@@ -24,12 +24,17 @@ import java.net.URL;
 public class BaiduAPI {
 
     private static final String API_URL = "https://fanyi-api.baidu.com/api/trans/vip/translate?";
-    // 百度API密钥
-    private static final String API_KEY = "uBk8gasCF1J7HJie_idg";
+    // 百度API密钥和ID从环境变量或配置文件中读取
+    private static final String API_KEY = System.getProperty("baidu.api.key", "");
     // 百度APIID
-    private static final String APP_ID = "20221110001445237";
+    private static final String APP_ID = System.getProperty("baidu.app.id", "");
 
     public static String translate(String Chinese) throws UnsupportedEncodingException {
+        // 检查API密钥和ID是否已配置
+        if (API_KEY.isEmpty() || APP_ID.isEmpty()) {
+            throw new IllegalStateException("百度翻译API密钥未配置，请设置系统属性: baidu.api.key 和 baidu.app.id");
+        }
+
         // 生成随机数
         String salt = generateSalt();
         String[] split = Chinese.split(" ");
@@ -85,7 +90,7 @@ public class BaiduAPI {
     private static String sendRequest(Map<String, String> params) throws IOException {
         URL url = new URL(API_URL);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
+        conn.setRequestMethod("POST");
         conn.setDoOutput(true);
 
         try (OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream(), StandardCharsets.UTF_8)) {

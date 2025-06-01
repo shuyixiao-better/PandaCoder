@@ -1,21 +1,19 @@
-.gradle
-**/build/
-!**/src/**/build/
+/gradlew
 
-# Ignore Gradle GUI config
-gradle-app.setting
+/gradlew.bat
 
-# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
-!gradle-wrapper.jar
+/.idea/
+/.idea/misc.xml/
 
-# Avoid ignore Gradle wrappper properties
-!gradle-wrapper.properties
+/.gradle/
 
-# Cache of project
-.gradletasknamecache
+# Project exclude paths
+/build/
 
-# Eclipse Gradle plugin generated files
-# Eclipse Core
-.project
-# JDT-specific (Eclipse Java Development Tools)
-.classpath
+/build/classes/java/main/
+
+# 忽略lib目录及其所有内容
+lib/
+lib/**/*.jar
+lib/**/*.zip
+

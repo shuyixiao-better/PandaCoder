@@ -1,5 +1,3 @@
-import proguard.gradle.ProGuardTask
-
 buildscript {
     repositories {
         mavenCentral()
@@ -30,13 +28,13 @@ dependencies {
 }
 
 intellij {
-    version = '2024.2'
+    version = '2025.1'
     type = 'IU'
     plugins = ['java', 'Groovy']
 }
 
 ext {
-    niagara_home = "E:\\ALearn\\IDEA-plugins\\YiXiaoPlugin"  // 这里替换为你实际的项目路径
+    niagara_home = project.rootDir.absolutePath  // 使用项目根目录的绝对路径
 }
 
 tasks.register('minJar', Jar) {
@@ -44,7 +42,7 @@ tasks.register('minJar', Jar) {
     from sourceSets.main.output
 }
 
-tasks.register('proguard', ProGuardTask) {
+tasks.register('proguard', proguard.gradle.ProGuardTask) {
     dependsOn minJar
     doFirst {
         ext {
@@ -56,8 +54,8 @@ tasks.register('proguard', ProGuardTask) {
                 libraryjars(jarFile)
             }
 
-            // 添加Java模块路径
-            libraryjars("D:/Program_Files/JDK/jdk-17_windows-x64_bin/jdk-17.0.6/jmods/java.base.jmod")
+            // 添加Java模块路径 - 使用系统属性获取JDK路径
+            libraryjars(System.getProperty("java.home") + "/jmods/java.base.jmod")
         }
 
         injars injar
@@ -68,7 +66,6 @@ tasks.register('proguard', ProGuardTask) {
     outputs.upToDateWhen { false }
 }
 
-
 tasks.named("runIde") {
     jvmArgs = ["-Xmx2g"]
 }
@@ -77,6 +74,11 @@ tasks {
     patchPluginXml {
         sinceBuild.set("242")
     }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 test {
