@@ -1,0 +1,40 @@
+com.shuyixiao.BaiduAPI -> com.shuyixiao.BaiduAPI:
+    java.lang.String API_URL -> API_URL
+    java.lang.String API_KEY -> API_KEY
+    java.lang.String APP_ID -> APP_ID
+    void <init>() -> <init>
+    java.lang.String translate(java.lang.String) -> translate
+    java.lang.String generateSalt() -> generateSalt
+    java.lang.String generateSign(java.lang.String,java.lang.String,java.lang.String) -> generateSign
+    java.lang.String md5(java.lang.String) -> md5
+    java.lang.String sendRequest(java.util.Map) -> sendRequest
+    java.lang.String unicodeToChinese(java.lang.String) -> unicodeToChinese
+com.shuyixiao.ConvertToCamelCaseAction -> com.shuyixiao.ConvertToCamelCaseAction:
+    void <init>() -> <init>
+    void actionPerformed(com.intellij.openapi.actionSystem.AnActionEvent) -> actionPerformed
+    java.lang.String toCamelCase(java.lang.String) -> toCamelCase
+    java.lang.String capitalize(java.lang.String) -> capitalize
+    void lambda$actionPerformed$0(com.intellij.openapi.editor.Document,int,int,java.lang.String) -> lambda$actionPerformed$0
+com.shuyixiao.JavaClassNameTranslatorAction -> com.shuyixiao.JavaClassNameTranslatorAction:
+    void <init>() -> <init>
+    void actionPerformed(com.intellij.openapi.actionSystem.AnActionEvent) -> actionPerformed
+    java.lang.String translateChineseToEnglish(java.lang.String) -> translateChineseToEnglish
+    java.lang.String toCamelCase(java.lang.String) -> toCamelCase
+    void createJavaClass(com.intellij.openapi.project.Project,java.lang.String,com.intellij.psi.PsiDirectory) -> createJavaClass
+    void createJavaInterface(com.intellij.openapi.project.Project,java.lang.String,com.intellij.psi.PsiDirectory) -> createJavaInterface
+    void createJavaRecord(com.intellij.openapi.project.Project,java.lang.String,com.intellij.psi.PsiDirectory) -> createJavaRecord
+    void createJavaEnum(com.intellij.openapi.project.Project,java.lang.String,com.intellij.psi.PsiDirectory) -> createJavaEnum
+    void createJavaAnnotation(com.intellij.openapi.project.Project,java.lang.String,com.intellij.psi.PsiDirectory) -> createJavaAnnotation
+    void createJavaException(com.intellij.openapi.project.Project,java.lang.String,com.intellij.psi.PsiDirectory) -> createJavaException
+    void lambda$createJavaException$5(com.intellij.psi.PsiElementFactory,com.intellij.openapi.project.Project,com.intellij.psi.PsiClass,com.intellij.psi.PsiDirectory) -> lambda$createJavaException$5
+    com.intellij.psi.PsiElement lambda$createJavaAnnotation$4(com.intellij.psi.PsiDirectory,com.intellij.psi.PsiElement) -> lambda$createJavaAnnotation$4
+    com.intellij.psi.PsiElement lambda$createJavaEnum$3(com.intellij.psi.PsiDirectory,com.intellij.psi.PsiElement) -> lambda$createJavaEnum$3
+    com.intellij.psi.PsiElement lambda$createJavaRecord$2(com.intellij.psi.PsiDirectory,com.intellij.psi.PsiElement) -> lambda$createJavaRecord$2
+    com.intellij.psi.PsiElement lambda$createJavaInterface$1(com.intellij.psi.PsiDirectory,com.intellij.psi.PsiElement) -> lambda$createJavaInterface$1
+    com.intellij.psi.PsiElement lambda$createJavaClass$0(com.intellij.psi.PsiDirectory,com.intellij.psi.PsiElement) -> lambda$createJavaClass$0
+com.shuyixiao.ReportMessage -> com.shuyixiao.ReportMessage:
+    void <init>() -> <init>
+    void actionPerformed(com.intellij.openapi.actionSystem.AnActionEvent) -> actionPerformed
+    java.lang.String getLocalizedMessage(java.lang.String,java.lang.String) -> getLocalizedMessage
+    void showMessageDialogOnUIThread(java.lang.String,java.lang.String) -> showMessageDialogOnUIThread
+    void lambda$showMessageDialogOnUIThread$0(java.lang.String,java.lang.String) -> lambda$showMessageDialogOnUIThread$0

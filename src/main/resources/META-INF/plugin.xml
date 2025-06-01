@@ -1,0 +1,29 @@
+<idea-plugin>
+    <id>com.shuyixiao.yixiaoPlugins</id>
+
+    <name>YixiaoPlugins</name>
+    <vendor email="yixiaoshu88@163.com" url="https://www.shuyixiao.cloud">舒一笑</vendor>
+
+
+    <extensions defaultExtensionNs="com.intellij">
+<!--        <applicationService serviceImplementation="com.shuyixiao.setting.PluginSettings"/>-->
+<!--        <applicationConfigurable groupId="tools" displayName="Yixiao Plugin" id="FileAnnotationInformationConfiguration"-->
+<!--                                 instance="com.shuyixiao.setting.SettingConfigurable"/>-->
+    </extensions>
+    <actions>
+        <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="一笑插件欢迎使用"
+                description="输出一条信息">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+        </action>
+
+        <!--翻译插件效果-->
+        <action id="ConvertToCamelCase" class="com.shuyixiao.ConvertToCamelCaseAction" text="中文转小驼峰">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt C"/>
+        </action>
+
+        <action id="KotlinClassNameTranslator" class="com.shuyixiao.JavaClassNameTranslatorAction" text="中文类转译" description="中文类生成工具">
+            <add-to-group group-id="NewGroup" anchor="first"/>
+        </action>
+    </actions>
+</idea-plugin>

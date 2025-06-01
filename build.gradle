@@ -1,0 +1,84 @@
+import proguard.gradle.ProGuardTask
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.guardsquare:proguard-gradle:7.5.0'
+    }
+}
+
+plugins {
+    id 'java'
+    id 'org.jetbrains.intellij' version '1.17.3'
+}
+
+group = 'com.shuyixiao'
+version = '1.0.2'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.apache.groovy:groovy:4.0.14'
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    implementation("com.google.code.gson:gson:2.11.0")
+    implementation("org.jetbrains:annotations:24.1.0")
+}
+
+intellij {
+    version = '2024.2'
+    type = 'IU'
+    plugins = ['java', 'Groovy']
+}
+
+ext {
+    niagara_home = "E:\\ALearn\\IDEA-plugins\\YiXiaoPlugin"  // 这里替换为你实际的项目路径
+}
+
+tasks.register('minJar', Jar) {
+    archiveClassifier.set('min')
+    from sourceSets.main.output
+}
+
+tasks.register('proguard', ProGuardTask) {
+    dependsOn minJar
+    doFirst {
+        ext {
+            injar = tasks.named('minJar').get().archiveFile.get().asFile  // 使用 minJar 任务的输出作为输入
+            outJar = file("$buildDir/libs/${rootProject.name}-${version}-proguarded.jar")
+
+            // 动态添加lib目录下的所有JAR文件
+            fileTree(dir: 'lib', include: '*.jar').files.each { jarFile ->
+                libraryjars(jarFile)
+            }
+
+            // 添加Java模块路径
+            libraryjars("D:/Program_Files/JDK/jdk-17_windows-x64_bin/jdk-17.0.6/jmods/java.base.jmod")
+        }
+
+        injars injar
+        outjars outJar
+        configuration 'sensetech.pro'
+    }
+    // 强制任务每次都执行
+    outputs.upToDateWhen { false }
+}
+
+
+tasks.named("runIde") {
+    jvmArgs = ["-Xmx2g"]
+}
+
+tasks {
+    patchPluginXml {
+        sinceBuild.set("242")
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
