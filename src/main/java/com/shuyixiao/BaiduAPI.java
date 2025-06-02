@@ -41,32 +41,35 @@ public class BaiduAPI {
             return simulateTranslation(Chinese);
         }
 
+        // 预处理：移除不必要的字符，例如括号、冒号等
+        Chinese = Chinese.replaceAll("[\\(\\)\\[\\]\\{\\}:：，,。.]+", " ").trim();
+
         // 生成随机数
         String salt = generateSalt();
-        String[] split = Chinese.split(" ");
         StringBuilder translatedText = new StringBuilder();
 
-        for (String word : split) {
-            try {
-                String sign = generateSign(APP_ID, word, salt); // 生成签名
+        try {
+            // 为整句生成签名，而不是分词处理
+            String sign = generateSign(APP_ID, Chinese, salt); // 生成签名
 
-                // 构建HTTP请求
-                Map<String, String> params = new java.util.HashMap<>();
-                params.put("q", word);
-                params.put("from", "auto");
-                params.put("to", "en");
-                params.put("appid", APP_ID);
-                params.put("salt", salt);
-                params.put("sign", sign);
+            // 构建HTTP请求
+            Map<String, String> params = new java.util.HashMap<>();
+            params.put("q", Chinese);
+            params.put("from", "zh"); // 明确指定从中文
+            params.put("to", "en");  // 翻译到英文
+            params.put("appid", APP_ID);
+            params.put("salt", salt);
+            params.put("sign", sign);
 
-                translatedText.append(sendRequest(params)); // 发送HTTP请求并获取翻译结果
-            } catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            String result = sendRequest(params); // 发送HTTP请求并获取翻译结果
+            return result.trim();  // 移除多余空格
+        } catch (UnsupportedEncodingException | NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return simulateTranslation(Chinese);
+        } catch (IOException e) {
+            System.out.println("翻译API调用失败：" + e.getMessage());
+            return simulateTranslation(Chinese);
         }
-        return translatedText.toString();
     }
 
     // 生成随机数
@@ -184,7 +187,7 @@ public class BaiduAPI {
      * 模拟翻译功能，用于API密钥未配置时
      */
     private static String simulateTranslation(String chinese) {
-        // 简单的中文到英文映射
+        // 扩展的中文到英文映射词典
         return chinese.replaceAll("用户", "user")
                      .replaceAll("管理", "manage")
                      .replaceAll("系统", "system")
@@ -192,6 +195,34 @@ public class BaiduAPI {
                      .replaceAll("数据", "data")
                      .replaceAll("配置", "config")
                      .replaceAll("信息", "info")
+                     .replaceAll("控制器", "controller")
+                     .replaceAll("工具", "util")
+                     .replaceAll("接口", "interface")
+                     .replaceAll("实现", "impl")
+                     .replaceAll("业务", "business")
+                     .replaceAll("层", "layer")
+                     .replaceAll("模型", "model")
+                     .replaceAll("视图", "view")
+                     .replaceAll("请求", "request")
+                     .replaceAll("响应", "response")
+                     .replaceAll("异常", "exception")
+                     .replaceAll("工厂", "factory")
+                     .replaceAll("构建", "builder")
+                     .replaceAll("转换", "converter")
+                     .replaceAll("解析", "parser")
+                     .replaceAll("处理", "handler")
+                     .replaceAll("存储", "storage")
+                     .replaceAll("缓存", "cache")
+                     .replaceAll("日志", "log")
+                     .replaceAll("消息", "message")
+                     .replaceAll("队列", "queue")
+                     .replaceAll("订阅", "subscribe")
+                     .replaceAll("发布", "publish")
+                     .replaceAll("测试", "test")
+                     .replaceAll("设置", "setting")
+                     .replaceAll("中心", "center")
+                     .replaceAll("引擎", "engine")
+                     .replaceAll("助手", "assistant")
                      .replaceAll(" ", "");
     }
 }
