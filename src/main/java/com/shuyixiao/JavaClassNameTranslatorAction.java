@@ -25,6 +25,11 @@ public class JavaClassNameTranslatorAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent e) {
+        // 检查API配置是否已设置
+        if (!com.shuyixiao.util.TranslationUtil.checkApiConfiguration()) {
+            return; // 未配置API，无法继续
+        }
+
         Project project = e.getProject();
         PsiElement selectedElement = LangDataKeys.PSI_ELEMENT.getData(e.getDataContext());
         PsiDirectory selectedDirectory = (selectedElement instanceof PsiDirectory) ? (PsiDirectory) selectedElement : null;
@@ -43,8 +48,16 @@ public class JavaClassNameTranslatorAction extends AnAction {
                     String translatedName = null;
                     try {
                         translatedName = translateChineseToEnglish(chineseClassName);
+                        if (translatedName == null || translatedName.trim().isEmpty()) {
+                            Messages.showErrorDialog(project, "翻译结果为空，无法创建文件。", "翻译错误");
+                            return;
+                        }
                     } catch (UnsupportedEncodingException ex) {
-                        throw new RuntimeException(ex);
+                        Messages.showErrorDialog(project, "翻译API配置错误: " + ex.getMessage(), "API错误");
+                        return;
+                    } catch (Exception ex) {
+                        Messages.showErrorDialog(project, "翻译过程中发生错误: " + ex.getMessage(), "翻译错误");
+                        return;
                     }
 
                     // Step 4: 将翻译后的英文名转换为大驼峰命名法

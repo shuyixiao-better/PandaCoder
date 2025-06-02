@@ -23,6 +23,11 @@ public class ConvertToCamelCaseAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent e) {
+        // 检查API配置是否已设置
+        if (!com.shuyixiao.util.TranslationUtil.checkApiConfiguration()) {
+            return; // 未配置API，无法继续
+        }
+
         // 获取当前编辑器
         Editor editor = e.getData(CommonDataKeys.EDITOR);
         if (editor == null) {
@@ -39,8 +44,16 @@ public class ConvertToCamelCaseAction extends AnAction {
         String translatedText = null;
         try {
             translatedText = BaiduAPI.translate(selectedText);
+            if (translatedText == null || translatedText.trim().isEmpty()) {
+                Messages.showErrorDialog("翻译结果为空，无法进行转换。请检查您的API配置是否正确。", "翻译失败");
+                return;
+            }
         } catch (UnsupportedEncodingException ex) {
-            throw new RuntimeException(ex);
+            // API未配置或配置错误，已经显示了错误信息，直接返回
+            return;
+        } catch (Exception ex) {
+            Messages.showErrorDialog("翻译过程中发生错误: " + ex.getMessage(), "翻译错误");
+            return;
         }
 
         // 将英文文本转换为驼峰命名

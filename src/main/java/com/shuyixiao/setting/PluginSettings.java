@@ -34,6 +34,12 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
                 // 类名前缀配置，多个前缀用逗号分隔
                 private String classPrefixes = "Service,Repository,Controller,Component,Util,Manager,Factory,Builder,Handler";
 
+                // 百度翻译API密钥
+                private String baiduApiKey = "";
+
+                // 百度翻译应用ID
+                private String baiduAppId = "";
+
     // 单例模式获取实例
     public static PluginSettings getInstance() {
         // 使用新的API代替已弃用的ServiceManager
@@ -71,6 +77,22 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
         this.classPrefixes = classPrefixes;
     }
 
+    public String getBaiduApiKey() {
+        return baiduApiKey;
+    }
+
+    public void setBaiduApiKey(String baiduApiKey) {
+        this.baiduApiKey = baiduApiKey;
+    }
+
+    public String getBaiduAppId() {
+        return baiduAppId;
+    }
+
+    public void setBaiduAppId(String baiduAppId) {
+        this.baiduAppId = baiduAppId;
+    }
+
     @Nullable
     @Override
     public PluginSettings getState() {
@@ -95,6 +117,15 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
         // 确保classPrefixes不为空
         if (this.classPrefixes == null || this.classPrefixes.isEmpty()) {
             this.classPrefixes = "Service,Repository,Controller,Component,Util,Manager,Factory,Builder,Handler";
+        }
+
+        // 确保百度API密钥和应用ID不为null
+        if (this.baiduApiKey == null) {
+            this.baiduApiKey = "";
+        }
+
+        if (this.baiduAppId == null) {
+            this.baiduAppId = "";
         }
     }
 }

@@ -9,7 +9,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.shuyixiao.setting.PluginSettings"/>
-        <applicationConfigurable groupId="tools" displayName="Yixiao Plugin" id="FileAnnotationInformationConfiguration"
+        <applicationConfigurable groupId="tools" displayName="PandaCoder" id="FileAnnotationInformationConfiguration"
                                 instance="com.shuyixiao.setting.SettingConfigurable"/>
     </extensions>
     <actions>
