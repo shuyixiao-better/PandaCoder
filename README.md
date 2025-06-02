@@ -1,7 +1,7 @@
 # PandaCoder
 
 <p align="center">
-  <img src="https://github.com/shuyixiao/PandaCoder/raw/main/src/main/resources/META-INF/pluginIcon.svg" width="128" alt="PandaCoder Logo">
+  <img src="https://github.com/shuyixiao-better/PandaCoder/blob/main/src/main/resources/META-INF/pluginIcon.svg" width="128" alt="PandaCoder Logo">
 </p>
 
 ## 项目说明
