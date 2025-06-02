@@ -2,6 +2,7 @@
     <id>com.shuyixiao.yixiaoPlugins</id>
 
     <name>PandaCoder</name>
+    <description>PandaCoder is an intelligent tool for Chinese developers that provides automatic conversion from Chinese to English naming, smart class creation with Chinese input, and various text conversion features to significantly improve programming efficiency.</description>
     <vendor email="yixiaoshu88@163.com" url="https://www.shuyixiao.cloud">舒一笑</vendor>
 
     <depends>com.intellij.modules.platform</depends>
@@ -15,23 +16,23 @@
         <notificationGroup id="PandaCoder Notification Group" displayType="BALLOON" />
     </extensions>
     <actions>
-        <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="关于PandaCoder"
-                description="显示PandaCoder插件信息">
+        <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="About PandaCoder"
+                description="Show PandaCoder plugin information">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>
 
-        <action id="ConvertToCamelCase" class="com.shuyixiao.ConvertToCamelCaseAction" text="中文转小驼峰" description="将选中的中文文本转换为小驼峰命名格式">
+        <action id="ConvertToCamelCase" class="com.shuyixiao.ConvertToCamelCaseAction" text="Chinese to camelCase" description="Convert selected Chinese text to camelCase naming format">
             <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="ReportMessage"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt C"/>
         </action>
 
-        <action id="ConvertToPascalCase" class="com.shuyixiao.ConvertToPascalCaseAction" text="中文转大驼峰" description="将选中的中文文本转换为大驼峰命名格式">
+        <action id="ConvertToPascalCase" class="com.shuyixiao.ConvertToPascalCaseAction" text="Chinese to PascalCase" description="Convert selected Chinese text to PascalCase naming format">
             <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="ConvertToCamelCase"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt P"/>
         </action>
 
-        <!-- 添加直接在原生对话框中支持中文输入的功能 -->
-        <action id="ChineseFileCreation" class="com.shuyixiao.ChineseClassCreationAction" text="智能中文类" description="支持在原生对话框中输入中文自动转换为英文类名">
+        <!-- Feature to support Chinese input in native dialog -->
+        <action id="ChineseFileCreation" class="com.shuyixiao.ChineseClassCreationAction" text="Smart Chinese Class" description="Create class with Chinese input automatically converted to English class name">
             <add-to-group group-id="NewGroup" anchor="first"/>
         </action>
     </actions>

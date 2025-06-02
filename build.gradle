@@ -86,8 +86,42 @@ tasks.named("runIde") {
 }
 
 patchPluginXml {
-    sinceBuild.set("212") // 设置最低支持版本为 2021.2
+    sinceBuild.set("241") // 设置最低支持版本为 2024.1，匹配 Java 17 要求
     // 不设置 untilBuild，允许在任何更高版本上使用
+
+    // 插件详细描述和变更说明
+    pluginDescription.set("""
+        PandaCoder is an intelligent tool designed for Chinese developers that facilitates programming in Chinese environment. 
+
+        Key features include:
+        - Chinese to English naming conversion (CamelCase and PascalCase)
+        - Smart class creation with automatic Chinese-to-English translation
+        - Support for class prefix patterns
+        - Custom file header templates
+        - Intelligent text processing for variable and method naming
+
+        This plugin significantly improves development efficiency for Chinese-speaking developers by bridging 
+        the gap between Chinese language concepts and English code conventions.
+    """)
+
+    changeNotes.set("""
+        <ul>
+            <li><b>1.1.0</b> - Added support for IntelliJ IDEA 2024.1, upgraded to Java 17</li>
+            <li><b>1.0.9</b> - Added smart class creation with prefix support</li>
+            <li><b>1.0.8</b> - Improved translation accuracy and added custom templates</li>
+            <li><b>1.0.7</b> - Initial release with basic Chinese to English conversion</li>
+        </ul>
+    """)
+}
+
+// 插件发布配置
+publishPlugin {
+    // 从环境变量获取发布令牌，如果没有则尝试从系统属性获取
+    token.set(System.getenv("JETBRAINS_TOKEN") ?: System.getProperty("jetbrains.token", ""))
+
+    // 发布渠道，默认为默认渠道（稳定版）
+    // 可以设置为 'eap'、'alpha' 或 'beta' 用于不同的发布阶段
+    channels.set([System.getenv("JETBRAINS_CHANNEL") ?: System.getProperty("jetbrains.channel", "default")])
 }
 
 // 使用Java 17，兼容IntelliJ 2024.1.6
