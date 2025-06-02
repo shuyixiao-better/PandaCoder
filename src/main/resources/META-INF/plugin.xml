@@ -30,11 +30,6 @@
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt P"/>
         </action>
 
-        <!-- 保留原有的中文类转译功能 -->
-        <action id="KotlinClassNameTranslator" class="com.shuyixiao.JavaClassNameTranslatorAction" text="中文类转译" description="中文类生成工具">
-            <add-to-group group-id="NewGroup" anchor="first"/>
-        </action>
-
         <!-- 添加直接在原生对话框中支持中文输入的功能 -->
         <action id="ChineseFileCreation" class="com.shuyixiao.ChineseClassCreationAction" text="智能中文类" description="支持在原生对话框中输入中文自动转换为英文类名">
             <add-to-group group-id="NewGroup" anchor="first"/>

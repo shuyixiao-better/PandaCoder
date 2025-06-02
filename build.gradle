@@ -86,8 +86,8 @@ tasks.named("runIde") {
 }
 
 patchPluginXml {
-    sinceBuild.set("241")
-    untilBuild.set("241.*")
+    sinceBuild.set("212") // 设置最低支持版本为 2021.2
+    // 不设置 untilBuild，允许在任何更高版本上使用
 }
 
 // 使用Java 17，兼容IntelliJ 2024.1.6
