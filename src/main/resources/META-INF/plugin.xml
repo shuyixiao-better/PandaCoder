@@ -25,6 +25,11 @@
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt C"/>
         </action>
 
+        <action id="ConvertToPascalCase" class="com.shuyixiao.ConvertToPascalCaseAction" text="中文转大驼峰" description="将选中的中文文本转换为大驼峰命名格式">
+            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="ConvertToCamelCase"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt P"/>
+        </action>
+
         <!-- 保留原有的中文类转译功能 -->
         <action id="KotlinClassNameTranslator" class="com.shuyixiao.JavaClassNameTranslatorAction" text="中文类转译" description="中文类生成工具">
             <add-to-group group-id="NewGroup" anchor="first"/>
