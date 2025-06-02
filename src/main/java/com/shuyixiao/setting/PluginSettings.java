@@ -17,8 +17,8 @@ import org.jetbrains.annotations.Nullable;
  * createTime 2024年09月07日 21:01:00
  */
 @State(
-    name = "YixiaoPluginSettings",
-    storages = @Storage("yixiao-plugin-settings.xml")
+    name = "PandaCoderSettings",
+    storages = @Storage("pandacoder-settings.xml")
 )
 public class PluginSettings implements PersistentStateComponent<PluginSettings> {
 

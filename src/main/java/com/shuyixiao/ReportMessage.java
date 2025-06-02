@@ -16,8 +16,8 @@ public class ReportMessage extends AnAction {
     @Override
     public void actionPerformed(AnActionEvent e) {
         // 获取国际化的消息和标题，如果没有可以使用默认值
-        String message = getLocalizedMessage("report.message", "欢迎使用中文类转化插件");
-        String title = getLocalizedMessage("report.title", "一笑友情提醒");
+        String message = getLocalizedMessage("report.message", "欢迎使用 PandaCoder - 中文开发者的智能编码助手！\n\n只需输入中文，即可生成标准英文命名的代码文件。");
+        String title = getLocalizedMessage("report.title", "PandaCoder 熊猫编码助手");
 
         // 显示消息对话框
         showMessageDialogOnUIThread(message, title);

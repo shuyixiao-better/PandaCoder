@@ -13,7 +13,7 @@ plugins {
 }
 
 group = 'com.shuyixiao'
-version = '1.0.2'
+version = '1.1.0' // 更新版本号反映品牌变更
 
 repositories {
     mavenCentral()
@@ -70,13 +70,19 @@ tasks.register('proguard', proguard.gradle.ProGuardTask) {
 
 // 运行插件配置
 tasks.named("runIde") {
-    // 取消下面的注释并填入您的百度翻译API密钥和APP_ID
+    // 从环境变量或系统属性中读取API配置，如果没有则使用默认值
     jvmArgs = [
-        "-Xmx2g", 
-        // 百度翻译API配置
-//         "-Dbaidu.api.key=您的百度API密钥",
-//         "-Dbaidu.app.id=您的百度APP_ID"
+        "-Xmx2g",
+        // 百度翻译API配置 - 支持环境变量
+        "-Dbaidu.api.key=${System.getenv('BAIDU_API_KEY') ?: System.getProperty('baidu.api.key', '')}",
+        "-Dbaidu.app.id=${System.getenv('BAIDU_APP_ID') ?: System.getProperty('baidu.app.id', '')}"
     ]
+    
+    // 打印配置信息（调试用，生产环境建议移除）
+    doFirst {
+        println "BAIDU_API_KEY 环境变量: ${System.getenv('BAIDU_API_KEY') ? '已设置' : '未设置'}"
+        println "BAIDU_APP_ID 环境变量: ${System.getenv('BAIDU_APP_ID') ? '已设置' : '未设置'}"
+    }
 }
 
 patchPluginXml {
