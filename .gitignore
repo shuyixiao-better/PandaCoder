@@ -1,19 +1,29 @@
-/gradlew
-
-/gradlew.bat
-
+# IDE
 /.idea/
-/.idea/misc.xml/
+*.iml
+*.iws
+*.ipr
 
+# Gradle
 /.gradle/
-
-# Project exclude paths
 /build/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
 
-/build/classes/java/main/
+# IntelliJ Platform Plugin
+/.intellijPlatform/
 
-# 忽略lib目录及其所有内容
+# Java
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+
+# 项目特定的忽略文件
 lib/
 lib/**/*.jar
 lib/**/*.zip
 
+# 但不要忽略 gradlew 文件
+# 这些文件应该被提交到版本控制中

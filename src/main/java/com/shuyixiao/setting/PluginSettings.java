@@ -2,6 +2,8 @@ package com.shuyixiao.setting;
 
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.components.State;
+import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,6 +16,10 @@ import org.jetbrains.annotations.Nullable;
  * Description TODO
  * createTime 2024年09月07日 21:01:00
  */
+@State(
+    name = "YixiaoPluginSettings",
+    storages = @Storage("yixiao-plugin-settings.xml")
+)
 public class PluginSettings implements PersistentStateComponent<PluginSettings> {
 
     private String template = "/**\n" +
@@ -27,7 +33,8 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
 
     // 单例模式获取实例
     public static PluginSettings getInstance() {
-        return ServiceManager.getService(PluginSettings.class);
+        // 使用新的API代替已弃用的ServiceManager
+        return com.intellij.openapi.application.ApplicationManager.getApplication().getService(PluginSettings.class);
     }
 
     // 获取模板，确保不会返回null

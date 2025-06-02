@@ -3,7 +3,6 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.ui.Messages;
-
 /**
  * Copyright © 2024年 integration-projects-maven. All rights reserved.
  * ClassName ReportMessage.java

@@ -24,15 +24,21 @@ import java.net.URL;
 public class BaiduAPI {
 
     private static final String API_URL = "https://fanyi-api.baidu.com/api/trans/vip/translate?";
-    // 百度API密钥和ID从环境变量或配置文件中读取
-    private static final String API_KEY = System.getProperty("baidu.api.key", "");
+    // 百度API密钥和ID获取顺序：
+    // 1. 系统属性 (通过 -D 参数传入)
+    // 2. 环境变量 (如果配置了)
+    // 3. 空字符串 (如果都没有配置，则使用模拟翻译)
+    private static final String API_KEY = System.getProperty("baidu.api.key", 
+                                      System.getenv().getOrDefault("BAIDU_API_KEY", ""));
     // 百度APIID
-    private static final String APP_ID = System.getProperty("baidu.app.id", "");
+    private static final String APP_ID = System.getProperty("baidu.app.id", 
+                                    System.getenv().getOrDefault("BAIDU_APP_ID", ""));
 
     public static String translate(String Chinese) throws UnsupportedEncodingException {
         // 检查API密钥和ID是否已配置
         if (API_KEY.isEmpty() || APP_ID.isEmpty()) {
-            throw new IllegalStateException("百度翻译API密钥未配置，请设置系统属性: baidu.api.key 和 baidu.app.id");
+            // 当API密钥未配置时，使用模拟翻译而不是抛出异常
+            return simulateTranslation(Chinese);
         }
 
         // 生成随机数
@@ -88,59 +94,74 @@ public class BaiduAPI {
 
     // 发送HTTP请求
     private static String sendRequest(Map<String, String> params) throws IOException {
-        URL url = new URL(API_URL);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("POST");
-        conn.setDoOutput(true);
+        try {
+            URL url = new URL(API_URL);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(5000);
 
-        try (OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream(), StandardCharsets.UTF_8)) {
-            // 构建POST参数
-            StringBuilder postData = new StringBuilder();
-            for (Map.Entry<String, String> entry : params.entrySet()) {
-                if (postData.length() > 0) {
-                    postData.append("&");
+            try (OutputStreamWriter wr = new OutputStreamWriter(conn.getOutputStream(), StandardCharsets.UTF_8)) {
+                // 构建POST参数
+                StringBuilder postData = new StringBuilder();
+                for (Map.Entry<String, String> entry : params.entrySet()) {
+                    if (postData.length() > 0) {
+                        postData.append("&");
+                    }
+                    postData.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8.toString()));
+                    postData.append("=");
+                    postData.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8.toString()));
                 }
-                postData.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8.toString()));
-                postData.append("=");
-                postData.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8.toString()));
+                wr.write(postData.toString());
+                wr.flush();
             }
-            wr.write(postData.toString());
-            wr.flush();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-        // 获取响应
-        int responseCode = conn.getResponseCode();
-        StringBuilder response = new StringBuilder();
+            // 获取响应
+            int responseCode = conn.getResponseCode();
+            StringBuilder response = new StringBuilder();
 
-        if (responseCode == HttpURLConnection.HTTP_OK) {
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = in.readLine()) != null) {
-                    response.append(line);
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = in.readLine()) != null) {
+                        response.append(line);
+                    }
                 }
+            } else {
+                System.out.println("POST request failed: " + responseCode);
+                return simulateTranslation(params.get("q"));
             }
-        } else {
-            System.out.println("POST request not worked");
+
+            try {
+                Gson gson = new Gson();
+                JsonObject jsonObject = gson.fromJson(response.toString(), JsonObject.class);
+                JsonArray transResultArray = jsonObject.getAsJsonArray("trans_result");
+
+                if (transResultArray != null && transResultArray.size() > 0) {
+                    JsonObject transResultObject = transResultArray.get(0).getAsJsonObject(); // 取第一个元素
+                    String dstValue = transResultObject.get("dst").getAsString();
+
+                    // 将 Unicode 编码字符串转换成中文
+                    return unicodeToChinese(dstValue);
+                }
+            } catch (Exception e) {
+                System.out.println("JSON parsing error: " + e.getMessage());
+                return simulateTranslation(params.get("q"));
+            }
+            return simulateTranslation(params.get("q"));
+        } catch (Exception e) {
+            System.out.println("Network error: " + e.getMessage());
+            return simulateTranslation(params.get("q"));
         }
-
-        Gson gson = new Gson();
-        JsonObject jsonObject = gson.fromJson(response.toString(), JsonObject.class);
-        JsonArray transResultArray = jsonObject.getAsJsonArray("trans_result");
-
-        if (transResultArray != null && transResultArray.size() > 0) {
-            JsonObject transResultObject = transResultArray.get(0).getAsJsonObject(); // 取第一个元素
-            String dstValue = transResultObject.get("dst").getAsString();
-
-            // 将 Unicode 编码字符串转换成中文
-            return unicodeToChinese(dstValue);
-        }
-        return "未知错误";
     }
 
     // Unicode 编码字符串转换成中文
     private static String unicodeToChinese(String unicodeStr) {
+        if (unicodeStr == null) {
+            return "";
+        }
+
         StringBuilder sb = new StringBuilder();
         int pos = 0;
 
@@ -157,5 +178,20 @@ public class BaiduAPI {
         sb.append(unicodeStr.substring(pos));
 
         return sb.toString();
+    }
+
+    /**
+     * 模拟翻译功能，用于API密钥未配置时
+     */
+    private static String simulateTranslation(String chinese) {
+        // 简单的中文到英文映射
+        return chinese.replaceAll("用户", "user")
+                     .replaceAll("管理", "manage")
+                     .replaceAll("系统", "system")
+                     .replaceAll("服务", "service")
+                     .replaceAll("数据", "data")
+                     .replaceAll("配置", "config")
+                     .replaceAll("信息", "info")
+                     .replaceAll(" ", "");
     }
 }

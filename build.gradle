@@ -9,7 +9,7 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.jetbrains.intellij' version '1.17.3'
+    id 'org.jetbrains.intellij' version '1.17.4'
 }
 
 group = 'com.shuyixiao'
@@ -23,18 +23,23 @@ dependencies {
     implementation 'org.apache.groovy:groovy:4.0.14'
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
-    implementation("com.google.code.gson:gson:2.11.0")
-    implementation("org.jetbrains:annotations:24.1.0")
+    implementation "com.google.code.gson:gson:2.11.0"
+    implementation "org.jetbrains:annotations:24.1.0"
 }
 
 intellij {
-    version = '2025.1'
+    version = '2024.1.6'
     type = 'IU'
-    plugins = ['java', 'Groovy']
+    plugins = ['java', 'org.intellij.groovy']
+    updateSinceUntilBuild = false
+}
+
+tasks.withType(org.jetbrains.intellij.tasks.BuildSearchableOptionsTask) {
+    enabled = false
 }
 
 ext {
-    niagara_home = project.rootDir.absolutePath  // 使用项目根目录的绝对路径
+    niagara_home = project.rootDir.absolutePath
 }
 
 tasks.register('minJar', Jar) {
@@ -46,15 +51,13 @@ tasks.register('proguard', proguard.gradle.ProGuardTask) {
     dependsOn minJar
     doFirst {
         ext {
-            injar = tasks.named('minJar').get().archiveFile.get().asFile  // 使用 minJar 任务的输出作为输入
+            injar = tasks.named('minJar').get().archiveFile.get().asFile
             outJar = file("$buildDir/libs/${rootProject.name}-${version}-proguarded.jar")
 
-            // 动态添加lib目录下的所有JAR文件
             fileTree(dir: 'lib', include: '*.jar').files.each { jarFile ->
                 libraryjars(jarFile)
             }
 
-            // 添加Java模块路径 - 使用系统属性获取JDK路径
             libraryjars(System.getProperty("java.home") + "/jmods/java.base.jmod")
         }
 
@@ -62,23 +65,29 @@ tasks.register('proguard', proguard.gradle.ProGuardTask) {
         outjars outJar
         configuration 'sensetech.pro'
     }
-    // 强制任务每次都执行
     outputs.upToDateWhen { false }
 }
 
+// 运行插件配置
 tasks.named("runIde") {
-    jvmArgs = ["-Xmx2g"]
+    // 取消下面的注释并填入您的百度翻译API密钥和APP_ID
+    jvmArgs = [
+        "-Xmx2g", 
+        // 百度翻译API配置
+//         "-Dbaidu.api.key=您的百度API密钥",
+//         "-Dbaidu.app.id=您的百度APP_ID"
+    ]
 }
 
-tasks {
-    patchPluginXml {
-        sinceBuild.set("242")
-    }
+patchPluginXml {
+    sinceBuild.set("241")
+    untilBuild.set("241.*")
 }
 
+// 使用Java 17，兼容IntelliJ 2024.1.6
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 test {

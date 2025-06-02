@@ -122,13 +122,11 @@ public class JavaClassNameTranslatorAction extends AnAction {
 
         try {
             // 获取用户定义的模板注释
-//            String fileHeader = getCustomFileHeader(className);
+            String fileHeader = getCustomFileHeader(className);
 
             // 使用类模板创建类并附加用户定义的文件头
             String classContent = classTemplate.getText(properties);
-//            String finalContent = fileHeader + "\n" + classContent;
-            // 使用正则表达式查找并在类声明前插入换行
-            String finalContent = classContent.replaceAll("(\\*/)(\\s*)(public class)", "$1\n$3");
+            String finalContent = fileHeader + "\n" + classContent;
             // 创建 PsiFile
             PsiFile psiFile = PsiFileFactory.getInstance(project).createFileFromText(className + ".java", JavaFileType.INSTANCE, finalContent);
 
@@ -174,12 +172,11 @@ public class JavaClassNameTranslatorAction extends AnAction {
 
         try {
             // 获取用户定义的模板注释
-//            String fileHeader = getCustomFileHeader(interfaceName);
+            String fileHeader = getCustomFileHeader(interfaceName);
 
             // 使用接口模板创建接口并附加用户定义的文件头
             String interfaceContent = interfaceTemplate.getText(properties);
-//            String finalContent = fileHeader + "\n" + interfaceContent;
-            String finalContent = interfaceContent.replaceAll("(\\*/)(\\s*)(public interface)", "$1\n$3");
+            String finalContent = fileHeader + "\n" + interfaceContent;
 
             // 创建 PsiFile
             PsiFile psiFile = PsiFileFactory.getInstance(project).createFileFromText(interfaceName + ".java", JavaFileType.INSTANCE, finalContent);
@@ -207,12 +204,11 @@ public class JavaClassNameTranslatorAction extends AnAction {
 
         try {
             // 获取用户定义的模板注释
-//            String fileHeader = getCustomFileHeader(recordName);
+            String fileHeader = getCustomFileHeader(recordName);
 
             // 使用记录模板创建记录并附加用户定义的文件头
             String recordContent = recordTemplate.getText(properties);
-//            String finalContent = fileHeader + "\n" + recordContent;
-            String finalContent = recordContent.replaceAll("(\\*/)(\\s*)(public record)", "$1\n$3");
+            String finalContent = fileHeader + "\n" + recordContent;
 
             // 创建 PsiFile
             PsiFile psiFile = PsiFileFactory.getInstance(project).createFileFromText(recordName + ".java", JavaFileType.INSTANCE, finalContent);
@@ -240,12 +236,11 @@ public class JavaClassNameTranslatorAction extends AnAction {
 
         try {
             // 获取用户定义的模板注释
-//            String fileHeader = getCustomFileHeader(enumName);
+            String fileHeader = getCustomFileHeader(enumName);
 
             // 使用枚举模板创建枚举并附加用户定义的文件头
             String enumContent = enumTemplate.getText(properties);
-//            String finalContent = fileHeader + "\n" + enumContent;
-            String finalContent = enumContent.replaceAll("(\\*/)(\\s*)(public enum)", "$1\n$3");
+            String finalContent = fileHeader + "\n" + enumContent;
 
             // 创建 PsiFile
             PsiFile psiFile = PsiFileFactory.getInstance(project).createFileFromText(enumName + ".java", JavaFileType.INSTANCE, finalContent);
@@ -273,12 +268,11 @@ public class JavaClassNameTranslatorAction extends AnAction {
 
         try {
             // 获取用户定义的模板注释
-//            String fileHeader = getCustomFileHeader(annotationName);
+            String fileHeader = getCustomFileHeader(annotationName);
 
             // 使用注解模板创建注解并附加用户定义的文件头
             String annotationContent = annotationTemplate.getText(properties);
-//            String finalContent = fileHeader + "\n" + annotationContent;
-            String finalContent = annotationContent.replaceAll("(\\*/)(\\s*)(public @interface)", "$1\n$3");
+            String finalContent = fileHeader + "\n" + annotationContent;
 
             // 创建 PsiFile
             PsiFile psiFile = PsiFileFactory.getInstance(project).createFileFromText(annotationName + ".java", JavaFileType.INSTANCE, finalContent);
@@ -306,12 +300,11 @@ public class JavaClassNameTranslatorAction extends AnAction {
 
         try {
             // 获取用户定义的模板注释
-//            String fileHeader = getCustomFileHeader(exceptionName + "Exception");
+            String fileHeader = getCustomFileHeader(exceptionName + "Exception");
 
             // 使用异常模板创建异常类并附加用户定义的文件头
             String exceptionContent = exceptionTemplate.getText(properties);
-//            String finalContent = fileHeader + "\n" + exceptionContent;
-            String finalContent = exceptionContent.replaceAll("(\\*/)(\\s*)(public class)", "$1\n$3");
+            String finalContent = fileHeader + "\n" + exceptionContent;
 
             // 创建 PsiFile
             PsiFile psiFile = PsiFileFactory.getInstance(project).createFileFromText(exceptionName + "Exception.java", JavaFileType.INSTANCE, finalContent);

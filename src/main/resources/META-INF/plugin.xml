@@ -4,11 +4,13 @@
     <name>YixiaoPlugins</name>
     <vendor email="yixiaoshu88@163.com" url="https://www.shuyixiao.cloud">舒一笑</vendor>
 
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-<!--        <applicationService serviceImplementation="com.shuyixiao.setting.PluginSettings"/>-->
-<!--        <applicationConfigurable groupId="tools" displayName="Yixiao Plugin" id="FileAnnotationInformationConfiguration"-->
-<!--                                 instance="com.shuyixiao.setting.SettingConfigurable"/>-->
+        <applicationService serviceImplementation="com.shuyixiao.setting.PluginSettings"/>
+        <applicationConfigurable groupId="tools" displayName="Yixiao Plugin" id="FileAnnotationInformationConfiguration"
+                                instance="com.shuyixiao.setting.SettingConfigurable"/>
     </extensions>
     <actions>
         <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="一笑插件欢迎使用"
@@ -16,7 +18,6 @@
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>
 
-        <!--翻译插件效果-->
         <action id="ConvertToCamelCase" class="com.shuyixiao.ConvertToCamelCaseAction" text="中文转小驼峰">
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt C"/>
