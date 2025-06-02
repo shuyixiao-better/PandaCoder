@@ -8,10 +8,6 @@
 
 ### 舒一笑 - 「云卷云舒，学无止境，焕然一新」
 
-<p align="center">
-  <img src="https://www.shuyixiao.cloud" width="150" alt="舒一笑" style="border-radius: 50%;">
-</p>
-
 ### 专业认证
 - **生成式AI应用工程师(高级)认证**
 - **阿里云博客专家**
