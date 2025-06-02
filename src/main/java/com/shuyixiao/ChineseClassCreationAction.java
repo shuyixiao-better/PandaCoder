@@ -92,10 +92,39 @@ public class ChineseClassCreationAction extends CreateFromTemplateAction<PsiFile
 
         // 检查文件名是否包含中文，如果包含则进行翻译
         String className = fileName;
-        if (containsChinese(fileName)) {
+        String prefix = "";
+
+        // 先检查是否存在预定义前缀
+        String[] prefixPatterns = PluginSettings.getInstance().getClassPrefixes().split(",");
+        for (String pattern : prefixPatterns) {
+            pattern = pattern.trim();
+            if (pattern.isEmpty()) {
+                continue;
+            }
+
+            // 检查两种模式：
+            // 1. "前缀:中文" - 例如 "Service:用户管理"
+            // 2. "前缀中文" - 例如 "Service用户管理"
+            if (fileName.startsWith(pattern + ":") || fileName.startsWith(pattern + "：")) {
+                // 提取前缀和中文部分
+                prefix = pattern;
+                String separator = fileName.contains(":") ? ":" : "：";
+                className = fileName.substring(pattern.length() + separator.length()).trim();
+                break;
+            } else if (fileName.startsWith(pattern) && fileName.length() > pattern.length() && 
+                       containsChinese(fileName.substring(pattern.length()))) {
+                // 前缀直接跟随中文
+                prefix = pattern;
+                className = fileName.substring(pattern.length()).trim();
+                break;
+            }
+        }
+
+        // 处理中文部分
+        if (containsChinese(className)) {
             try {
                 // 翻译中文为英文
-                String translatedName = BaiduAPI.translate(fileName);
+                String translatedName = BaiduAPI.translate(className);
                 // 转换为大驼峰命名
                 className = toCamelCase(translatedName);
 
@@ -103,6 +132,11 @@ public class ChineseClassCreationAction extends CreateFromTemplateAction<PsiFile
                 if (templateName.equals("Class") && fileName.contains("异常") 
                         && !className.endsWith("Exception")) {
                     className += "Exception";
+                }
+
+                // 添加前缀（如果有）
+                if (!prefix.isEmpty()) {
+                    className = prefix + className;
                 }
 
             } catch (UnsupportedEncodingException ex) {

@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * Copyright © 2024年 integration-projects-maven. All rights reserved.
@@ -19,6 +21,7 @@ import java.awt.*;
 public class SettingConfigurable implements SearchableConfigurable {
 
     private JTextArea templateTextArea;
+    private JTextField prefixesTextField;
     private JPanel panel;
 
     @NotNull

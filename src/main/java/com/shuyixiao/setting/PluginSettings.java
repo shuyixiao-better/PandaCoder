@@ -31,6 +31,9 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
             " * createTime ${TIME}\n" +
             " */\n";
 
+                // 类名前缀配置，多个前缀用逗号分隔
+                private String classPrefixes = "Service,Repository,Controller,Component,Util,Manager,Factory,Builder,Handler";
+
     // 单例模式获取实例
     public static PluginSettings getInstance() {
         // 使用新的API代替已弃用的ServiceManager
@@ -57,6 +60,17 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
         this.template = template;
     }
 
+    public String getClassPrefixes() {
+        if (classPrefixes == null || classPrefixes.isEmpty()) {
+            classPrefixes = "Service,Repository,Controller,Component,Util,Manager,Factory,Builder,Handler";
+        }
+        return classPrefixes;
+    }
+
+    public void setClassPrefixes(String classPrefixes) {
+        this.classPrefixes = classPrefixes;
+    }
+
     @Nullable
     @Override
     public PluginSettings getState() {
@@ -76,6 +90,11 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
                     " * Description TODO\n" +
                     " * createTime ${TIME}\n" +
                     " */\n";  // 初始化默认模板
+        }
+
+        // 确保classPrefixes不为空
+        if (this.classPrefixes == null || this.classPrefixes.isEmpty()) {
+            this.classPrefixes = "Service,Repository,Controller,Component,Util,Manager,Factory,Builder,Handler";
         }
     }
 }
