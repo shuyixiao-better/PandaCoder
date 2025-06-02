@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.shuyixiao.yixiaoPlugins</id>
 
-    <name>YixiaoPlugins</name>
+    <name>PandaCoder</name>
     <vendor email="yixiaoshu88@163.com" url="https://www.shuyixiao.cloud">舒一笑</vendor>
 
     <depends>com.intellij.modules.platform</depends>
@@ -9,17 +9,19 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.shuyixiao.setting.PluginSettings"/>
+        <applicationService serviceImplementation="com.shuyixiao.settings.ConversionSettings"/>
         <applicationConfigurable groupId="tools" displayName="PandaCoder" id="FileAnnotationInformationConfiguration"
                                 instance="com.shuyixiao.setting.SettingConfigurable"/>
+        <notificationGroup id="PandaCoder Notification Group" displayType="BALLOON" />
     </extensions>
     <actions>
-        <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="一笑插件欢迎使用"
-                description="输出一条信息">
+        <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="关于PandaCoder"
+                description="显示PandaCoder插件信息">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>
 
-        <action id="ConvertToCamelCase" class="com.shuyixiao.ConvertToCamelCaseAction" text="中文转小驼峰">
-            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        <action id="ConvertToCamelCase" class="com.shuyixiao.ConvertToCamelCaseAction" text="中文转小驼峰" description="将选中的中文文本转换为小驼峰命名格式">
+            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="ReportMessage"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt C"/>
         </action>
 

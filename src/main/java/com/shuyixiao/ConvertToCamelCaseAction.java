@@ -3,13 +3,25 @@ package com.shuyixiao;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.ui.popup.JBPopupFactory;
+import com.intellij.openapi.ui.popup.ListPopup;
+import com.intellij.openapi.ui.popup.PopupStep;
+import com.intellij.openapi.ui.popup.util.BaseListPopupStep;
+import com.intellij.openapi.util.NlsContexts;
+import com.intellij.openapi.wm.StatusBar;
+import com.intellij.openapi.wm.WindowManager;
+import com.shuyixiao.converter.TranslationConverter;
+import com.shuyixiao.notification.NotificationUtil;
+import org.jetbrains.annotations.NotNull;
 
-import java.io.UnsupportedEncodingException;
+import javax.swing.*;
 
 /**
  * Copyright © 2024年 integration-projects-maven. All rights reserved.
@@ -34,60 +46,188 @@ public class ConvertToCamelCaseAction extends AnAction {
             return;
         }
 
+        // 获取当前项目
+        Project project = e.getProject();
+        if (project == null) {
+            return;
+        }
+
         SelectionModel selectionModel = editor.getSelectionModel();
         String selectedText = selectionModel.getSelectedText();
         if (selectedText == null || selectedText.isEmpty()) {
+            // 如果没有选中文本，提示用户
+            showStatusBarMessage(project, "请先选择要转换的中文文本");
             return;
         }
 
-        // 将选中的中文文本翻译为英文
-        String translatedText = null;
-        try {
-            translatedText = BaiduAPI.translate(selectedText);
-            if (translatedText == null || translatedText.trim().isEmpty()) {
-                Messages.showErrorDialog("翻译结果为空，无法进行转换。请检查您的API配置是否正确。", "翻译失败");
-                return;
-            }
-        } catch (UnsupportedEncodingException ex) {
-            // API未配置或配置错误，已经显示了错误信息，直接返回
-            return;
-        } catch (Exception ex) {
-            Messages.showErrorDialog("翻译过程中发生错误: " + ex.getMessage(), "翻译错误");
+        // 显示转换选项弹窗
+        showConversionOptionsPopup(e, editor, selectedText);
+    }
+
+    /**
+     * 显示转换选项弹窗
+     */
+    private void showConversionOptionsPopup(AnActionEvent e, Editor editor, String selectedText) {
+        Project project = e.getProject();
+        if (project == null) return;
+
+        ListPopup popup = JBPopupFactory.getInstance().createListPopup(
+                new BaseListPopupStep<ConversionOption>("选择转换方式", 
+                        ConversionOption.values()) {
+                    @Override
+                    public @NotNull String getTextFor(ConversionOption value) {
+                        return value.getDisplayName();
+                    }
+
+                    @Override
+                    public Icon getIconFor(ConversionOption value) {
+                        return value.getIcon();
+                    }
+
+                    @Override
+                    public PopupStep<?> onChosen(ConversionOption selectedValue, boolean finalChoice) {
+                        if (finalChoice) {
+                            processConversion(e, editor, selectedText, selectedValue);
+                        }
+                        return FINAL_CHOICE;
+                    }
+                }
+        );
+
+        popup.showInBestPositionFor(editor);
+    }
+
+    /**
+     * 处理转换操作
+     */
+    private void processConversion(AnActionEvent e, Editor editor, String selectedText, ConversionOption option) {
+        Project project = e.getProject();
+        if (project == null) return;
+
+        // 获取转换后的文本
+        String convertedText;
+        if (option == ConversionOption.SMART_CONVERT) {
+            // 智能转换 - 先进行文本预处理，再转换
+            // 使用更严格的精简算法生成短小精悍的名称
+            convertedText = smartConvert(selectedText, project);
+        } else {
+            // 普通转换
+            convertedText = TranslationConverter.convertToLowerCamelCase(selectedText, project);
+        }
+
+        if (convertedText == null) {
+            // 转换失败，已经显示了错误信息
             return;
         }
 
-        // 将英文文本转换为驼峰命名
-        String camelCaseText = toCamelCase(translatedText);
-
-        // 替换选中文本为转换后的文本
+        SelectionModel selectionModel = editor.getSelectionModel();
         Document document = editor.getDocument();
         int start = selectionModel.getSelectionStart();
         int end = selectionModel.getSelectionEnd();
 
-        // 开始写入前加入操作队列，这样可以撤销（Ctrl+Z）
-        Runnable runnable = () -> document.replaceString(start, end, camelCaseText);
-        WriteCommandAction.runWriteCommandAction(e.getProject(), runnable);
+        // 根据选择的选项处理
+        switch (option) {
+            case REPLACE_DIRECTLY:
+            case SMART_CONVERT: // 智能转换也是直接替换
+                // 直接替换选中文本
+                WriteCommandAction.runWriteCommandAction(project, () -> 
+                        document.replaceString(start, end, convertedText));
+                showStatusBarMessage(project, "已将 '" + selectedText + "' 转换为 '" + convertedText + "'");
+                break;
 
-        // 显示一个消息框提示转换成功
-        Messages.showMessageDialog("中文：" + selectedText + " 翻译为: " + camelCaseText,
-                "Conversion Successful", Messages.getInformationIcon());
+            case SHOW_PREVIEW:
+                // 显示预览对话框
+                int choice = Messages.showYesNoDialog(
+                        project,
+                        "将 '" + selectedText + "' 转换为: '" + convertedText + "'\n\n是否应用此转换?",
+                        "转换预览",
+                        "应用",
+                        "取消",
+                        Messages.getQuestionIcon()
+                );
+
+                if (choice == Messages.YES) {
+                    WriteCommandAction.runWriteCommandAction(project, () -> 
+                            document.replaceString(start, end, convertedText));
+                }
+                break;
+
+            case COPY_TO_CLIPBOARD:
+                // 复制到剪贴板
+                java.awt.Toolkit.getDefaultToolkit()
+                        .getSystemClipboard()
+                        .setContents(new java.awt.datatransfer.StringSelection(convertedText), null);
+                NotificationUtil.showInfoNotification(project, "复制成功", 
+                        "已将 '" + convertedText + "' 复制到剪贴板");
+                break;
+        }
     }
 
-    private String toCamelCase(String text) {
-        String[] words = text.split(" ");
-        StringBuilder camelCaseText = new StringBuilder(words[0].toLowerCase());
+    /**
+     * 智能转换功能
+     * 针对较长的中文内容进行更激进的精简，提取核心关键词
+     */
+    private String smartConvert(String chineseText, Project project) {
+        // 特别长的文本可能是一段描述，需要先提取关键词
+        if (chineseText.length() > 15) {
+            // 按标点分割文本
+            String[] segments = chineseText.split("[,，.。;；!！?？\\s]+");
+            if (segments.length > 1) {
+                // 如果有多个分段，只取第一个或最短的有意义分段
+                String shortestSegment = segments[0];
+                for (String segment : segments) {
+                    if (segment.length() >= 2 && segment.length() < shortestSegment.length()) {
+                        shortestSegment = segment;
+                    }
+                }
+                // 使用提取的关键片段
+                chineseText = shortestSegment;
+            }
 
-        for (int i = 1; i < words.length; i++) {
-            camelCaseText.append(capitalize(words[i]));
+            // 移除常见修饰词
+            String[] modifiers = {"该", "这个", "那个", "我们", "他们", "您的", "我的", "进行", "实现", "完成", "处理"};
+            for (String modifier : modifiers) {
+                chineseText = chineseText.replace(modifier, "");
+            }
         }
 
-        return camelCaseText.toString();
+        // 调用标准转换处理
+        return TranslationConverter.convertToLowerCamelCase(chineseText, project);
     }
 
-    private String capitalize(String word) {
-        if (word == null || word.isEmpty()) {
-            return word;
+    /**
+     * 在状态栏显示消息
+     */
+    private void showStatusBarMessage(Project project, @NlsContexts.StatusBarText String message) {
+        StatusBar statusBar = WindowManager.getInstance().getStatusBar(project);
+        if (statusBar != null) {
+            statusBar.setInfo(message);
         }
-        return word.substring(0, 1).toUpperCase() + word.substring(1).toLowerCase();
+    }
+
+    /**
+     * 转换选项枚举
+     */
+    private enum ConversionOption {
+        REPLACE_DIRECTLY("直接替换", null),
+        SHOW_PREVIEW("预览并确认", null),
+        COPY_TO_CLIPBOARD("复制到剪贴板", null),
+        SMART_CONVERT("智能精简转换", null); // 新增智能转换选项
+
+        private final String displayName;
+        private final Icon icon;
+
+        ConversionOption(String displayName, Icon icon) {
+            this.displayName = displayName;
+            this.icon = icon;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        public Icon getIcon() {
+            return icon;
+        }
     }
 }

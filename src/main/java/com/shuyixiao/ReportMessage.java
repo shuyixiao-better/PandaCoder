@@ -8,7 +8,7 @@ import com.intellij.openapi.ui.Messages;
  * ClassName ReportMessage.java
  * author 舒一笑 yixiaoshu88@163.com
  * version 1.0.0
- * Description IDEA插件开发消息提示成功
+ * Description PandaCoder欢迎信息
  * createTime 2024年08月21日 21:53:00
  */
 public class ReportMessage extends AnAction {
@@ -16,7 +16,13 @@ public class ReportMessage extends AnAction {
     @Override
     public void actionPerformed(AnActionEvent e) {
         // 获取国际化的消息和标题，如果没有可以使用默认值
-        String message = getLocalizedMessage("report.message", "欢迎使用 PandaCoder - 中文开发者的智能编码助手！\n\n只需输入中文，即可生成标准英文命名的代码文件。");
+        String message = getLocalizedMessage("report.message", "欢迎使用 PandaCoder - 中文开发者的智能编码助手！\n\n" +
+                "版本：1.0.1\n" +
+                "功能特性：\n" +
+                "- 智能中文转小驼峰\n" +
+                "- 中文类名自动转换\n" +
+                "- 智能中文类生成\n\n" +
+                "作者：舒一笑");
         String title = getLocalizedMessage("report.title", "PandaCoder 熊猫编码助手");
 
         // 显示消息对话框
