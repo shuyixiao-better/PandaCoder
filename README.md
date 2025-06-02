@@ -9,7 +9,7 @@
 ### 舒一笑 - 「云卷云舒，学无止境，焕然一新」
 
 <p align="center">
-  <img src="https://www.shuyixiao.cloud/assets/images/avatar.jpg" width="150" alt="舒一笑" style="border-radius: 50%;">
+  <img src="https://www.shuyixiao.cloud" width="150" alt="舒一笑" style="border-radius: 50%;">
 </p>
 
 ### 专业认证
