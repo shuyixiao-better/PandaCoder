@@ -1,9 +1,9 @@
 <idea-plugin>
-    <id>com.shuyixiao.yixiaoPlugins</id>
+    <id>com.shuyixiao.pandacoder</id>
 
     <name>PandaCoder</name>
-    <description>PandaCoder is an intelligent tool for Chinese developers that provides automatic conversion from Chinese to English naming, smart class creation with Chinese input, and various text conversion features to significantly improve programming efficiency.</description>
-    <vendor email="yixiaoshu88@163.com" url="https://www.shuyixiao.cloud">舒一笑</vendor>
+    <description>PandaCoder 是一款专为中文开发人员设计的智能工具，可自动将中文命名转换为英文命名，使用中文输入创建智能类，以及各种文本转换功能，从而大幅提高编程效率。</description>
+    <vendor email="yixiaoshu88@163.com" url="https://www.shuyixiao.top">舒一笑</vendor>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
