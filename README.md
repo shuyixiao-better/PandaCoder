@@ -290,6 +290,17 @@ export BAIDU_APP_ID=您的百度APP_ID
 
 > "团队引入 PandaCoder 后，我们的命名规范变得更加统一，代码可读性也提高了。特别是对于初级开发者，减少了很多命名方面的错误。" — 李总，技术团队负责人
 
+## 赞助作者
+
+如果您觉得PandaCoder对您的工作有所帮助，欢迎给作者买杯咖啡，支持插件的持续开发与维护！
+
+<p align="center">
+  <img src="images/alipay.jpg" width="300" alt="支付宝收款码">
+  <img src="images/wechat.jpg" width="300" alt="微信收款码">
+</p>
+
+<p align="center">感谢您的支持！每一份赞助都是对我工作的肯定和鼓励。</p>
+
 ### 成功案例
 
 - **某金融科技公司**：引入 PandaCoder 后，新功能开发速度提升 20%，代码审查中命名相关问题减少 35%
