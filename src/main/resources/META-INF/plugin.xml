@@ -21,17 +21,17 @@
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>
 
-        <action id="ConvertToCamelCase" class="com.shuyixiao.ConvertToCamelCaseAction" text="Chinese to camelCase" description="Convert selected Chinese text to camelCase naming format">
+        <action id="ConvertToCamelCase" class="com.shuyixiao.ConvertToCamelCaseAction" text="中文转小驼峰" description="Convert selected Chinese text to camelCase naming format">
             <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="ReportMessage"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt C"/>
         </action>
 
-        <action id="ConvertToPascalCase" class="com.shuyixiao.ConvertToPascalCaseAction" text="Chinese to PascalCase" description="Convert selected Chinese text to PascalCase naming format">
+        <action id="ConvertToPascalCase" class="com.shuyixiao.ConvertToPascalCaseAction" text="中文转大驼峰" description="Convert selected Chinese text to PascalCase naming format">
             <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="ConvertToCamelCase"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt P"/>
         </action>
 
-        <action id="ConvertToUpperCase" class="com.shuyixiao.ConvertToUpperCaseAction" text="Chinese to UPPER_CASE" description="Convert selected Chinese text to UPPER_CASE naming format">
+        <action id="ConvertToUpperCase" class="com.shuyixiao.ConvertToUpperCaseAction" text="中文转大写带下划线" description="Convert selected Chinese text to UPPER_CASE naming format">
             <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="ConvertToPascalCase"/>
             <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt U"/>
         </action>
