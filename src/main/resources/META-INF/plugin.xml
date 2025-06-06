@@ -16,7 +16,7 @@
         <notificationGroup id="PandaCoder Notification Group" displayType="BALLOON" />
     </extensions>
     <actions>
-        <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="About PandaCoder"
+        <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="关于PandaCoder"
                 description="Show PandaCoder plugin information">
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>

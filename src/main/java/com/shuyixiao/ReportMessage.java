@@ -16,13 +16,15 @@ public class ReportMessage extends AnAction {
     @Override
     public void actionPerformed(AnActionEvent e) {
         // 获取国际化的消息和标题，如果没有可以使用默认值
-        String message = getLocalizedMessage("report.message", "欢迎使用 PandaCoder - 中文开发者的智能编码助手！\n\n" +
+        String message = getLocalizedMessage("report.message", "欢迎使用 PandaCoder - 中文开发者的智能编码助手！有问题或创意赶紧联系我\n\n" +
                 "版本：1.1.2\n" +
                 "功能特性：\n" +
-                "- 智能中文转小驼峰\n" +
+                "- 智能中文转大小驼峰\n" +
+                "- 智能中文转大写带下划线\n" +
                 "- 中文类名自动转换\n" +
-                "- 智能中文类生成\n\n" +
-                "作者：舒一笑");
+                "- 智能中文类生成\n" +
+                "作者：舒一笑\n" +
+                "公众号：舒一笑的架构笔记");
         String title = getLocalizedMessage("report.title", "PandaCoder 熊猫编码助手");
 
         // 显示消息对话框
