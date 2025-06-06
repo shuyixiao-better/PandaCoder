@@ -17,7 +17,7 @@ public class ReportMessage extends AnAction {
     public void actionPerformed(AnActionEvent e) {
         // 获取国际化的消息和标题，如果没有可以使用默认值
         String message = getLocalizedMessage("report.message", "欢迎使用 PandaCoder - 中文开发者的智能编码助手！\n\n" +
-                "版本：1.0.1\n" +
+                "版本：1.1.2\n" +
                 "功能特性：\n" +
                 "- 智能中文转小驼峰\n" +
                 "- 中文类名自动转换\n" +
