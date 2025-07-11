@@ -1,0 +1,63 @@
+pipeline {
+    agent any
+    
+    environment {
+        // 测试环境变量定义 - 这里应该有智能补全
+        MAVEN_OPTS = '-Xmx1024m'
+        NODE_VERSION = '18'
+        APP_VERSION = '1.0.0'
+    }
+    
+    parameters {
+        // 测试参数定义 - 这里应该有参数类型补全
+        string(name: 'BRANCH_NAME', defaultValue: 'main', description: '分支名称')
+        booleanParam(name: 'SKIP_TESTS', defaultValue: false, description: '跳过测试')
+        choice(name: 'ENVIRONMENT', choices: ['dev', 'staging', 'prod'], description: '部署环境')
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                // 这里输入时应该有Jenkins Pipeline方法补全
+                
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                // 这里应该有env.和params.的智能补全
+                echo "Maven options: ${env.MAVEN_OPTS}"
+                echo "Branch: ${params.BRANCH_NAME}"
+                echo "Environment: ${params.ENVIRONMENT}"
+                
+                script {
+                    // 在script块中也应该有补全支持
+                    
+                }
+            }
+        }
+        
+        stage('Test') {
+            when {
+                not { params.SKIP_TESTS }
+            }
+            steps {
+                // 测试相关的方法补全
+                
+            }
+        }
+    }
+    
+    post {
+        always {
+            // post块中的方法补全
+            
+        }
+        success {
+            echo "构建成功！"
+        }
+        failure {
+            echo "构建失败！"
+        }
+    }
+} 

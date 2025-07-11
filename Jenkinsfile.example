@@ -1,0 +1,101 @@
+pipeline {
+    agent any
+    
+    environment {
+        MAVEN_OPTS = '-Xmx1024m'
+        BUILD_VERSION = '1.0.0'
+        DEPLOY_ENV = 'staging'
+    }
+    
+    parameters {
+        string(name: 'BRANCH_NAME', defaultValue: 'main', description: '要构建的分支名称')
+        booleanParam(name: 'SKIP_TESTS', defaultValue: false, description: '是否跳过测试')
+        choice(name: 'DEPLOY_TARGET', choices: ['dev', 'staging', 'prod'], description: '部署目标环境')
+    }
+    
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        retry(3)
+        skipDefaultCheckout()
+    }
+    
+    tools {
+        maven 'Maven-3.8.6'
+        jdk 'JDK-17'
+    }
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+                echo "检出代码完成，分支: ${params.BRANCH_NAME}"
+                echo "构建版本: ${env.BUILD_VERSION}"
+            }
+        }
+        
+        stage('Build') {
+            steps {
+                sh 'mvn clean compile'
+                echo "编译完成"
+            }
+        }
+        
+        stage('Test') {
+            when {
+                not { params.SKIP_TESTS }
+            }
+            steps {
+                sh 'mvn test'
+                publishTestResults testResultsPattern: 'target/test-reports/*.xml'
+            }
+        }
+        
+        stage('Package') {
+            steps {
+                sh 'mvn package -DskipTests'
+                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+            }
+        }
+        
+        stage('Deploy') {
+            when {
+                anyOf {
+                    branch 'main'
+                    branch 'develop'
+                }
+            }
+            steps {
+                script {
+                    if (params.DEPLOY_TARGET == 'prod') {
+                        input message: '确认部署到生产环境?', ok: '部署'
+                    }
+                    
+                    echo "部署到 ${params.DEPLOY_TARGET} 环境"
+                    sh "deploy.sh ${params.DEPLOY_TARGET}"
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo "清理工作空间"
+            deleteDir()
+        }
+        success {
+            echo "构建成功! 版本: ${env.BUILD_NUMBER}"
+            emailext subject: "构建成功 - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                     body: "构建成功完成",
+                     to: "${env.CHANGE_AUTHOR_EMAIL}"
+        }
+        failure {
+            echo "构建失败"
+            emailext subject: "构建失败 - ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                     body: "构建过程中发生错误，请检查日志",
+                     to: "${env.CHANGE_AUTHOR_EMAIL}"
+        }
+        unstable {
+            echo "构建不稳定"
+        }
+    }
+} 

@@ -25,6 +25,9 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
     implementation "com.google.code.gson:gson:2.11.0"
     implementation "org.jetbrains:annotations:24.1.0"
+    // Jenkins Pipeline支持所需依赖
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'org.jetbrains:annotations:24.1.0'
 }
 
 intellij {
