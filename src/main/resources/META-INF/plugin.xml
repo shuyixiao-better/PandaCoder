@@ -26,8 +26,15 @@
         <notificationGroup id="PandaCoder Notification Group" displayType="BALLOON" />
         
         <!-- Jenkins Pipeline支持扩展 -->
-        <!-- 文件类型关联：将Jenkinsfile等文件关联到Groovy文件类型 -->
+        <!-- 文件类型工厂：注册Jenkins文件类型和特殊文件名 -->
         <fileType.fileTypeFactory implementation="com.shuyixiao.jenkins.JenkinsFileTypeFactory"/>
+        
+        <!-- 语法高亮器：为Jenkins文件提供增强的语法高亮 -->
+        <lang.syntaxHighlighterFactory language="Groovy" 
+            implementationClass="com.shuyixiao.jenkins.highlight.JenkinsSyntaxHighlighterFactory"/>
+        
+        <!-- 颜色设置：允许用户自定义Jenkins Pipeline的语法高亮颜色 -->
+        <colorSettingsPage implementation="com.shuyixiao.jenkins.highlight.JenkinsColorSettingsPage"/>
         
         <!-- 环境变量和参数映射 -->
         <groovy.mapContentProvider implementation="com.shuyixiao.jenkins.provider.JenkinsMapContentProvider"/>
@@ -38,6 +45,15 @@
         
         <!-- 服务 -->
         <projectService serviceImplementation="com.shuyixiao.jenkins.gdsl.JenkinsGdslService"/>
+        
+        <!-- 启动活动：确保文件类型正确注册 -->
+        <postStartupActivity implementation="com.shuyixiao.jenkins.JenkinsFileTypeRegistrar"/>
+        
+        <!-- 图标提供器：确保Jenkins图标不被主题覆盖 -->
+        <iconProvider implementation="com.shuyixiao.jenkins.icon.JenkinsIconProvider"/>
+        
+        <!-- 文件图标提供器：最高优先级的图标覆盖 -->
+        <fileIconProvider implementation="com.shuyixiao.jenkins.icon.JenkinsFileIconDecorator"/>
     </extensions>
     <actions>
         <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="关于PandaCoder"
