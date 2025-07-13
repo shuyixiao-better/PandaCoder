@@ -2,7 +2,7 @@
     <id>com.shuyixiao.yixiaoPlugins</id>
 
     <name>PandaCoder</name>
-    <description>PandaCoder 是一款专为中文开发人员设计的智能工具，集成了中文编程助手和Jenkins Pipeline支持功能。
+    <description>PandaCoder 是一款专为中文开发人员设计的智能工具，集成了中文编程助手、Jenkins Pipeline支持和Spring Boot Helper功能。
 
 主要功能：
 • 中文命名智能转换：自动将中文转换为英文变量名、类名等
@@ -10,13 +10,17 @@
 • Jenkins Pipeline支持：提供智能补全、语法高亮、文档提示
 • 环境变量和参数补全：自动识别env和params对象的属性
 • 多种文本转换：支持驼峰、帕斯卡、下划线等命名格式转换
+• Spring Boot Helper：配置文件智能补全、注解支持、属性验证
+• 配置属性管理：支持application.properties智能补全和文档提示
+• 注解智能补全：为Spring Boot常用注解提供智能补全和参数提示
 
-大幅提高中文开发人员的编程效率和Jenkins Pipeline开发体验。</description>
+大幅提高中文开发人员的编程效率、Jenkins Pipeline开发体验和Spring Boot开发效率。</description>
     <vendor email="yixiaoshu88@163.com" url="https://www.shuyixiao.top">舒一笑</vendor>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
     <depends>org.intellij.groovy</depends>
+    <depends>com.intellij.properties</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.shuyixiao.setting.PluginSettings"/>
@@ -54,6 +58,32 @@
         
         <!-- 文件图标提供器：最高优先级的图标覆盖 -->
         <fileIconProvider implementation="com.shuyixiao.jenkins.icon.JenkinsFileIconDecorator"/>
+        
+        <!-- Spring Boot Helper 扩展 -->
+        <!-- Spring Boot Helper 设置 -->
+        <applicationService serviceImplementation="com.shuyixiao.spring.boot.settings.SpringBootHelperSettings"/>
+        <applicationConfigurable groupId="tools" displayName="Spring Boot Helper" id="SpringBootHelperConfiguration"
+                                instance="com.shuyixiao.spring.boot.settings.SpringBootHelperConfigurable"/>
+        
+        <!-- Spring Boot 图标提供器：为Spring Boot配置文件提供图标显示 -->
+        <iconProvider implementation="com.shuyixiao.spring.boot.icon.SpringBootIconProvider"/>
+        
+        <!-- Spring Boot 文件图标提供器：确保Spring Boot配置文件图标不被主题覆盖 -->
+        <fileIconProvider implementation="com.shuyixiao.spring.boot.icon.SpringBootFileIconDecorator"/>
+        
+        <!-- Spring Boot 配置属性管理器 -->
+        <projectService serviceImplementation="com.shuyixiao.spring.boot.config.SpringBootConfigPropertyManager"/>
+        
+        <!-- Spring Boot 注解管理器 -->
+        <projectService serviceImplementation="com.shuyixiao.spring.boot.annotation.SpringBootAnnotationManager"/>
+        
+        <!-- Spring Boot 配置文件智能补全 -->
+        <completion.contributor language="Properties" 
+            implementationClass="com.shuyixiao.spring.boot.completion.SpringBootConfigCompletionContributor"/>
+        
+        <!-- Spring Boot 配置文件文档提供器 -->
+        <lang.documentationProvider language="Properties" 
+            implementationClass="com.shuyixiao.spring.boot.documentation.SpringBootConfigDocumentationProvider"/>
     </extensions>
     <actions>
         <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="关于PandaCoder"
