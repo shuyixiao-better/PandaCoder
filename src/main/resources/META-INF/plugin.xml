@@ -21,6 +21,7 @@
     <depends>com.intellij.modules.java</depends>
     <depends>org.intellij.groovy</depends>
     <depends>com.intellij.properties</depends>
+    <depends>org.jetbrains.plugins.yaml</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.shuyixiao.setting.PluginSettings"/>
@@ -81,9 +82,25 @@
         <completion.contributor language="Properties" 
             implementationClass="com.shuyixiao.spring.boot.completion.SpringBootConfigCompletionContributor"/>
         
+        <!-- Spring Boot YAML配置文件智能补全 -->
+        <completion.contributor language="yaml" 
+            implementationClass="com.shuyixiao.spring.boot.completion.SpringBootConfigCompletionContributor"/>
+        
         <!-- Spring Boot 配置文件文档提供器 -->
         <lang.documentationProvider language="Properties" 
             implementationClass="com.shuyixiao.spring.boot.documentation.SpringBootConfigDocumentationProvider"/>
+        
+        <!-- Spring Boot YAML配置文件文档提供器 -->
+        <lang.documentationProvider language="yaml" 
+            implementationClass="com.shuyixiao.spring.boot.documentation.SpringBootConfigDocumentationProvider"/>
+        
+        <!-- Spring Boot YAML配置文件行标记提供器：显示技术栈图标 -->
+        <codeInsight.lineMarkerProvider language="yaml"
+            implementationClass="com.shuyixiao.spring.boot.icon.SpringBootYamlLineMarkerProvider"/>
+        
+        <!-- Spring Boot Properties配置文件行标记提供器：显示技术栈图标 -->
+        <codeInsight.lineMarkerProvider language="Properties"
+            implementationClass="com.shuyixiao.spring.boot.icon.SpringBootPropertiesLineMarkerProvider"/>
     </extensions>
     <actions>
         <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="关于PandaCoder"

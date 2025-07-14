@@ -33,21 +33,23 @@ public class SpringBootConfigCompletionContributor extends CompletionContributor
             PlatformPatterns.psiElement().inFile(PlatformPatterns.psiFile().withName(
                 PlatformPatterns.string().contains("application")
             )),
-            new SpringBootPropertiesCompletionProvider()
+            new SpringBootConfigCompletionProvider()
         );
     }
 
     /**
-     * Properties文件补全提供器
+     * 配置文件补全提供器（支持Properties和YAML）
      */
-    private static class SpringBootPropertiesCompletionProvider extends CompletionProvider<CompletionParameters> {
+    private static class SpringBootConfigCompletionProvider extends CompletionProvider<CompletionParameters> {
         @Override
         protected void addCompletions(@NotNull CompletionParameters parameters,
                                     @NotNull ProcessingContext context,
                                     @NotNull CompletionResultSet result) {
             
             PsiFile file = parameters.getOriginalFile();
-            if (!(file instanceof PropertiesFile) || !SpringBootFileDetector.isSpringBootConfigFile(file)) {
+            
+            // 检查是否为Spring Boot配置文件（支持Properties和YAML）
+            if (!isSpringBootConfigFile(file)) {
                 return;
             }
 
@@ -64,21 +66,46 @@ public class SpringBootConfigCompletionContributor extends CompletionContributor
             List<ConfigProperty> properties = propertyManager.getPropertiesByPrefix(prefix);
             
             for (ConfigProperty property : properties) {
-                LookupElement element = createPropertiesLookupElement(property);
+                LookupElement element = createLookupElement(property, file);
                 result.addElement(element);
             }
             
             // 如果没有找到匹配的属性，提供所有属性
             if (properties.isEmpty() && prefix.length() < 3) {
                 for (ConfigProperty property : propertyManager.getAllProperties()) {
-                    LookupElement element = createPropertiesLookupElement(property);
+                    LookupElement element = createLookupElement(property, file);
                     result.addElement(element);
                 }
             }
         }
+        
+        /**
+         * 检查是否为Spring Boot配置文件（支持Properties和YAML）
+         */
+        private boolean isSpringBootConfigFile(@NotNull PsiFile file) {
+            // 首先检查是否为Spring Boot配置文件
+            if (!SpringBootFileDetector.isSpringBootConfigFile(file)) {
+                return false;
+            }
+            
+            // 检查文件类型：Properties文件或YAML文件
+            String fileName = file.getName();
+            return file instanceof PropertiesFile || 
+                   fileName.endsWith(".yml") || 
+                   fileName.endsWith(".yaml");
+        }
     }
 
-
+    /**
+     * 创建补全元素（根据文件类型调整格式）
+     */
+    private static LookupElement createLookupElement(ConfigProperty property, PsiFile file) {
+        if (file instanceof PropertiesFile) {
+            return createPropertiesLookupElement(property);
+        } else {
+            return createYamlLookupElement(property);
+        }
+    }
 
     /**
      * 创建Properties格式的补全元素
@@ -87,34 +114,51 @@ public class SpringBootConfigCompletionContributor extends CompletionContributor
         String key = property.getKey();
         String description = property.getDescription();
         String defaultValue = property.getDefaultValue();
+        String typeInfo = property.getType().toString().toLowerCase();
         
         LookupElementBuilder builder = LookupElementBuilder.create(key)
-            .withTypeText(property.getType().toString().toLowerCase())
-            .withTailText(defaultValue.isEmpty() ? "" : " (默认: " + defaultValue + ")")
-            .withPresentableText(key);
+                .withTypeText(typeInfo)
+                .withTailText(" = " + (defaultValue.isEmpty() ? "..." : defaultValue), true);
         
-        if (!description.isEmpty()) {
-            builder = builder.withTypeText(description, true);
-        }
-        
-        // 如果有枚举值，添加到描述中
-        if (property.hasEnumValues()) {
-            String enumText = "可选值: " + String.join(", ", property.getEnumValues());
-            builder = builder.withTailText(" - " + enumText, true);
-        }
-        
-        // 如果属性已废弃，添加标记
-        if (property.isDeprecated()) {
-            builder = builder.withStrikeoutness(true);
-            if (property.getReplacementProperty() != null) {
-                builder = builder.withTailText(" (已废弃，请使用: " + property.getReplacementProperty() + ")", true);
-            }
+        if (description != null && !description.isEmpty()) {
+            builder = builder.withPresentableText(key + " (" + description + ")");
         }
         
         return builder;
     }
-
-
+    
+    /**
+     * 创建YAML格式的补全元素
+     */
+    private static LookupElement createYamlLookupElement(ConfigProperty property) {
+        String key = property.getKey();
+        String description = property.getDescription();
+        String defaultValue = property.getDefaultValue();
+        String typeInfo = property.getType().toString().toLowerCase();
+        
+        // 将点分隔的key转换为YAML格式
+        String yamlKey = convertToYamlKey(key);
+        
+        LookupElementBuilder builder = LookupElementBuilder.create(yamlKey)
+                .withTypeText(typeInfo)
+                .withTailText(": " + (defaultValue.isEmpty() ? "..." : defaultValue), true);
+        
+        if (description != null && !description.isEmpty()) {
+            builder = builder.withPresentableText(yamlKey + " (" + description + ")");
+        }
+        
+        return builder;
+    }
+    
+    /**
+     * 将点分隔的属性键转换为YAML格式
+     * 例如：server.port -> server:\n  port
+     */
+    private static String convertToYamlKey(String key) {
+        // 简单实现：对于YAML，我们可以直接使用原始key
+        // 更复杂的实现可以处理嵌套结构
+        return key;
+    }
 
     /**
      * 获取当前文本
@@ -142,6 +186,4 @@ public class SpringBootConfigCompletionContributor extends CompletionContributor
         }
         return "";
     }
-
-
 } 

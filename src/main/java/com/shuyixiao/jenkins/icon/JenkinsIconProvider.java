@@ -1,6 +1,7 @@
 package com.shuyixiao.jenkins.icon;
 
 import com.intellij.ide.IconProvider;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -18,7 +19,26 @@ import javax.swing.*;
  */
 public class JenkinsIconProvider extends IconProvider implements DumbAware {
 
-    private static final Icon JENKINS_ICON = IconLoader.getIcon("/icons/jenkinsfile.svg", JenkinsIconProvider.class);
+    private static final Logger LOG = Logger.getInstance(JenkinsIconProvider.class);
+    private static final Icon JENKINS_ICON;
+    
+    static {
+        Icon icon = null;
+        try {
+            icon = IconLoader.getIcon("/icons/jenkinsfile.svg", JenkinsIconProvider.class);
+            LOG.info("Successfully loaded Jenkins icon");
+        } catch (Exception e) {
+            LOG.warn("Failed to load Jenkins icon", e);
+            try {
+                // 尝试备用路径
+                icon = IconLoader.getIcon("/icons/jenkinsfile@2x.svg", JenkinsIconProvider.class);
+                LOG.info("Successfully loaded Jenkins @2x icon as fallback");
+            } catch (Exception ex) {
+                LOG.error("Failed to load any Jenkins icon", ex);
+            }
+        }
+        JENKINS_ICON = icon;
+    }
 
     @Nullable
     @Override
@@ -28,6 +48,7 @@ public class JenkinsIconProvider extends IconProvider implements DumbAware {
             VirtualFile virtualFile = psiFile.getVirtualFile();
             
             if (virtualFile != null && isJenkinsFile(virtualFile)) {
+                LOG.debug("Providing Jenkins icon for file: " + virtualFile.getName());
                 return JENKINS_ICON;
             }
         }
