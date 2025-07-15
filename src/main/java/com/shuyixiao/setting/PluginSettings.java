@@ -40,6 +40,12 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
                 // 百度翻译应用ID
                 private String baiduAppId = "";
 
+    // Google Cloud Translation 配置
+    private boolean enableGoogleTranslation = false;
+    private String googleApiKey = "";
+    private String googleProjectId = "";
+    private String googleRegion = "global";
+
     // 单例模式获取实例
     public static PluginSettings getInstance() {
         // 使用新的API代替已弃用的ServiceManager
@@ -93,6 +99,31 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
         this.baiduAppId = baiduAppId;
     }
 
+    public boolean isEnableGoogleTranslation() {
+        return enableGoogleTranslation;
+    }
+    public void setEnableGoogleTranslation(boolean enableGoogleTranslation) {
+        this.enableGoogleTranslation = enableGoogleTranslation;
+    }
+    public String getGoogleApiKey() {
+        return googleApiKey;
+    }
+    public void setGoogleApiKey(String googleApiKey) {
+        this.googleApiKey = googleApiKey;
+    }
+    public String getGoogleProjectId() {
+        return googleProjectId;
+    }
+    public void setGoogleProjectId(String googleProjectId) {
+        this.googleProjectId = googleProjectId;
+    }
+    public String getGoogleRegion() {
+        return googleRegion;
+    }
+    public void setGoogleRegion(String googleRegion) {
+        this.googleRegion = googleRegion;
+    }
+
     @Nullable
     @Override
     public PluginSettings getState() {
@@ -101,7 +132,6 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
 
     @Override
     public void loadState(@NotNull PluginSettings state) {
-        // 确保state不为空
         XmlSerializerUtil.copyBean(state, this);
         if (this.template == null || this.template.isEmpty()) {
             this.template = "/**\n" +
@@ -126,6 +156,16 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
 
         if (this.baiduAppId == null) {
             this.baiduAppId = "";
+        }
+
+        if (this.googleApiKey == null) {
+            this.googleApiKey = "";
+        }
+        if (this.googleProjectId == null) {
+            this.googleProjectId = "";
+        }
+        if (this.googleRegion == null) {
+            this.googleRegion = "global";
         }
     }
 }

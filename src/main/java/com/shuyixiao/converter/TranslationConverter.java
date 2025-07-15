@@ -3,6 +3,7 @@ package com.shuyixiao.converter;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.shuyixiao.BaiduAPI;
+import com.shuyixiao.setting.PluginSettings;
 
 import java.io.UnsupportedEncodingException;
 
@@ -29,7 +30,11 @@ public class TranslationConverter {
         // 进行翻译
         String translatedText;
         try {
-            translatedText = BaiduAPI.translate(processedText);
+            if (PluginSettings.getInstance().isEnableGoogleTranslation()) {
+                translatedText = com.shuyixiao.GoogleCloudTranslationAPI.translate(processedText);
+            } else {
+                translatedText = BaiduAPI.translate(processedText);
+            }
             if (translatedText == null || translatedText.trim().isEmpty()) {
                 Messages.showErrorDialog(project, "翻译结果为空，无法进行转换。请检查您的API配置是否正确。", "翻译失败");
                 return null;
