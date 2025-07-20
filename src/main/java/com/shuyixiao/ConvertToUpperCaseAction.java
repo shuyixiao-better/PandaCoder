@@ -200,17 +200,14 @@ public class ConvertToUpperCaseAction extends AnAction {
         // 智能处理中文文本
         String processedText = preprocessChineseText(chineseText);
 
-        // 进行翻译
+        // 进行翻译 - 使用统一翻译引擎
         String translatedText;
         try {
-            translatedText = BaiduAPI.translate(processedText);
+            translatedText = com.shuyixiao.converter.TranslationConverter.translateText(processedText);
             if (translatedText == null || translatedText.trim().isEmpty()) {
                 Messages.showErrorDialog(project, "翻译结果为空，无法进行转换。请检查您的API配置是否正确。", "翻译失败");
                 return null;
             }
-        } catch (java.io.UnsupportedEncodingException ex) {
-            // API未配置或配置错误，TranslationUtil已经显示了错误信息
-            return null;
         } catch (Exception ex) {
             Messages.showErrorDialog(project, "翻译过程中发生错误: " + ex.getMessage(), "翻译错误");
             return null;

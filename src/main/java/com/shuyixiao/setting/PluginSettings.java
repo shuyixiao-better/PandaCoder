@@ -46,6 +46,20 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
     private String googleProjectId = "";
     private String googleRegion = "global";
 
+    // 国内大模型配置
+    private boolean enableDomesticAI = false;
+    private String domesticAIModel = "qianwen"; // qianwen, wenxin, zhipu
+    private String domesticAIApiKey = "";
+    
+    // 翻译提示词配置
+    private String translationPrompt = "请将以下中文翻译为英文，只返回翻译结果，不要解释。要求：\n" +
+            "1. 翻译结果应该是准确的英文表达\n" +
+            "2. 适合用作编程中的变量名、方法名或类名\n" +
+            "3. 优先使用常见的编程术语\n" +
+            "4. 如果是专业术语，保持术语的准确性\n\n" +
+            "中文文本：";
+    private boolean useCustomPrompt = false;
+
     // 单例模式获取实例
     public static PluginSettings getInstance() {
         // 使用新的API代替已弃用的ServiceManager
@@ -123,6 +137,29 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
     public void setGoogleRegion(String googleRegion) {
         this.googleRegion = googleRegion;
     }
+    
+    // 国内大模型相关方法
+    public boolean isEnableDomesticAI() {
+        return enableDomesticAI;
+    }
+    public void setEnableDomesticAI(boolean enableDomesticAI) {
+        this.enableDomesticAI = enableDomesticAI;
+    }
+    public String getDomesticAIModel() {
+        if (domesticAIModel == null || domesticAIModel.isEmpty()) {
+            domesticAIModel = "qianwen";
+        }
+        return domesticAIModel;
+    }
+    public void setDomesticAIModel(String domesticAIModel) {
+        this.domesticAIModel = domesticAIModel;
+    }
+    public String getDomesticAIApiKey() {
+        return domesticAIApiKey;
+    }
+    public void setDomesticAIApiKey(String domesticAIApiKey) {
+        this.domesticAIApiKey = domesticAIApiKey;
+    }
 
     @Nullable
     @Override
@@ -167,6 +204,49 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
         if (this.googleRegion == null) {
             this.googleRegion = "global";
         }
+        
+        // 确保国内大模型配置不为null
+        if (this.domesticAIModel == null || this.domesticAIModel.isEmpty()) {
+            this.domesticAIModel = "qianwen";
+        }
+        if (this.domesticAIApiKey == null) {
+            this.domesticAIApiKey = "";
+        }
+        
+        // 确保提示词配置不为null
+        if (this.translationPrompt == null || this.translationPrompt.isEmpty()) {
+            this.translationPrompt = "请将以下中文翻译为英文，只返回翻译结果，不要解释。要求：\n" +
+                    "1. 翻译结果应该是准确的英文表达\n" +
+                    "2. 适合用作编程中的变量名、方法名或类名\n" +
+                    "3. 优先使用常见的编程术语\n" +
+                    "4. 如果是专业术语，保持术语的准确性\n\n" +
+                    "中文文本：";
+        }
+    }
+
+    // 提示词相关方法
+    public String getTranslationPrompt() {
+        if (translationPrompt == null || translationPrompt.isEmpty()) {
+            translationPrompt = "请将以下中文翻译为英文，只返回翻译结果，不要解释。要求：\n" +
+                    "1. 翻译结果应该是准确的英文表达\n" +
+                    "2. 适合用作编程中的变量名、方法名或类名\n" +
+                    "3. 优先使用常见的编程术语\n" +
+                    "4. 如果是专业术语，保持术语的准确性\n\n" +
+                    "中文文本：";
+        }
+        return translationPrompt;
+    }
+    
+    public void setTranslationPrompt(String translationPrompt) {
+        this.translationPrompt = translationPrompt;
+    }
+    
+    public boolean isUseCustomPrompt() {
+        return useCustomPrompt;
+    }
+    
+    public void setUseCustomPrompt(boolean useCustomPrompt) {
+        this.useCustomPrompt = useCustomPrompt;
     }
 }
 

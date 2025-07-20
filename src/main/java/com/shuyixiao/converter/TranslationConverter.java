@@ -27,14 +27,10 @@ public class TranslationConverter {
         // 智能处理中文文本
         String processedText = preprocessChineseText(chineseText);
 
-        // 进行翻译
+        // 进行翻译 - 支持三级翻译引擎
         String translatedText;
         try {
-            if (PluginSettings.getInstance().isEnableGoogleTranslation()) {
-                translatedText = com.shuyixiao.GoogleCloudTranslationAPI.translate(processedText);
-            } else {
-                translatedText = BaiduAPI.translate(processedText);
-            }
+            translatedText = translateText(processedText);
             if (translatedText == null || translatedText.trim().isEmpty()) {
                 Messages.showErrorDialog(project, "翻译结果为空，无法进行转换。请检查您的API配置是否正确。", "翻译失败");
                 return null;
@@ -161,5 +157,46 @@ public class TranslationConverter {
         }
 
         return pascalCaseText.toString();
+    }
+
+    /**
+     * 统一翻译接口 - 支持三级翻译引擎切换
+     * 优先级: 国内大模型 > Google翻译 > 百度翻译
+     * 
+     * @param text 待翻译文本
+     * @return 翻译结果
+     * @throws Exception 翻译异常
+     */
+    public static String translateText(String text) throws Exception {
+        PluginSettings settings = PluginSettings.getInstance();
+        
+        // 第一优先级：国内大模型
+        if (settings.isEnableDomesticAI() && 
+            settings.getDomesticAIApiKey() != null && 
+            !settings.getDomesticAIApiKey().trim().isEmpty()) {
+            try {
+                return com.shuyixiao.DomesticAITranslationAPI.translate(text);
+            } catch (Exception e) {
+                System.err.println("国内大模型翻译失败，尝试其他翻译引擎: " + e.getMessage());
+                // 继续尝试其他翻译引擎
+            }
+        }
+        
+        // 第二优先级：Google Cloud Translation
+        if (settings.isEnableGoogleTranslation() && 
+            settings.getGoogleApiKey() != null && 
+            !settings.getGoogleApiKey().trim().isEmpty() &&
+            settings.getGoogleProjectId() != null && 
+            !settings.getGoogleProjectId().trim().isEmpty()) {
+            try {
+                return com.shuyixiao.GoogleCloudTranslationAPI.translate(text);
+            } catch (Exception e) {
+                System.err.println("Google翻译失败，尝试百度翻译: " + e.getMessage());
+                // 继续尝试百度翻译
+            }
+        }
+        
+        // 第三优先级：百度翻译（备用）
+        return BaiduAPI.translate(text);
     }
 }
