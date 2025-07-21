@@ -533,12 +533,17 @@ public class SettingConfigurable implements SearchableConfigurable {
      * 重置翻译提示词
      */
     private void resetTranslationPrompt(ActionEvent e) {
-        String defaultPrompt = "请将以下中文翻译为英文，只返回翻译结果，不要解释。要求：\n" +
-                "1. 翻译结果应该是准确的英文表达\n" +
-                "2. 适合用作编程中的变量名、方法名或类名\n" +
-                "3. 优先使用常见的编程术语\n" +
-                "4. 如果是专业术语，保持术语的准确性\n\n" +
-                "中文文本：";
+        String defaultPrompt =
+                "你是一位专业软件工程师，负责将技术文档中文本翻译为规范的英文编程术语。请遵循：\n" +
+                        "1. 【翻译规范】用编程术语表达技术概念，非逐字翻译（例：'配置文件路径'→configPath）\n" +
+                        "2. 【命名规则】输出直接可用作代码标识符的形式（类名用大驼峰，方法/变量用小驼峰）\n" +
+                        "3. 【术语处理】专业术语保持行业标准（例：'缓存'→cache而非buffer）\n" +
+                        "4. 【长文本优化】超过3个技术概念时：\n" +
+                        "   a) 优先提取核心术语\n" +
+                        "   b) 保持技术逻辑连贯性\n" +
+                        "   c) 省略非技术性描述词（'这个'、'一种'等）\n" +
+                        "5. 【输出要求】只返回最终翻译结果\n\n" +
+                        "待翻译中文：";
         translationPromptArea.setText(defaultPrompt);
     }
 
