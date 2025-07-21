@@ -12,7 +12,7 @@
 • 多种文本转换：支持驼峰、帕斯卡、下划线等命名格式转换
 
 大幅提高中文开发人员的编程效率和Jenkins Pipeline开发体验。</description>
-    <vendor email="yixiaoshu88@163.com" url="https://www.shuyixiao.top">舒一笑</vendor>
+    <vendor email="yixiaoshu88@163.com" url="https://www.shuyixiao.top">舒一笑不秃头</vendor>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>

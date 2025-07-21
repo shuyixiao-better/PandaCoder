@@ -13,7 +13,7 @@ plugins {
 }
 
 group = 'com.shuyixiao'
-version = '1.1.3' // 更新版本号反映品牌变更
+version = '1.1.4' // 更新版本号反映品牌变更
 
 repositories {
     mavenCentral()
@@ -97,7 +97,7 @@ patchPluginXml {
         PandaCoder is an intelligent development tool designed for Chinese developers, integrating Chinese programming assistant and comprehensive Jenkins Pipeline support.
 
         Key Features:
-        • Chinese to English naming conversion: Automatically converts Chinese to English variable names, class names, etc.
+        • Chinese to English naming conversion: The conversion from Chinese to English is achieved through the combination of large models and prompt words, avoiding mechanical word-for-word translation.Automatically converts Chinese to English variable names, class names, etc.
         • Smart class creation: Supports Chinese input for quick Java class creation
         • Complete Jenkins Pipeline support: Provides intelligent completion, syntax highlighting, and documentation
         • Environment variable completion: Auto-recognizes env.BUILD_NUMBER, env.WORKSPACE, etc.
