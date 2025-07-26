@@ -31,9 +31,17 @@ public class SpringBootYamlLineMarkerProvider implements LineMarkerProvider {
     }
     
     /**
+     * 获取所有技术栈配置
+     * @return 技术栈配置映射
+     */
+    public static Map<String, TechStackConfig> getTechStackConfigs() {
+        return TECH_STACK_CONFIGS;
+    }
+
+    /**
      * 技术栈配置类
      */
-    private static class TechStackConfig {
+    public static class TechStackConfig {
         private final String iconPath;
         private final String displayName;
         private final List<Pattern> configPatterns;
@@ -81,6 +89,23 @@ public class SpringBootYamlLineMarkerProvider implements LineMarkerProvider {
         
         public Icon getIcon() { return icon; }
         public String getDisplayName() { return displayName; }
+
+        /**
+         * 获取配置关键词列表
+         * @return 配置关键词列表
+         */
+        public List<String> getConfigKeywords() {
+            List<String> keywords = new ArrayList<>();
+            for (Pattern pattern : configPatterns) {
+                String regex = pattern.pattern();
+                // 提取关键词部分
+                String keyword = regex.replaceAll("^\\^\\\\s\\*|\\\\.\\*|\\\\s\\*:\\$|\\(\\^\\|\\\\s\\+\\)|\\\\s\\*:", "");
+                if (!keyword.isEmpty() && !keywords.contains(keyword)) {
+                    keywords.add(keyword);
+                }
+            }
+            return keywords;
+        }
     }
     
     /**

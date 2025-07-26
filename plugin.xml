@@ -1,4 +1,12 @@
 <idea-plugin>
+    <!-- 项目服务 -->
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- YAML配置服务 -->
+        <projectService serviceImplementation="com.shuyixiao.spring.boot.service.YamlConfigService"/>
+
+        <!-- 启动活动 -->
+        <postStartupActivity implementation="com.shuyixiao.spring.boot.startup.YamlConfigStartupActivity"/>
+    </extensions>
     <id>com.shuyixiao.yixiaoPlugins</id>
 
     <name>PandaCoder</name>

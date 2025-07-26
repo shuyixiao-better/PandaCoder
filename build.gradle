@@ -13,7 +13,7 @@ plugins {
 }
 
 group = 'com.shuyixiao'
-version = '1.1.4' // 更新版本号反映品牌变更
+version = '1.1.5' // 更新版本号反映品牌变更
 
 repositories {
     mavenCentral()
@@ -112,16 +112,45 @@ patchPluginXml {
 
     changeNotes.set("""
         <ul>
+            <li><b>1.1.5</b> - 重大功能升级：新增SpringBoot配置文件图标显示功能
+                <ul>
+                    <li>🍃 <b>SpringBoot配置文件图标</b>：自动识别配置文件中的技术栈并显示对应图标</li>
+                    <li>🎯 <b>技术栈识别</b>：支持MySQL、PostgreSQL、Oracle、SQL Server、Redis、Kafka、RabbitMQ、Elasticsearch等</li>
+                    <li>📁 <b>多格式支持</b>：支持YAML和Properties格式的配置文件</li>
+                    <li>🎨 <b>智能图标显示</b>：在编辑器左侧gutter区域显示彩色技术栈图标</li>
+                    <li>🧠 <b>优先级匹配</b>：特定技术栈图标优先于通用配置图标</li>
+                    <li>🖱️ <b>鼠标悬停提示</b>：显示技术栈名称和详细信息</li>
+                </ul>
+            </li>
+            <li><b>1.1.4</b> - 多引擎翻译系统重大升级
+                <ul>
+                    <li>🤖 <b>国内大模型支持</b>：新增通义千问、文心一言、智谱AI三大国内大模型</li>
+                    <li>🌐 <b>Google Cloud Translation</b>：新增Google翻译API支持</li>
+                    <li>🔄 <b>三级翻译引擎</b>：国内大模型 > Google翻译 > 百度翻译智能切换</li>
+                    <li>⚙️ <b>自定义翻译提示词</b>：支持用户自定义翻译prompt，适配不同技术领域</li>
+                    <li>🔧 <b>API配置验证</b>：实时验证各翻译引擎的API配置</li>
+                    <li>🛡️ <b>智能错误处理</b>：优雅降级，确保功能可用性</li>
+                    <li>📊 <b>配置页面优化</b>：分为4个标签页，界面更加清晰易用</li>
+                </ul>
+            </li>
+            <li><b>1.1.3</b> - 中文编程助手功能完善
+                <ul>
+                    <li>🎯 <b>类名前缀识别</b>：支持"Service:用户管理"格式，自动生成ServiceUserManagement等规范类名</li>
+                    <li>📝 <b>自定义文件模板</b>：支持用户自定义Java文件注释模板</li>
+                    <li>🔧 <b>智能精简转换</b>：自动提取核心技术词汇，去除无用词</li>
+                    <li>⚙️ <b>类名前缀配置</b>：支持自定义类名前缀列表</li>
+                </ul>
+            </li>
             <li><b>1.1.2</b> - 新增完整Jenkins Pipeline支持
                 <ul>
-                    <li>✨ 自定义Jenkins文件类型和图标显示</li>
-                    <li>🎨 11种鲜艳颜色的语法高亮(VS Code风格)</li>
-                    <li>🔧 智能补全：pipeline、stage、step等关键字</li>
-                    <li>🌍 环境变量补全：env.BUILD_NUMBER、env.WORKSPACE等</li>
-                    <li>📋 参数补全：params.APP_NAME、params.DEPLOY_ENV等</li>
-                    <li>📖 悬停文档：显示方法签名和参数说明</li>
-                    <li>🛡️ 防主题覆盖：5层防护确保图标在任何主题下正确显示</li>
-                    <li>⚙️ 可自定义颜色：支持在设置中调整语法高亮颜色</li>
+                    <li>✨ <b>自定义Jenkins文件类型和图标显示</b></li>
+                    <li>🎨 <b>11种鲜艳颜色的语法高亮(VS Code风格)</b></li>
+                    <li>🔧 <b>智能补全</b>：pipeline、stage、step等关键字</li>
+                    <li>🌍 <b>环境变量补全</b>：env.BUILD_NUMBER、env.WORKSPACE等</li>
+                    <li>📋 <b>参数补全</b>：params.APP_NAME、params.DEPLOY_ENV等</li>
+                    <li>📖 <b>悬停文档</b>：显示方法签名和参数说明</li>
+                    <li>🛡️ <b>防主题覆盖</b>：5层防护确保图标在任何主题下正确显示</li>
+                    <li>⚙️ <b>可自定义颜色</b>：支持在设置中调整语法高亮颜色</li>
                 </ul>
             </li>
             <li><b>1.1.0</b> - 支持IntelliJ IDEA 2024.1，升级到Java 17</li>
