@@ -123,8 +123,8 @@ public class ChineseClassCreationAction extends CreateFromTemplateAction<PsiFile
         // 处理中文部分
         if (containsChinese(className)) {
             try {
-                // 翻译中文为英文
-                String translatedName = BaiduAPI.translate(className);
+                // 使用统一翻译接口 - 支持三级翻译引擎切换
+                String translatedName = com.shuyixiao.converter.TranslationConverter.translateText(className);
                 // 转换为大驼峰命名
                 className = toCamelCase(translatedName);
 
@@ -139,7 +139,7 @@ public class ChineseClassCreationAction extends CreateFromTemplateAction<PsiFile
                     className = prefix + className;
                 }
 
-            } catch (UnsupportedEncodingException ex) {
+            } catch (Exception ex) {
                 throw new IncorrectOperationException("翻译失败: " + ex.getMessage());
             }
         }

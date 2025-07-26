@@ -40,6 +40,31 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
                 // 百度翻译应用ID
                 private String baiduAppId = "";
 
+    // Google Cloud Translation 配置
+    private boolean enableGoogleTranslation = false;
+    private String googleApiKey = "";
+    private String googleProjectId = "";
+    private String googleRegion = "global";
+
+    // 国内大模型配置
+    private boolean enableDomesticAI = false;
+    private String domesticAIModel = "qianwen"; // qianwen, wenxin, zhipu
+    private String domesticAIApiKey = "";
+    
+    // 翻译提示词配置
+    private String translationPrompt =
+            "你是一位专业软件工程师，负责将技术文档中文本翻译为规范的英文编程术语。请遵循：\n" +
+            "1. 【翻译规范】用编程术语表达技术概念，非逐字翻译（例：'配置文件路径'→configPath）\n" +
+            "2. 【命名规则】输出直接可用作代码标识符的形式（类名用大驼峰，方法/变量用小驼峰）\n" +
+            "3. 【术语处理】专业术语保持行业标准（例：'缓存'→cache而非buffer）\n" +
+            "4. 【长文本优化】超过3个技术概念时：\n" +
+            "   a) 优先提取核心术语\n" +
+            "   b) 保持技术逻辑连贯性\n" +
+            "   c) 省略非技术性描述词（'这个'、'一种'等）\n" +
+            "5. 【输出要求】只返回最终翻译结果\n\n" +
+            "待翻译中文：";
+    private boolean useCustomPrompt = false;
+
     // 单例模式获取实例
     public static PluginSettings getInstance() {
         // 使用新的API代替已弃用的ServiceManager
@@ -93,6 +118,54 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
         this.baiduAppId = baiduAppId;
     }
 
+    public boolean isEnableGoogleTranslation() {
+        return enableGoogleTranslation;
+    }
+    public void setEnableGoogleTranslation(boolean enableGoogleTranslation) {
+        this.enableGoogleTranslation = enableGoogleTranslation;
+    }
+    public String getGoogleApiKey() {
+        return googleApiKey;
+    }
+    public void setGoogleApiKey(String googleApiKey) {
+        this.googleApiKey = googleApiKey;
+    }
+    public String getGoogleProjectId() {
+        return googleProjectId;
+    }
+    public void setGoogleProjectId(String googleProjectId) {
+        this.googleProjectId = googleProjectId;
+    }
+    public String getGoogleRegion() {
+        return googleRegion;
+    }
+    public void setGoogleRegion(String googleRegion) {
+        this.googleRegion = googleRegion;
+    }
+    
+    // 国内大模型相关方法
+    public boolean isEnableDomesticAI() {
+        return enableDomesticAI;
+    }
+    public void setEnableDomesticAI(boolean enableDomesticAI) {
+        this.enableDomesticAI = enableDomesticAI;
+    }
+    public String getDomesticAIModel() {
+        if (domesticAIModel == null || domesticAIModel.isEmpty()) {
+            domesticAIModel = "qianwen";
+        }
+        return domesticAIModel;
+    }
+    public void setDomesticAIModel(String domesticAIModel) {
+        this.domesticAIModel = domesticAIModel;
+    }
+    public String getDomesticAIApiKey() {
+        return domesticAIApiKey;
+    }
+    public void setDomesticAIApiKey(String domesticAIApiKey) {
+        this.domesticAIApiKey = domesticAIApiKey;
+    }
+
     @Nullable
     @Override
     public PluginSettings getState() {
@@ -101,7 +174,6 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
 
     @Override
     public void loadState(@NotNull PluginSettings state) {
-        // 确保state不为空
         XmlSerializerUtil.copyBean(state, this);
         if (this.template == null || this.template.isEmpty()) {
             this.template = "/**\n" +
@@ -127,6 +199,67 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
         if (this.baiduAppId == null) {
             this.baiduAppId = "";
         }
+
+        if (this.googleApiKey == null) {
+            this.googleApiKey = "";
+        }
+        if (this.googleProjectId == null) {
+            this.googleProjectId = "";
+        }
+        if (this.googleRegion == null) {
+            this.googleRegion = "global";
+        }
+        
+        // 确保国内大模型配置不为null
+        if (this.domesticAIModel == null || this.domesticAIModel.isEmpty()) {
+            this.domesticAIModel = "qianwen";
+        }
+        if (this.domesticAIApiKey == null) {
+            this.domesticAIApiKey = "";
+        }
+        
+        // 确保提示词配置不为null
+        if (this.translationPrompt == null || this.translationPrompt.isEmpty()) {
+            this.translationPrompt = "你是一位专业软件工程师，负责将技术文档中文本翻译为规范的英文编程术语。请遵循：\n" +
+                    "1. 【翻译规范】用编程术语表达技术概念，非逐字翻译（例：'配置文件路径'→configPath）\n" +
+                    "2. 【命名规则】输出直接可用作代码标识符的形式（类名用大驼峰，方法/变量用小驼峰）\n" +
+                    "3. 【术语处理】专业术语保持行业标准（例：'缓存'→cache而非buffer）\n" +
+                    "4. 【长文本优化】超过3个技术概念时：\n" +
+                    "   a) 优先提取核心术语\n" +
+                    "   b) 保持技术逻辑连贯性\n" +
+                    "   c) 省略非技术性描述词（'这个'、'一种'等）\n" +
+                    "5. 【输出要求】只返回最终翻译结果\n\n" +
+                    "待翻译中文：";
+        }
+    }
+
+    // 提示词相关方法
+    public String getTranslationPrompt() {
+        if (translationPrompt == null || translationPrompt.isEmpty()) {
+            translationPrompt = "你是一位专业软件工程师，负责将技术文档中文本翻译为规范的英文编程术语。请遵循：\n" +
+                    "1. 【翻译规范】用编程术语表达技术概念，非逐字翻译（例：'配置文件路径'→configPath）\n" +
+                    "2. 【命名规则】输出直接可用作代码标识符的形式（类名用大驼峰，方法/变量用小驼峰）\n" +
+                    "3. 【术语处理】专业术语保持行业标准（例：'缓存'→cache而非buffer）\n" +
+                    "4. 【长文本优化】超过3个技术概念时：\n" +
+                    "   a) 优先提取核心术语\n" +
+                    "   b) 保持技术逻辑连贯性\n" +
+                    "   c) 省略非技术性描述词（'这个'、'一种'等）\n" +
+                    "5. 【输出要求】只返回最终翻译结果\n\n" +
+                    "待翻译中文：";
+        }
+        return translationPrompt;
+    }
+    
+    public void setTranslationPrompt(String translationPrompt) {
+        this.translationPrompt = translationPrompt;
+    }
+    
+    public boolean isUseCustomPrompt() {
+        return useCustomPrompt;
+    }
+    
+    public void setUseCustomPrompt(boolean useCustomPrompt) {
+        this.useCustomPrompt = useCustomPrompt;
     }
 }
 

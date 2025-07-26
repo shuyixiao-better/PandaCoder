@@ -52,9 +52,6 @@ public class JavaClassNameTranslatorAction extends AnAction {
                             Messages.showErrorDialog(project, "翻译结果为空，无法创建文件。", "翻译错误");
                             return;
                         }
-                    } catch (UnsupportedEncodingException ex) {
-                        Messages.showErrorDialog(project, "翻译API配置错误: " + ex.getMessage(), "API错误");
-                        return;
                     } catch (Exception ex) {
                         Messages.showErrorDialog(project, "翻译过程中发生错误: " + ex.getMessage(), "翻译错误");
                         return;
@@ -96,10 +93,9 @@ public class JavaClassNameTranslatorAction extends AnAction {
         }
     }
 
-    // 模拟百度翻译 API 调用
-    private String translateChineseToEnglish(String chinese) throws UnsupportedEncodingException {
-        // 假设这里调用了实际的百度翻译 API
-        return BaiduAPI.translate(chinese);  // 示例：将"中文类名"翻译为 "TranslatedName"
+    // 统一翻译接口调用
+    private String translateChineseToEnglish(String chinese) throws Exception {
+        return com.shuyixiao.converter.TranslationConverter.translateText(chinese);
     }
 
     // 将英文名转换为大驼峰命名法
