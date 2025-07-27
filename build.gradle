@@ -94,24 +94,62 @@ patchPluginXml {
 
     // 插件详细描述和变更说明
     pluginDescription.set("""
-        PandaCoder is an intelligent development tool designed for Chinese developers, integrating Chinese programming assistant and comprehensive Jenkins Pipeline support.
+        PandaCoder is an intelligent development tool designed for Chinese developers, integrating Chinese programming assistant, comprehensive Jenkins Pipeline support, and SpringBoot configuration visualization.
 
-        Key Features:
-        • Chinese to English naming conversion: The conversion from Chinese to English is achieved through the combination of large models and prompt words, avoiding mechanical word-for-word translation.Automatically converts Chinese to English variable names, class names, etc.
-        • Smart class creation: Supports Chinese input for quick Java class creation
-        • Complete Jenkins Pipeline support: Provides intelligent completion, syntax highlighting, and documentation
+        🎯 Core Features:
+
+        📝 Chinese Programming Assistant:
+        • Intelligent Chinese to English conversion: Achieved through large models and prompt engineering, avoiding mechanical word-for-word translation
+        • Smart class creation: Supports Chinese input for quick Java class creation with automatic English conversion
+        • Class name prefix recognition: Supports "Service:User Management" format for standardized naming
+        • Multiple naming formats: CamelCase, PascalCase, UPPER_CASE with underscores
+        • Multi-engine translation: Domestic AI models (Qianwen/Wenxin/Zhipu) > Google Cloud Translation > Baidu Translation
+
+        🐳 Jenkins Pipeline Support:
+        • Custom file type and icon: Jenkins robot icon with 5-layer theme override protection
+        • Enhanced syntax highlighting: 11 vibrant colors in VS Code style
+        • Intelligent completion: pipeline, stage, step keywords and methods
         • Environment variable completion: Auto-recognizes env.BUILD_NUMBER, env.WORKSPACE, etc.
         • Parameter completion: Auto-completes params.APP_NAME, params.DEPLOY_ENV, etc.
-        • Multiple text conversion: Supports CamelCase, PascalCase, underscore naming formats
-        • Custom file icons: Jenkins robot icon with 5-layer theme override protection
-        • Vibrant syntax highlighting: 11 bright colors in VS Code style
+        • Documentation support: Hover documentation and method signatures
         • Customizable colors: Adjust syntax highlighting colors in IDE settings
 
-        Significantly improves development efficiency for Chinese-speaking developers and enhances Jenkins Pipeline development experience.
+        🍃 SpringBoot Configuration Icons:
+        • Technology stack recognition: MySQL, PostgreSQL, Oracle, SQL Server, Redis, Kafka, RabbitMQ, Elasticsearch
+        • Smart icon display: Colorful technology stack icons in editor gutter
+        • Multi-format support: YAML and Properties configuration files
+        • Priority matching: Specific technology icons override generic configuration icons
+        • Hover tooltips: Display technology stack names and detailed information
+
+        ⚙️ Advanced Features:
+        • Custom translation prompts: Adapt to different technical domains
+        • File template configuration: Custom Java file comment templates
+        • API configuration validation: Real-time verification of translation engine APIs
+        • Smart error handling: Graceful degradation ensuring functionality availability
+        • Three-tier translation engine: Ensures translation quality and availability
+
+        🎨 Technical Highlights:
+        • Intelligent priority matching: Avoids icon conflicts, displays most relevant technology stack icons
+        • Multi-language support: Chinese and English programming environments
+        • Theme compatibility: Custom icons support light and dark themes
+        • Performance optimization: Thread-safe caching and intelligent loading
+
+        Significantly improves development efficiency for Chinese-speaking developers and enhances Jenkins Pipeline development experience while providing intuitive SpringBoot configuration visualization.
     """)
 
     changeNotes.set("""
         <ul>
+            <li><b>1.1.6</b> - 用户体验全面升级
+                <ul>
+                    <li>🎨 <b>现代化欢迎界面</b>：全新设计的欢迎对话框，提供更美观的用户体验</li>
+                    <li>📱 <b>微信公众号集成</b>：一键关注公众号，获取最新功能更新和技术分享</li>
+                    <li>💬 <b>问题反馈优化</b>：提供更便捷的问题反馈渠道，支持微信直接联系</li>
+                    <li>🏢 <b>作者信息展示</b>：显示作者所在公司信息，增强用户信任度</li>
+                    <li>🔧 <b>界面布局优化</b>：重新设计界面布局，信息展示更加清晰</li>
+                    <li>📊 <b>功能特性展示</b>：详细展示插件核心功能，帮助用户快速了解</li>
+                    <li>🎯 <b>一键开始使用</b>：简化用户操作流程，快速进入工作状态</li>
+                </ul>
+            </li>
             <li><b>1.1.5</b> - 重大功能升级：新增SpringBoot配置文件图标显示功能
                 <ul>
                     <li>🍃 <b>SpringBoot配置文件图标</b>：自动识别配置文件中的技术栈并显示对应图标</li>
