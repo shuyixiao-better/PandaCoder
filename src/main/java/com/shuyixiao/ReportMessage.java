@@ -1,8 +1,7 @@
 package com.shuyixiao;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.ui.Messages;
+import com.shuyixiao.ui.WelcomeDialog;
 /**
  * Copyright © 2024年 integration-projects-maven. All rights reserved.
  * ClassName ReportMessage.java
@@ -15,32 +14,7 @@ public class ReportMessage extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent e) {
-        // 获取国际化的消息和标题，如果没有可以使用默认值
-        String message = getLocalizedMessage("report.message", "欢迎使用 PandaCoder - 中文开发者的智能编码助手！有问题或创意赶紧联系我\n\n" +
-                "版本：1.1.2\n" +
-                "功能特性：\n" +
-                "- 智能中文转大小驼峰\n" +
-                "- 智能中文转大写带下划线\n" +
-                "- 中文类名自动转换\n" +
-                "- 智能中文类生成\n" +
-                "作者：舒一笑\n" +
-                "公众号：舒一笑的架构笔记");
-        String title = getLocalizedMessage("report.title", "PandaCoder 熊猫编码助手");
-
-        // 显示消息对话框
-        showMessageDialogOnUIThread(message, title);
-    }
-
-    private String getLocalizedMessage(String key, String defaultMessage) {
-        // 这里可以添加从资源文件中读取的逻辑，目前简单返回默认值
-        // 实际实现时可以使用 ResourceBundle.getBundle("messages.Bundle").getString(key)
-        return defaultMessage;
-    }
-
-    private void showMessageDialogOnUIThread(String message, String title) {
-        // 确保消息对话框是在 UI 线程中显示
-        ApplicationManager.getApplication().invokeLater(() ->
-                Messages.showMessageDialog(message, title, Messages.getInformationIcon())
-        );
+        // 显示现代化的欢迎对话框
+        WelcomeDialog.show(e.getProject());
     }
 }

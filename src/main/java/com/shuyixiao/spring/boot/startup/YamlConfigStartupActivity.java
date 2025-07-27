@@ -1,5 +1,6 @@
 package com.shuyixiao.spring.boot.startup;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.project.Project;
@@ -30,11 +31,20 @@ public class YamlConfigStartupActivity implements StartupActivity.DumbAware {
                 project
         );
 
-        // 扫描项目YAML文件
-        configService.scanProjectYamlFiles();
-
-        // 更新已打开的编辑器
-        configService.updateOpenEditors();
+        // 在后台线程中扫描项目YAML文件，避免阻塞启动过程
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                // 扫描项目YAML文件
+                configService.scanProjectYamlFiles();
+                
+                // 在EDT上更新已打开的编辑器
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    configService.updateOpenEditors();
+                });
+            } catch (Exception e) {
+                LOG.error("Error during YAML config initialization", e);
+            }
+        });
 
         LOG.info("YAML config services initialization completed");
     }

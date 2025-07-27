@@ -1,6 +1,7 @@
 package com.shuyixiao.spring.boot.service;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
@@ -16,6 +17,7 @@ import com.shuyixiao.spring.boot.yaml.YamlTechStackRenderer;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.ArrayList;
 
 /**
  * YAML配置服务
@@ -82,7 +84,10 @@ public final class YamlConfigService {
      */
     public List<PsiFile> scanProjectYamlFiles() {
         LOG.info("Scanning for YAML config files in project: " + project.getName());
+        
+        // YamlConfigReader已经处理了ReadAction，无需重复包装
         List<PsiFile> yamlFiles = YamlConfigReader.getAllSpringBootYamlFiles(project);
+        
         LOG.info("Found " + yamlFiles.size() + " YAML config files");
         return yamlFiles;
     }

@@ -1,5 +1,6 @@
 package com.shuyixiao.spring.boot.yaml;
 
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -70,30 +71,33 @@ public class YamlTechStackRenderer implements EditorFactoryListener {
         Project project = editor.getProject();
         if (project == null) return;
 
-        PsiFile psiFile = PsiDocumentManager.getInstance(project).getPsiFile(editor.getDocument());
-        if (psiFile == null) return;
+        // 使用ReadAction包装PSI访问操作
+        ReadAction.run(() -> {
+            PsiFile psiFile = PsiDocumentManager.getInstance(project).getPsiFile(editor.getDocument());
+            if (psiFile == null) return;
 
-        // 清理现有高亮
-        clearHighlighters(editor);
+            // 清理现有高亮
+            clearHighlighters(editor);
 
-        // 读取YAML内容
-        String yamlContent = editor.getDocument().getText();
-        List<YamlConfigProcessor.YamlConfigEntry> entries = YamlConfigProcessor.extractConfigEntries(yamlContent);
+            // 读取YAML内容
+            String yamlContent = editor.getDocument().getText();
+            List<YamlConfigProcessor.YamlConfigEntry> entries = YamlConfigProcessor.extractConfigEntries(yamlContent);
 
-        // 为每个技术栈添加图标
-        for (SpringBootYamlLineMarkerProvider.TechStackConfig techStack : 
-                SpringBootYamlLineMarkerProvider.getTechStackConfigs().values()) {
+            // 为每个技术栈添加图标
+            for (SpringBootYamlLineMarkerProvider.TechStackConfig techStack : 
+                    SpringBootYamlLineMarkerProvider.getTechStackConfigs().values()) {
 
-            // 查找匹配该技术栈的配置项
-            List<YamlConfigProcessor.YamlConfigEntry> matchedEntries = YamlConfigProcessor.findTechStackEntries(
-                    entries,
-                    techStack.getConfigKeywords());
+                // 查找匹配该技术栈的配置项
+                List<YamlConfigProcessor.YamlConfigEntry> matchedEntries = YamlConfigProcessor.findTechStackEntries(
+                        entries,
+                        techStack.getConfigKeywords());
 
-            // 添加技术栈图标高亮
-            for (YamlConfigProcessor.YamlConfigEntry entry : matchedEntries) {
-                addTechStackIconHighlighter(editor, entry.getLineNumber() - 1, techStack);
+                // 添加技术栈图标高亮
+                for (YamlConfigProcessor.YamlConfigEntry entry : matchedEntries) {
+                    addTechStackIconHighlighter(editor, entry.getLineNumber() - 1, techStack);
+                }
             }
-        }
+        });
     }
 
     /**

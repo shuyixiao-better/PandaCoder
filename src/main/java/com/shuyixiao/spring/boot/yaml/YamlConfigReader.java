@@ -1,5 +1,6 @@
 package com.shuyixiao.spring.boot.yaml;
 
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -33,34 +34,37 @@ public class YamlConfigReader {
     public static List<PsiFile> getAllSpringBootYamlFiles(@NotNull Project project) {
         LOG.debug("Scanning for Spring Boot YAML files in project: " + project.getName());
 
-        List<PsiFile> yamlFiles = new ArrayList<>();
+        // 使用ReadAction确保在正确的线程上下文中访问文件索引和PSI
+        return ReadAction.compute(() -> {
+            List<PsiFile> yamlFiles = new ArrayList<>();
 
-        // 查找所有.yml文件
-        Collection<VirtualFile> ymlFiles = FilenameIndex.getAllFilesByExt(project, "yml", GlobalSearchScope.projectScope(project));
-        for (VirtualFile file : ymlFiles) {
-            if (SpringBootFileDetector.isSpringBootYamlFile(file)) {
-                PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
-                if (psiFile != null) {
-                    yamlFiles.add(psiFile);
-                    LOG.debug("Found Spring Boot YAML file: " + file.getPath());
+            // 查找所有.yml文件
+            Collection<VirtualFile> ymlFiles = FilenameIndex.getAllFilesByExt(project, "yml", GlobalSearchScope.projectScope(project));
+            for (VirtualFile file : ymlFiles) {
+                if (SpringBootFileDetector.isSpringBootYamlFile(file)) {
+                    PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
+                    if (psiFile != null) {
+                        yamlFiles.add(psiFile);
+                        LOG.debug("Found Spring Boot YAML file: " + file.getPath());
+                    }
                 }
             }
-        }
 
-        // 查找所有.yaml文件
-        Collection<VirtualFile> yamlFileExt = FilenameIndex.getAllFilesByExt(project, "yaml", GlobalSearchScope.projectScope(project));
-        for (VirtualFile file : yamlFileExt) {
-            if (SpringBootFileDetector.isSpringBootYamlFile(file)) {
-                PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
-                if (psiFile != null) {
-                    yamlFiles.add(psiFile);
-                    LOG.debug("Found Spring Boot YAML file: " + file.getPath());
+            // 查找所有.yaml文件
+            Collection<VirtualFile> yamlFileExt = FilenameIndex.getAllFilesByExt(project, "yaml", GlobalSearchScope.projectScope(project));
+            for (VirtualFile file : yamlFileExt) {
+                if (SpringBootFileDetector.isSpringBootYamlFile(file)) {
+                    PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
+                    if (psiFile != null) {
+                        yamlFiles.add(psiFile);
+                        LOG.debug("Found Spring Boot YAML file: " + file.getPath());
+                    }
                 }
             }
-        }
 
-        LOG.info("Found " + yamlFiles.size() + " Spring Boot YAML files in project");
-        return yamlFiles;
+            LOG.info("Found " + yamlFiles.size() + " Spring Boot YAML files in project");
+            return yamlFiles;
+        });
     }
 
     /**

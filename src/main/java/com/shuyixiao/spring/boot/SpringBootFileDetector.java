@@ -1,5 +1,6 @@
 package com.shuyixiao.spring.boot;
 
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
@@ -113,22 +114,25 @@ public class SpringBootFileDetector {
      * 检测文件是否在Spring Boot资源目录中
      */
     public static boolean isInSpringBootResourcesDirectory(@NotNull VirtualFile file, @NotNull Project project) {
-        Module module = ModuleUtilCore.findModuleForFile(file, project);
-        if (module == null) {
-            return false;
-        }
-
-        ModuleRootManager rootManager = ModuleRootManager.getInstance(module);
-        VirtualFile[] sourceRoots = rootManager.getSourceRoots();
-        
-        for (VirtualFile sourceRoot : sourceRoots) {
-            // 检查是否在resources目录中
-            if (isResourcesDirectory(sourceRoot) && VfsUtil.isAncestor(sourceRoot, file, false)) {
-                return true;
+        // 使用ReadAction包装模块和根目录访问操作
+        return ReadAction.compute(() -> {
+            Module module = ModuleUtilCore.findModuleForFile(file, project);
+            if (module == null) {
+                return false;
             }
-        }
-        
-        return false;
+
+            ModuleRootManager rootManager = ModuleRootManager.getInstance(module);
+            VirtualFile[] sourceRoots = rootManager.getSourceRoots();
+            
+            for (VirtualFile sourceRoot : sourceRoots) {
+                // 检查是否在resources目录中
+                if (isResourcesDirectory(sourceRoot) && VfsUtil.isAncestor(sourceRoot, file, false)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        });
     }
 
     /**

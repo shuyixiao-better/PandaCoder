@@ -9,6 +9,8 @@ import com.intellij.openapi.actionSystem.LangDataKeys;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.shuyixiao.ui.ModernInputDialog;
+import com.shuyixiao.ui.EnhancedNotificationUtil;
 import com.intellij.openapi.util.Computable;
 import com.intellij.psi.*;
 import com.intellij.psi.search.GlobalSearchScope;
@@ -41,7 +43,13 @@ public class JavaClassNameTranslatorAction extends AnAction {
 
             if (fileType != null) {
                 // Step 2: 弹出输入框，获取用户输入的中文类名
-                String chineseClassName = Messages.showInputDialog(project, "请输入中文类名：", "类名转换", Messages.getQuestionIcon());
+                String chineseClassName = ModernInputDialog.showDialog(
+                    project, 
+                    "类名转换", 
+                    "请输入中文类名：", 
+                    "", 
+                    ModernInputDialog.createChineseClassNameValidator()
+                );
 
                 if (chineseClassName != null && !chineseClassName.trim().isEmpty()) {
                     // Step 3: 调用翻译 API，将中文类名转换为英文
@@ -49,11 +57,23 @@ public class JavaClassNameTranslatorAction extends AnAction {
                     try {
                         translatedName = translateChineseToEnglish(chineseClassName);
                         if (translatedName == null || translatedName.trim().isEmpty()) {
-                            Messages.showErrorDialog(project, "翻译结果为空，无法创建文件。", "翻译错误");
+                            EnhancedNotificationUtil.showEnhancedError(
+                                project, 
+                                "翻译错误", 
+                                "翻译结果为空，无法创建文件", 
+                                "请检查网络连接或API配置，然后重试。", 
+                                () -> com.shuyixiao.util.TranslationUtil.checkApiConfiguration(project)
+                            );
                             return;
                         }
                     } catch (Exception ex) {
-                        Messages.showErrorDialog(project, "翻译过程中发生错误: " + ex.getMessage(), "翻译错误");
+                        EnhancedNotificationUtil.showEnhancedError(
+                            project, 
+                            "翻译错误", 
+                            "翻译过程中发生错误", 
+                            ex.getMessage(), 
+                            () -> com.shuyixiao.util.TranslationUtil.checkApiConfiguration(project)
+                        );
                         return;
                     }
 
