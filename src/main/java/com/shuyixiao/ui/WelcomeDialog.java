@@ -16,6 +16,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 /**
  * 现代化的PandaCoder欢迎对话框
@@ -35,7 +36,7 @@ public class WelcomeDialog extends DialogWrapper {
     @Override
     protected @Nullable JComponent createCenterPanel() {
         JBPanel<?> mainPanel = new JBPanel<>(new BorderLayout());
-        mainPanel.setPreferredSize(JBUI.size(500, 400));
+        mainPanel.setPreferredSize(JBUI.size(550, 400)); // 增加宽度
         mainPanel.setBorder(JBUI.Borders.empty(20));
         
         // 创建头部面板
@@ -89,12 +90,28 @@ public class WelcomeDialog extends DialogWrapper {
         titlePanel.add(textPanel);
         headerPanel.add(titlePanel, BorderLayout.WEST);
         
-        // 右侧：版本号
+        // 右侧：版本信息和作者信息
+        JBPanel<?> rightPanel = new JBPanel<>(new BorderLayout());
+        rightPanel.setBorder(JBUI.Borders.empty(5, 15, 5, 5)); // 进一步增加右边距
+        
+        // 版本号（上方）
         JBLabel versionLabel = new JBLabel("v" + VERSION);
         versionLabel.setForeground(UIUtil.getContextHelpForeground());
         versionLabel.setFont(versionLabel.getFont().deriveFont(Font.PLAIN, 11f));
-        versionLabel.setBorder(JBUI.Borders.empty(5));
-        headerPanel.add(versionLabel, BorderLayout.EAST);
+        versionLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        rightPanel.add(versionLabel, BorderLayout.NORTH);
+        
+        // 作者信息（下方）
+        JBLabel authorLabel = new JBLabel("<html><body style='white-space: nowrap;'>" +
+                "<span style='color: #666666; font-size: 14px'>作者：</span>" +
+                "<span style='color: #4A90E2; font-weight: bold; font-size: 14px'>舒一笑不秃头</span>" +
+                "</body></html>");
+        authorLabel.setHorizontalAlignment(SwingConstants.RIGHT);
+        authorLabel.setBorder(JBUI.Borders.empty(2, 0, 0, 0)); // 增加上边距
+        authorLabel.setPreferredSize(new Dimension(180, 22)); // 增加宽度以容纳完整文字
+        rightPanel.add(authorLabel, BorderLayout.SOUTH);
+        
+        headerPanel.add(rightPanel, BorderLayout.EAST);
         
         return headerPanel;
     }
@@ -152,19 +169,8 @@ public class WelcomeDialog extends DialogWrapper {
         JBPanel<?> footerPanel = new JBPanel<>(new BorderLayout());
         footerPanel.setBorder(JBUI.Borders.emptyTop(15));
         
-        // 作者信息
-        JBPanel<?> authorPanel = new JBPanel<>(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        
-        JBLabel authorLabel = new JBLabel("<html>" +
-                "<span style='color: #666666'>作者：</span>" +
-                "<span style='color: #4A90E2; font-weight: bold'>舒一笑不秃头</span>" +
-                "</html>");
-        authorPanel.add(authorLabel);
-        
-        footerPanel.add(authorPanel, BorderLayout.WEST);
-        
         // 操作按钮
-        JBPanel<?> buttonPanel = new JBPanel<>(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        JBPanel<?> buttonPanel = new JBPanel<>(new FlowLayout(FlowLayout.CENTER, 5, 0));
         
         // 公众号按钮
         JButton wechatButton = new JButton("📱 关注公众号");
@@ -183,8 +189,20 @@ public class WelcomeDialog extends DialogWrapper {
             showNotification("如有问题或建议，请联系微信：Tobeabetterman1001,备注来意-PandaCoder问题交流");
         });
         buttonPanel.add(feedbackButton);
+
+        // 作者公司网站按钮
+        JButton authorsCompanyIsAwesome = new JButton("🏢 作者所在的牛逼公司");
+        authorsCompanyIsAwesome.putClientProperty("JButton.buttonType", "borderless");
+        authorsCompanyIsAwesome.addActionListener(e -> {
+            try {
+                Desktop.getDesktop().browse(new URI("https://www.torchv.com/"));
+            } catch (Exception ex) {
+                showNotification("无法打开浏览器，请手动访问：https://www.torchv.com/");
+            }
+        });
+        buttonPanel.add(authorsCompanyIsAwesome);
         
-        footerPanel.add(buttonPanel, BorderLayout.EAST);
+        footerPanel.add(buttonPanel, BorderLayout.CENTER);
         
         return footerPanel;
     }
