@@ -59,35 +59,107 @@ public class QRCodeDialog extends DialogWrapper {
         imagePanel.setBorder(JBUI.Borders.empty(10));
 
         try {
-            // 加载二维码图片
-            ImageIcon qrCodeIcon = new ImageIcon(getClass().getResource(qrCodePath));
-            if (qrCodeIcon.getImageLoadStatus() == MediaTracker.COMPLETE) {
-                // 调整图片大小
-                Image img = qrCodeIcon.getImage();
-                Image scaledImg = img.getScaledInstance(200, 200, Image.SCALE_SMOOTH);
-                qrCodeIcon = new ImageIcon(scaledImg);
-
-                JBLabel qrCodeLabel = new JBLabel(qrCodeIcon);
-                qrCodeLabel.setHorizontalAlignment(SwingConstants.CENTER);
-                qrCodeLabel.setBorder(JBUI.Borders.empty(10));
-                imagePanel.add(qrCodeLabel, BorderLayout.CENTER);
+            ImageIcon qrCodeIcon = null;
+            System.out.println("尝试加载图片路径: " + qrCodePath);
+            
+            // 判断是网络URL还是本地资源
+            if (qrCodePath.startsWith("http://") || qrCodePath.startsWith("https://")) {
+                // 网络图片加载
+                System.out.println("检测到网络URL，开始下载图片...");
+                try {
+                    java.net.URL imageUrl = new java.net.URL(qrCodePath);
+                    qrCodeIcon = new ImageIcon(imageUrl);
+                    
+                    // 等待网络图片加载完成
+                    System.out.println("等待网络图片加载...");
+                    Thread.sleep(1000); // 给一点时间让图片加载
+                    
+                } catch (Exception e) {
+                    System.out.println("网络图片加载失败: " + e.getMessage());
+                    showErrorPlaceholder(imagePanel, "网络图片加载失败", qrCodePath);
+                    qrCodeIcon = null; // 设置为null，后面会处理
+                }
             } else {
-                // 如果图片加载失败，显示占位符
-                JBLabel placeholderLabel = new JBLabel("📱 https://i-blog.csdnimg.cn/direct/68693f613c2a4e2cb0ff042fbadc2a9c.gif#pic_center");
-                placeholderLabel.setFont(placeholderLabel.getFont().deriveFont(Font.BOLD, 48f));
-                placeholderLabel.setForeground(UIUtil.getContextHelpForeground());
-                placeholderLabel.setHorizontalAlignment(SwingConstants.CENTER);
-                placeholderLabel.setBorder(JBUI.Borders.empty(50));
-                imagePanel.add(placeholderLabel, BorderLayout.CENTER);
+                // 本地资源文件加载
+                java.net.URL imageUrl = null;
+                
+                // 方式1：使用当前类加载器
+                imageUrl = getClass().getResource(qrCodePath);
+                
+                // 方式2：如果方式1失败，尝试使用ClassLoader
+                if (imageUrl == null) {
+                    imageUrl = getClass().getClassLoader().getResource(qrCodePath.substring(1)); // 去掉开头的 /
+                }
+                
+                // 方式3：如果还是失败，尝试完整路径
+                if (imageUrl == null) {
+                    imageUrl = getClass().getClassLoader().getResource("images/WechatOfficialAccount.gif");
+                }
+                
+                System.out.println("本地资源URL: " + imageUrl);
+                
+                if (imageUrl != null) {
+                    qrCodeIcon = new ImageIcon(imageUrl);
+                } else {
+                    System.out.println("无法找到本地图片资源: " + qrCodePath);
+                    showErrorPlaceholder(imagePanel, "图片文件未找到", qrCodePath);
+                    qrCodeIcon = null; // 设置为null，后面会处理
+                }
             }
+            
+            // 处理加载好的图片
+            if (qrCodeIcon != null) {
+                System.out.println("图片加载状态: " + qrCodeIcon.getImageLoadStatus());
+                System.out.println("原始图片尺寸: " + qrCodeIcon.getIconWidth() + "x" + qrCodeIcon.getIconHeight());
+                
+                // 检查图片是否有效
+                if (qrCodeIcon.getIconWidth() > 0 && qrCodeIcon.getIconHeight() > 0) {
+                    
+                    // 检查是否为gif文件
+                    if (qrCodePath.toLowerCase().endsWith(".gif")) {
+                        // 对于gif文件，设置合适的显示尺寸但保持动画
+                        int originalWidth = qrCodeIcon.getIconWidth();
+                        int originalHeight = qrCodeIcon.getIconHeight();
+                        
+                        // 如果图片太大，等比例缩放
+                        if (originalWidth > 250 || originalHeight > 250) {
+                            double scale = Math.min(250.0 / originalWidth, 250.0 / originalHeight);
+                            int newWidth = (int) (originalWidth * scale);
+                            int newHeight = (int) (originalHeight * scale);
+                            
+                            // 创建一个新的ImageIcon来显示缩放后的gif
+                            Image img = qrCodeIcon.getImage();
+                            Image scaledImg = img.getScaledInstance(newWidth, newHeight, Image.SCALE_DEFAULT);
+                            qrCodeIcon = new ImageIcon(scaledImg);
+                            
+                            System.out.println("缩放后尺寸: " + newWidth + "x" + newHeight);
+                        }
+                    } else {
+                        // 非gif文件，按原来方式处理
+                        Image img = qrCodeIcon.getImage();
+                        Image scaledImg = img.getScaledInstance(200, 200, Image.SCALE_SMOOTH);
+                        qrCodeIcon = new ImageIcon(scaledImg);
+                    }
+
+                    JBLabel qrCodeLabel = new JBLabel(qrCodeIcon);
+                    qrCodeLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                    qrCodeLabel.setBorder(JBUI.Borders.empty(10));
+                    imagePanel.add(qrCodeLabel, BorderLayout.CENTER);
+                    
+                    System.out.println("图片显示成功!");
+                } else {
+                    System.out.println("图片尺寸无效: " + qrCodeIcon.getIconWidth() + "x" + qrCodeIcon.getIconHeight());
+                    showErrorPlaceholder(imagePanel, "图片尺寸无效", qrCodePath);
+                }
+            } else {
+                System.out.println("qrCodeIcon为null");
+                showErrorPlaceholder(imagePanel, "图片对象创建失败", qrCodePath);
+            }
+            
         } catch (Exception e) {
-            // 异常处理，显示占位符
-            JBLabel placeholderLabel = new JBLabel("📱 https://i-blog.csdnimg.cn/direct/68693f613c2a4e2cb0ff042fbadc2a9c.gif#pic_center");
-            placeholderLabel.setFont(placeholderLabel.getFont().deriveFont(Font.BOLD, 48f));
-            placeholderLabel.setForeground(UIUtil.getContextHelpForeground());
-            placeholderLabel.setHorizontalAlignment(SwingConstants.CENTER);
-            placeholderLabel.setBorder(JBUI.Borders.empty(50));
-            imagePanel.add(placeholderLabel, BorderLayout.CENTER);
+            System.out.println("图片加载异常: " + e.getMessage());
+            e.printStackTrace();
+            showErrorPlaceholder(imagePanel, "图片加载失败: " + e.getMessage(), qrCodePath);
         }
 
         mainPanel.add(imagePanel, BorderLayout.CENTER);
@@ -124,6 +196,21 @@ public class QRCodeDialog extends DialogWrapper {
                     }
                 }
         };
+    }
+
+    /**
+     * 显示错误占位符
+     */
+    private void showErrorPlaceholder(JBPanel<?> imagePanel, String errorMessage, String path) {
+        JBLabel placeholderLabel = new JBLabel("<html><div style='text-align: center'>" +
+                "📱<br><br>" +
+                "<small>" + errorMessage + "<br>" + path + "</small>" +
+                "</div></html>");
+        placeholderLabel.setFont(placeholderLabel.getFont().deriveFont(Font.BOLD, 24f));
+        placeholderLabel.setForeground(UIUtil.getContextHelpForeground());
+        placeholderLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        placeholderLabel.setBorder(JBUI.Borders.empty(50));
+        imagePanel.add(placeholderLabel, BorderLayout.CENTER);
     }
 
     /**
@@ -173,7 +260,7 @@ public class QRCodeDialog extends DialogWrapper {
                 "📱 关注微信公众号",
                 "扫描二维码关注「舒一笑的架构笔记」<br>" +
                         "获取最新技术分享、插件更新和问题解答",
-                "/images/WechatOfficialAccount.gif",
+                "https://shuyixiao.oss-cn-hangzhou.aliyuncs.com/CSDN%E6%8E%A8%E5%B9%BF.gif",
                 "复制链接",
                 "https://i-blog.csdnimg.cn/direct/68693f613c2a4e2cb0ff042fbadc2a9c.gif#pic_center" // 替换为实际的公众号链接
         );

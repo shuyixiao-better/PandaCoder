@@ -13,7 +13,7 @@ plugins {
 }
 
 group = 'com.shuyixiao'
-version = '1.1.5' // 更新版本号反映品牌变更
+version = '1.1.6' // 更新版本号反映品牌变更
 
 repositories {
     mavenCentral()

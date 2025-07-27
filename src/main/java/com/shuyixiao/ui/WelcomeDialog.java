@@ -23,7 +23,7 @@ import java.net.URI;
  */
 public class WelcomeDialog extends DialogWrapper {
     
-    private static final String VERSION = "1.1.2";
+    private static final String VERSION = "1.1.6";
     
     public WelcomeDialog(@Nullable Project project) {
         super(project);
@@ -126,7 +126,9 @@ public class WelcomeDialog extends DialogWrapper {
             "🤖 智能中文类生成 - AI驱动的代码生成体验",
             "🌐 多引擎翻译支持 - 国内大模型、Google、百度三级备用",
             "⚙️ Jenkins Pipeline增强 - 语法高亮、智能补全",
-            "🍃 SpringBoot配置图标 - 技术栈可视化识别"
+            "🍃 SpringBoot配置图标 - 技术栈可视化识别",
+            "🎯 类名前缀识别 - 支持Service:用户管理等格式",
+            "📝 自定义文件模板 - 支持用户自定义Java注释模板"
         };
         
         JBPanel<?> featuresList = new JBPanel<>();
@@ -155,7 +157,7 @@ public class WelcomeDialog extends DialogWrapper {
         
         JBLabel authorLabel = new JBLabel("<html>" +
                 "<span style='color: #666666'>作者：</span>" +
-                "<span style='color: #4A90E2; font-weight: bold'>舒一笑</span>" +
+                "<span style='color: #4A90E2; font-weight: bold'>舒一笑不秃头</span>" +
                 "</html>");
         authorPanel.add(authorLabel);
         
@@ -178,7 +180,7 @@ public class WelcomeDialog extends DialogWrapper {
         JButton feedbackButton = new JButton("💬 问题反馈");
         feedbackButton.putClientProperty("JButton.buttonType", "borderless");
         feedbackButton.addActionListener(e -> {
-            showNotification("如有问题或建议，请联系：yixiaoshu88@163.com");
+            showNotification("如有问题或建议，请联系微信：Tobeabetterman1001,备注来意-PandaCoder问题交流");
         });
         buttonPanel.add(feedbackButton);
         
