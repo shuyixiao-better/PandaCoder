@@ -108,6 +108,23 @@
         
         <!-- 文件图标提供器：最高优先级的图标覆盖 -->
         <fileIconProvider implementation="com.shuyixiao.jenkins.icon.JenkinsFileIconDecorator"/>
+
+        <!-- Bug记录器相关服务 -->
+        <projectService serviceImplementation="com.shuyixiao.bugrecorder.service.BugRecordService"/>
+        <projectService serviceImplementation="com.shuyixiao.bugrecorder.service.ConsoleMonitoringService"/>
+        <projectService serviceImplementation="com.shuyixiao.bugrecorder.service.BugAnalysisService"/>
+
+        <!-- 现有的启动活动 -->
+        <postStartupActivity implementation="com.shuyixiao.spring.boot.startup.YamlConfigStartupActivity"/>
+
+        <!-- Bug记录器启动活动 -->
+        <postStartupActivity implementation="com.shuyixiao.bugrecorder.startup.BugRecorderStartupActivity"/>
+
+        <!-- Bug记录器工具窗口 -->
+        <toolWindow id="Bug Recorder"
+                    factoryClass="com.shuyixiao.bugrecorder.toolwindow.BugRecorderToolWindowFactory"
+                    anchor="bottom"
+                    icon="/icons/bug-recorder.svg"/>
     </extensions>
     <actions>
         <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="关于PandaCoder"
