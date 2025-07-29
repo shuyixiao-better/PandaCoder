@@ -621,6 +621,8 @@ public class BugRecorderToolWindow extends JPanel {
                 Messages.getWarningIcon()
         );
         if (result == Messages.YES) {
+            bugRecordService.cleanupRecordsByStatus(BugStatus.PENDING, 1);
+            bugRecordService.cleanupRecordsByStatus(BugStatus.IN_PROGRESS, 1);
             bugRecordService.cleanupRecordsByStatus(BugStatus.RESOLVED, 1);
             bugRecordService.cleanupRecordsByStatus(BugStatus.IGNORED, 1);
             refreshData();
