@@ -24,7 +24,7 @@ import java.net.URISyntaxException;
  */
 public class WelcomeDialog extends DialogWrapper {
     
-    private static final String VERSION = "1.1.6";
+    private static final String VERSION = "1.1.7";
     
     public WelcomeDialog(@Nullable Project project) {
         super(project);
@@ -94,8 +94,8 @@ public class WelcomeDialog extends DialogWrapper {
         JBPanel<?> rightPanel = new JBPanel<>(new BorderLayout());
         rightPanel.setBorder(JBUI.Borders.empty(5, 15, 5, 5)); // 进一步增加右边距
         
-        // 版本号（上方）
-        JBLabel versionLabel = new JBLabel("v" + VERSION);
+        // 版本号（上方）- 内测版本标识
+        JBLabel versionLabel = new JBLabel("v" + VERSION + " 🧪");
         versionLabel.setForeground(UIUtil.getContextHelpForeground());
         versionLabel.setFont(versionLabel.getFont().deriveFont(Font.PLAIN, 11f));
         versionLabel.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -123,7 +123,9 @@ public class WelcomeDialog extends DialogWrapper {
         JBLabel welcomeLabel = new JBLabel("<html><body style='width: 400px'>" +
                 "<p style='margin-bottom: 10px; color: #4A90E2; font-size: 14px'>" +
                 "🎉 欢迎使用 PandaCoder！您的智能编码伙伴已就绪</p>" +
-                "<p style='margin-bottom: 15px; color: #666666'>专为中文开发者设计，让编码更高效、更智能</p>" +
+                "<p style='margin-bottom: 8px; color: #666666'>专为中文开发者设计，让编码更高效、更智能</p>" +
+                "<p style='margin-bottom: 15px; color: #FF6B35; font-size: 12px; font-style: italic'>" +
+                "🧪 当前为内测版本，部分功能可能存在不稳定性，请谨慎使用</p>" +
                 "</body></html>");
         contentPanel.add(welcomeLabel, BorderLayout.NORTH);
         
@@ -145,7 +147,8 @@ public class WelcomeDialog extends DialogWrapper {
             "⚙️ Jenkins Pipeline增强 - 语法高亮、智能补全",
             "🍃 SpringBoot配置图标 - 技术栈可视化识别",
             "🎯 类名前缀识别 - 支持Service:用户管理等格式",
-            "📝 自定义文件模板 - 支持用户自定义Java注释模板"
+            "📝 自定义文件模板 - 支持用户自定义Java注释模板",
+            "🐛 Bug记录工具窗口 - 内测功能，智能记录和管理开发问题"
         };
         
         JBPanel<?> featuresList = new JBPanel<>();
