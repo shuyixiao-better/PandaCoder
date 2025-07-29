@@ -27,6 +27,7 @@ public class BugRecord {
     private final boolean resolved;
     private final String aiAnalysis;
     private final String solution;
+    private final BugStatus status;
 
     private BugRecord(Builder builder) {
         this.id = builder.id != null ? builder.id : UUID.randomUUID().toString();
@@ -41,6 +42,7 @@ public class BugRecord {
         this.resolved = builder.resolved;
         this.aiAnalysis = builder.aiAnalysis;
         this.solution = builder.solution;
+        this.status = builder.status;
     }
 
     // Getters
@@ -93,6 +95,11 @@ public class BugRecord {
         return resolved;
     }
 
+    @NotNull
+    public BugStatus getStatus() {
+        return status != null ? status : BugStatus.PENDING;
+    }
+
     @Nullable
     public String getAiAnalysis() {
         return aiAnalysis;
@@ -137,6 +144,10 @@ public class BugRecord {
         return new Builder(this).aiAnalysis(aiAnalysis).solution(solution).build();
     }
 
+    public BugRecord withStatus(BugStatus status) {
+        return new Builder(this).status(status).build();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -178,6 +189,7 @@ public class BugRecord {
         private boolean resolved = false;
         private String aiAnalysis;
         private String solution;
+        private BugStatus status = BugStatus.PENDING;
 
         public Builder() {}
 
@@ -194,6 +206,7 @@ public class BugRecord {
             this.resolved = bugRecord.resolved;
             this.aiAnalysis = bugRecord.aiAnalysis;
             this.solution = bugRecord.solution;
+            this.status = bugRecord.status;
         }
 
         public Builder id(String id) {
@@ -243,6 +256,11 @@ public class BugRecord {
 
         public Builder resolved(boolean resolved) {
             this.resolved = resolved;
+            return this;
+        }
+
+        public Builder status(BugStatus status) {
+            this.status = status;
             return this;
         }
 

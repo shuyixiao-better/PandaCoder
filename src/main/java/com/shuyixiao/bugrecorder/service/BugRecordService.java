@@ -7,6 +7,7 @@ import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.shuyixiao.bugrecorder.model.BugRecord;
+import com.shuyixiao.bugrecorder.model.BugStatus;
 import com.shuyixiao.bugrecorder.model.ErrorType;
 import com.shuyixiao.bugrecorder.util.LocalDateTimeAdapter;
 import org.jetbrains.annotations.NotNull;
@@ -54,6 +55,50 @@ public final class BugRecordService {
 
         // 加载今日的Bug记录到缓存
         loadTodayRecords();
+        
+        // 迁移现有数据，确保所有记录都有状态
+        migrateExistingRecords();
+    }
+
+    /**
+     * 迁移现有记录，确保所有记录都有正确的状态
+     */
+    private void migrateExistingRecords() {
+        try {
+            boolean hasChanges = false;
+            
+            for (Map.Entry<String, List<BugRecord>> entry : cache.entrySet()) {
+                String dateKey = entry.getKey();
+                List<BugRecord> records = entry.getValue();
+                List<BugRecord> updatedRecords = new ArrayList<>();
+                
+                for (BugRecord record : records) {
+                    // 检查记录是否需要迁移
+                    if (record.getStatus() == null || record.getStatus() == BugStatus.PENDING) {
+                        // 根据resolved字段确定状态
+                        BugStatus newStatus = record.isResolved() ? BugStatus.RESOLVED : BugStatus.PENDING;
+                        BugRecord updatedRecord = record.withStatus(newStatus);
+                        updatedRecords.add(updatedRecord);
+                        hasChanges = true;
+                        LOG.info("Migrated bug record: " + record.getId() + " -> " + newStatus.getDisplayName());
+                    } else {
+                        updatedRecords.add(record);
+                    }
+                }
+                
+                if (hasChanges) {
+                    cache.put(dateKey, updatedRecords);
+                    saveDailyRecords(dateKey, updatedRecords);
+                }
+            }
+            
+            if (hasChanges) {
+                LOG.info("Data migration completed successfully");
+            }
+            
+        } catch (Exception e) {
+            LOG.error("Failed to migrate existing records", e);
+        }
     }
 
     /**
@@ -151,24 +196,60 @@ public final class BugRecordService {
     public void updateBugRecord(@NotNull BugRecord updatedRecord) {
         try {
             String dateKey = updatedRecord.getTimestamp().format(DATE_FORMATTER);
-            List<BugRecord> dayRecords = cache.get(dateKey);
+            List<BugRecord> records = cache.get(dateKey);
 
-            if (dayRecords != null) {
-                // 找到并替换对应的记录
-                for (int i = 0; i < dayRecords.size(); i++) {
-                    if (dayRecords.get(i).getId().equals(updatedRecord.getId())) {
-                        dayRecords.set(i, updatedRecord);
-                        break;
+            if (records != null) {
+                // 找到并更新记录
+                for (int i = 0; i < records.size(); i++) {
+                    if (records.get(i).getId().equals(updatedRecord.getId())) {
+                        records.set(i, updatedRecord);
+                        saveDailyRecords(dateKey, records);
+                        LOG.info("Updated bug record: " + updatedRecord.getId());
+                        return;
                     }
                 }
-
-                // 持久化更新
-                saveDailyRecords(dateKey, dayRecords);
-                LOG.info("Updated bug record: " + updatedRecord.getId());
             }
+
+            LOG.warn("Bug record not found for update: " + updatedRecord.getId());
 
         } catch (Exception e) {
             LOG.error("Failed to update bug record", e);
+        }
+    }
+
+    /**
+     * 更新Bug状态
+     */
+    public void updateBugStatus(@NotNull String recordId, @NotNull BugStatus newStatus) {
+        try {
+            // 在所有缓存中查找记录
+            for (Map.Entry<String, List<BugRecord>> entry : cache.entrySet()) {
+                List<BugRecord> records = entry.getValue();
+                for (int i = 0; i < records.size(); i++) {
+                    BugRecord record = records.get(i);
+                    if (record.getId().equals(recordId)) {
+                        BugRecord updatedRecord = record.withStatus(newStatus);
+                        records.set(i, updatedRecord);
+                        saveDailyRecords(entry.getKey(), records);
+                        LOG.info("Updated bug status: " + recordId + " -> " + newStatus.getDisplayName());
+                        return;
+                    }
+                }
+            }
+
+            LOG.warn("Bug record not found for status update: " + recordId);
+
+        } catch (Exception e) {
+            LOG.error("Failed to update bug status", e);
+        }
+    }
+
+    /**
+     * 批量更新Bug状态
+     */
+    public void updateBugStatusBatch(@NotNull List<String> recordIds, @NotNull BugStatus newStatus) {
+        for (String recordId : recordIds) {
+            updateBugStatus(recordId, newStatus);
         }
     }
 
@@ -177,18 +258,20 @@ public final class BugRecordService {
      */
     public void deleteBugRecord(@NotNull String recordId) {
         try {
-            // 在所有缓存中查找并删除
+            // 在所有缓存中查找并删除记录
             for (Map.Entry<String, List<BugRecord>> entry : cache.entrySet()) {
                 List<BugRecord> records = entry.getValue();
-                boolean removed = records.removeIf(record -> record.getId().equals(recordId));
-
-                if (removed) {
-                    // 持久化更新
+                records.removeIf(record -> record.getId().equals(recordId));
+                
+                if (records.size() != entry.getValue().size()) {
+                    // 记录被删除了
                     saveDailyRecords(entry.getKey(), records);
                     LOG.info("Deleted bug record: " + recordId);
                     return;
                 }
             }
+
+            LOG.warn("Bug record not found for deletion: " + recordId);
 
         } catch (Exception e) {
             LOG.error("Failed to delete bug record", e);
@@ -196,42 +279,186 @@ public final class BugRecordService {
     }
 
     /**
-     * 清理过期的Bug记录（超过指定天数）
+     * 批量删除Bug记录
+     */
+    public void deleteBugRecords(@NotNull List<String> recordIds) {
+        for (String recordId : recordIds) {
+            deleteBugRecord(recordId);
+        }
+    }
+
+    /**
+     * 清理旧记录
      */
     public void cleanupOldRecords(int keepDays) {
         try {
-            Path recordsDir = getStorageDirectory();
-            if (!Files.exists(recordsDir)) {
-                return;
+            LocalDate cutoffDate = LocalDate.now().minusDays(keepDays);
+            List<String> datesToRemove = new ArrayList<>();
+
+            // 找出需要删除的日期
+            for (String dateKey : cache.keySet()) {
+                try {
+                    LocalDate recordDate = LocalDate.parse(dateKey, DATE_FORMATTER);
+                    if (recordDate.isBefore(cutoffDate)) {
+                        datesToRemove.add(dateKey);
+                    }
+                } catch (Exception e) {
+                    LOG.warn("Invalid date key: " + dateKey);
+                }
             }
 
-            LocalDate cutoffDate = LocalDate.now().minusDays(keepDays);
+            // 删除旧记录
+            for (String dateKey : datesToRemove) {
+                cache.remove(dateKey);
+                Path filePath = getStorageDirectory().resolve(dateKey + DAILY_LOG_SUFFIX);
+                Files.deleteIfExists(filePath);
+                LOG.info("Cleaned up old records for date: " + dateKey);
+            }
 
-            Files.list(recordsDir)
-                    .filter(Files::isRegularFile)
-                    .filter(path -> path.getFileName().toString().startsWith(DAILY_LOG_PREFIX))
-                    .filter(path -> {
-                        try {
-                            String fileName = path.getFileName().toString();
-                            String dateStr = fileName.substring(DAILY_LOG_PREFIX.length(),
-                                    fileName.length() - DAILY_LOG_SUFFIX.length());
-                            LocalDate fileDate = LocalDate.parse(dateStr, DATE_FORMATTER);
-                            return fileDate.isBefore(cutoffDate);
-                        } catch (Exception e) {
-                            return false;
-                        }
-                    })
-                    .forEach(path -> {
-                        try {
-                            Files.delete(path);
-                            LOG.info("Deleted old bug record file: " + path.getFileName());
-                        } catch (IOException e) {
-                            LOG.warn("Failed to delete old file: " + path, e);
-                        }
-                    });
+            LOG.info("Cleanup completed. Removed " + datesToRemove.size() + " old date files.");
 
         } catch (Exception e) {
             LOG.error("Failed to cleanup old records", e);
+        }
+    }
+
+    /**
+     * 清理指定状态的记录
+     */
+    public void cleanupRecordsByStatus(@NotNull BugStatus status, int days) {
+        try {
+            LocalDate cutoffDate = LocalDate.now().minusDays(days);
+            int removedCount = 0;
+
+            for (Map.Entry<String, List<BugRecord>> entry : cache.entrySet()) {
+                String dateKey = entry.getKey();
+                List<BugRecord> records = entry.getValue();
+                
+                try {
+                    LocalDate recordDate = LocalDate.parse(dateKey, DATE_FORMATTER);
+                    if (recordDate.isAfter(cutoffDate)) {
+                        // 只处理指定天数内的记录
+                        List<BugRecord> filteredRecords = records.stream()
+                                .filter(record -> record.getStatus() != status)
+                                .collect(Collectors.toList());
+                        
+                        if (filteredRecords.size() != records.size()) {
+                            removedCount += records.size() - filteredRecords.size();
+                            cache.put(dateKey, filteredRecords);
+                            saveDailyRecords(dateKey, filteredRecords);
+                        }
+                    }
+                } catch (Exception e) {
+                    LOG.warn("Invalid date key: " + dateKey);
+                }
+            }
+
+            LOG.info("Cleaned up " + removedCount + " records with status: " + status.getDisplayName());
+
+        } catch (Exception e) {
+            LOG.error("Failed to cleanup records by status", e);
+        }
+    }
+
+    /**
+     * 获取指定状态的记录
+     */
+    @NotNull
+    public List<BugRecord> getRecordsByStatus(@NotNull BugStatus status, int days) {
+        return getRecentRecords(days).stream()
+                .filter(record -> record.getStatus() == status)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 验证所有记录的状态
+     */
+    public void validateAllRecords() {
+        try {
+            int totalRecords = 0;
+            int migratedRecords = 0;
+            
+            for (Map.Entry<String, List<BugRecord>> entry : cache.entrySet()) {
+                String dateKey = entry.getKey();
+                List<BugRecord> records = entry.getValue();
+                List<BugRecord> validatedRecords = new ArrayList<>();
+                
+                for (BugRecord record : records) {
+                    totalRecords++;
+                    
+                    if (record.getStatus() == null) {
+                        // 根据resolved字段确定状态
+                        BugStatus newStatus = record.isResolved() ? BugStatus.RESOLVED : BugStatus.PENDING;
+                        BugRecord updatedRecord = record.withStatus(newStatus);
+                        validatedRecords.add(updatedRecord);
+                        migratedRecords++;
+                        LOG.info("Validated bug record: " + record.getId() + " -> " + newStatus.getDisplayName());
+                    } else {
+                        validatedRecords.add(record);
+                    }
+                }
+                
+                if (migratedRecords > 0) {
+                    cache.put(dateKey, validatedRecords);
+                    saveDailyRecords(dateKey, validatedRecords);
+                }
+            }
+            
+            LOG.info("Validation completed. Total records: " + totalRecords + ", Migrated: " + migratedRecords);
+            
+        } catch (Exception e) {
+            LOG.error("Failed to validate records", e);
+        }
+    }
+
+    /**
+     * 测试方法 - 创建示例Bug记录
+     */
+    public void createTestRecords() {
+        try {
+            // 创建一些测试记录
+            BugRecord testRecord1 = new BugRecord.Builder()
+                    .project("测试项目")
+                    .timestamp(LocalDateTime.now())
+                    .errorType(ErrorType.DATABASE)
+                    .exceptionClass("java.sql.SQLException")
+                    .errorMessage("数据库连接失败")
+                    .summary("数据库连接超时")
+                    .rawText("2025-07-29 10:29:11,503 ERROR [main] Database connection failed")
+                    .status(BugStatus.PENDING)
+                    .build();
+
+            BugRecord testRecord2 = new BugRecord.Builder()
+                    .project("测试项目")
+                    .timestamp(LocalDateTime.now().minusMinutes(5))
+                    .errorType(ErrorType.NETWORK)
+                    .exceptionClass("java.net.ConnectException")
+                    .errorMessage("网络连接失败")
+                    .summary("API服务不可达")
+                    .rawText("2025-07-29 10:24:06,447 ERROR [main] Network connection failed")
+                    .status(BugStatus.IN_PROGRESS)
+                    .build();
+
+            BugRecord testRecord3 = new BugRecord.Builder()
+                    .project("测试项目")
+                    .timestamp(LocalDateTime.now().minusMinutes(10))
+                    .errorType(ErrorType.UNKNOWN)
+                    .exceptionClass("java.lang.ClassNotFoundException")
+                    .errorMessage("类未找到")
+                    .summary("com.torchv.TorchV类未找到")
+                    .rawText("java.lang.ClassNotFoundException: com.torchv.TorchV")
+                    .status(BugStatus.RESOLVED)
+                    .build();
+
+            // 保存测试记录
+            saveBugRecord(testRecord1);
+            saveBugRecord(testRecord2);
+            saveBugRecord(testRecord3);
+
+            LOG.info("Created test records successfully");
+
+        } catch (Exception e) {
+            LOG.error("Failed to create test records", e);
         }
     }
 
@@ -294,7 +521,30 @@ public final class BugRecordService {
                 List<BugRecord> records = gson.fromJson(content, listType);
 
                 if (records != null) {
-                    cache.put(dateKey, records);
+                    // 确保所有记录都有正确的状态
+                    List<BugRecord> migratedRecords = new ArrayList<>();
+                    boolean hasChanges = false;
+                    
+                    for (BugRecord record : records) {
+                        if (record.getStatus() == null) {
+                            // 根据resolved字段确定状态
+                            BugStatus newStatus = record.isResolved() ? BugStatus.RESOLVED : BugStatus.PENDING;
+                            BugRecord updatedRecord = record.withStatus(newStatus);
+                            migratedRecords.add(updatedRecord);
+                            hasChanges = true;
+                            LOG.info("Migrated loaded bug record: " + record.getId() + " -> " + newStatus.getDisplayName());
+                        } else {
+                            migratedRecords.add(record);
+                        }
+                    }
+                    
+                    if (hasChanges) {
+                        // 保存迁移后的记录
+                        cache.put(dateKey, migratedRecords);
+                        saveDailyRecords(dateKey, migratedRecords);
+                    } else {
+                        cache.put(dateKey, records);
+                    }
                 }
             }
 

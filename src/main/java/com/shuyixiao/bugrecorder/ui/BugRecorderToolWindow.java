@@ -25,6 +25,7 @@ import java.awt.event.MouseEvent;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import com.shuyixiao.bugrecorder.model.BugStatus;
 
 /**
  * Bug记录器工具窗口
@@ -147,22 +148,37 @@ public class BugRecorderToolWindow extends JPanel {
         refreshButton.addActionListener(e -> refreshData());
         toolbar.add(refreshButton);
 
+        // 状态转换按钮
+        JButton markResolvedButton = new JButton("标记已解决");
+        markResolvedButton.addActionListener(e -> markSelectedAsResolved());
+        toolbar.add(markResolvedButton);
+
+        JButton markIgnoredButton = new JButton("标记已忽略");
+        markIgnoredButton.addActionListener(e -> markSelectedAsIgnored());
+        toolbar.add(markIgnoredButton);
+
         // 清理按钮
         JButton cleanupButton = new JButton("清理旧记录");
-        cleanupButton.addActionListener(e -> {
-            int result = Messages.showYesNoDialog(
-                    project,
-                    "确定要清理30天前的Bug记录吗？",
-                    "清理确认",
-                    Messages.getQuestionIcon()
-            );
-            if (result == Messages.YES) {
-                bugRecordService.cleanupOldRecords(30);
-                refreshData();
-                Messages.showInfoMessage(project, "清理完成！", "操作成功");
-            }
-        });
+        cleanupButton.addActionListener(e -> showCleanupDialog());
         toolbar.add(cleanupButton);
+
+        // 测试按钮（开发阶段使用）
+        JButton testButton = new JButton("创建测试数据");
+        testButton.addActionListener(e -> {
+            bugRecordService.createTestRecords();
+            refreshData();
+            Messages.showInfoMessage(project, "测试数据创建完成！", "操作成功");
+        });
+        toolbar.add(testButton);
+
+        // 验证按钮
+        JButton validateButton = new JButton("验证数据");
+        validateButton.addActionListener(e -> {
+            bugRecordService.validateAllRecords();
+            refreshData();
+            Messages.showInfoMessage(project, "数据验证完成！", "操作成功");
+        });
+        toolbar.add(validateButton);
 
         return toolbar;
     }
@@ -287,11 +303,13 @@ public class BugRecorderToolWindow extends JPanel {
         errorTypeFilter.addActionListener(e -> refreshData());
         dateRangeFilter.addActionListener(e -> refreshData());
 
-        // 双击事件
+        // 单击事件 - 查看详细错误信息
         bugTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2) {
+                if (e.getClickCount() == 1) {
+                    showBugDetails();
+                } else if (e.getClickCount() == 2) {
                     performAIAnalysis();
                 }
             }
@@ -487,6 +505,130 @@ public class BugRecorderToolWindow extends JPanel {
     }
 
     /**
+     * 标记选中的Bug为已解决
+     */
+    private void markSelectedAsResolved() {
+        int selectedRow = bugTable.getSelectedRow();
+        if (selectedRow < 0) {
+            Messages.showWarningDialog(project, "请先选择一个Bug记录", "提示");
+            return;
+        }
+
+        BugRecord selectedRecord = tableModel.getRecordAt(selectedRow);
+        if (selectedRecord != null) {
+            bugRecordService.updateBugStatus(selectedRecord.getId(), BugStatus.RESOLVED);
+            refreshData();
+            Messages.showInfoMessage(project, "Bug已标记为已解决", "操作成功");
+        }
+    }
+
+    /**
+     * 标记选中的Bug为已忽略
+     */
+    private void markSelectedAsIgnored() {
+        int selectedRow = bugTable.getSelectedRow();
+        if (selectedRow < 0) {
+            Messages.showWarningDialog(project, "请先选择一个Bug记录", "提示");
+            return;
+        }
+
+        BugRecord selectedRecord = tableModel.getRecordAt(selectedRow);
+        if (selectedRecord != null) {
+            bugRecordService.updateBugStatus(selectedRecord.getId(), BugStatus.IGNORED);
+            refreshData();
+            Messages.showInfoMessage(project, "Bug已标记为已忽略", "操作成功");
+        }
+    }
+
+    /**
+     * 显示清理对话框
+     */
+    private void showCleanupDialog() {
+        String[] options = {
+                "清理30天前的记录",
+                "清理已解决的记录",
+                "清理已忽略的记录",
+                "清理所有旧记录"
+        };
+
+        int choice = Messages.showDialog(
+                project,
+                "选择清理方式：",
+                "清理确认",
+                options,
+                0,
+                Messages.getQuestionIcon()
+        );
+
+        switch (choice) {
+            case 0: // 清理30天前的记录
+                cleanupOldRecords(30);
+                break;
+            case 1: // 清理已解决的记录
+                cleanupRecordsByStatus(BugStatus.RESOLVED, 7);
+                break;
+            case 2: // 清理已忽略的记录
+                cleanupRecordsByStatus(BugStatus.IGNORED, 7);
+                break;
+            case 3: // 清理所有旧记录
+                cleanupAllOldRecords();
+                break;
+        }
+    }
+
+    /**
+     * 清理30天前的记录
+     */
+    private void cleanupOldRecords(int days) {
+        int result = Messages.showYesNoDialog(
+                project,
+                "确定要清理" + days + "天前的Bug记录吗？",
+                "清理确认",
+                Messages.getQuestionIcon()
+        );
+        if (result == Messages.YES) {
+            bugRecordService.cleanupOldRecords(days);
+            refreshData();
+            Messages.showInfoMessage(project, "清理完成！", "操作成功");
+        }
+    }
+
+    /**
+     * 清理指定状态的记录
+     */
+    private void cleanupRecordsByStatus(BugStatus status, int days) {
+        int result = Messages.showYesNoDialog(
+                project,
+                "确定要清理" + days + "天内的" + status.getDisplayName() + "记录吗？",
+                "清理确认",
+                Messages.getQuestionIcon()
+        );
+        if (result == Messages.YES) {
+            bugRecordService.cleanupRecordsByStatus(status, days);
+            refreshData();
+            Messages.showInfoMessage(project, "清理完成！", "操作成功");
+        }
+    }
+
+    /**
+     * 清理所有旧记录
+     */
+    private void cleanupAllOldRecords() {
+        int result = Messages.showYesNoDialog(
+                project,
+                "确定要清理所有已解决和已忽略的Bug记录吗？\n此操作不可恢复！",
+                "清理确认",
+                Messages.getWarningIcon()
+        );
+        if (result == Messages.YES) {
+            bugRecordService.cleanupRecordsByStatus(BugStatus.RESOLVED, 1);
+            bugRecordService.cleanupRecordsByStatus(BugStatus.IGNORED, 1);
+            refreshData();
+            Messages.showInfoMessage(project, "清理完成！", "操作成功");
+        }
+    }
+
+    /**
      * 更新状态标签
      */
     private void updateStatusLabel() {
@@ -506,6 +648,102 @@ public class BugRecorderToolWindow extends JPanel {
 
         statusLabel.setText(status);
         statusLabel.setForeground(monitoring ? JBColor.BLACK : JBColor.RED);
+    }
+
+    /**
+     * 显示Bug详细信息
+     */
+    private void showBugDetails() {
+        int selectedRow = bugTable.getSelectedRow();
+        if (selectedRow < 0) {
+            return;
+        }
+
+        BugRecord selectedRecord = tableModel.getRecordAt(selectedRow);
+        if (selectedRecord != null) {
+            showBugDetailsDialog(selectedRecord);
+        }
+    }
+
+    /**
+     * 显示Bug详细信息对话框
+     */
+    private void showBugDetailsDialog(BugRecord record) {
+        StringBuilder details = new StringBuilder();
+        details.append("=== Bug详细信息 ===\n\n");
+        
+        details.append("ID: ").append(record.getId()).append("\n");
+        details.append("项目: ").append(record.getProject()).append("\n");
+        details.append("时间: ").append(record.getFormattedTimestamp()).append("\n");
+        details.append("状态: ").append(record.getStatus().getDisplayName()).append("\n");
+        details.append("错误类型: ").append(record.getErrorType().getDisplayName()).append("\n");
+        
+        if (record.getExceptionClass() != null) {
+            details.append("异常类: ").append(record.getExceptionClass()).append("\n");
+        }
+        
+        if (record.getErrorMessage() != null) {
+            details.append("错误消息: ").append(record.getErrorMessage()).append("\n");
+        }
+        
+        details.append("\n=== 完整错误信息 ===\n");
+        details.append(record.getRawText());
+        
+        if (record.getStackTrace() != null && !record.getStackTrace().isEmpty()) {
+            details.append("\n\n=== 堆栈跟踪 ===\n");
+            for (var stackElement : record.getStackTrace()) {
+                details.append(stackElement.getFormattedString()).append("\n");
+            }
+        }
+        
+        if (record.getAiAnalysis() != null && !record.getAiAnalysis().isEmpty()) {
+            details.append("\n\n=== AI分析 ===\n");
+            details.append(record.getAiAnalysis());
+        }
+        
+        if (record.getSolution() != null && !record.getSolution().isEmpty()) {
+            details.append("\n\n=== 解决方案 ===\n");
+            details.append(record.getSolution());
+        }
+
+        // 创建详细信息对话框
+        JTextArea textArea = new JTextArea(details.toString());
+        textArea.setEditable(false);
+        textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new Dimension(800, 600));
+        
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Bug详细信息", true);
+        dialog.setLayout(new BorderLayout());
+        
+        // 添加按钮面板
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        
+        JButton copyButton = new JButton("复制到剪贴板");
+        copyButton.addActionListener(e -> {
+            try {
+                java.awt.Toolkit.getDefaultToolkit()
+                        .getSystemClipboard()
+                        .setContents(new java.awt.datatransfer.StringSelection(details.toString()), null);
+                Messages.showInfoMessage(project, "已复制到剪贴板", "操作成功");
+            } catch (Exception ex) {
+                Messages.showErrorDialog(project, "复制失败: " + ex.getMessage(), "错误");
+            }
+        });
+        
+        JButton closeButton = new JButton("关闭");
+        closeButton.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(copyButton);
+        buttonPanel.add(closeButton);
+        
+        dialog.add(scrollPane, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 
     /**
@@ -542,14 +780,20 @@ public class BugRecorderToolWindow extends JPanel {
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
             if (rowIndex >= records.size()) return null;
-
+            
             BugRecord record = records.get(rowIndex);
+            
             switch (columnIndex) {
-                case 0: return record.getErrorType();
-                case 1: return record.getShortDescription();
-                case 2: return record.getFormattedTimestamp();
-                case 3: return record.isResolved() ? "已解决" : "待处理";
-                default: return null;
+                case 0: // 类型
+                    return record.getErrorType().getDisplayNameWithIcon();
+                case 1: // 摘要
+                    return record.getShortDescription();
+                case 2: // 时间
+                    return record.getFormattedTimestamp();
+                case 3: // 状态
+                    return record.getStatus().getDisplayName();
+                default:
+                    return null;
             }
         }
     }
@@ -560,31 +804,30 @@ public class BugRecorderToolWindow extends JPanel {
     private static class BugTableCellRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
-                                                       boolean hasFocus, int row, int column) {
-            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
-            if (value instanceof ErrorType) {
-                ErrorType errorType = (ErrorType) value;
-                setText(errorType.getDisplayNameWithIcon());
-                if (!isSelected) {
-                    setBackground(Color.decode(errorType.getColor()));
-                    setForeground(Color.WHITE);
+                                                     boolean hasFocus, int row, int column) {
+            Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            
+            if (value != null && column == 3) { // 状态列
+                String statusText = value.toString();
+                if (statusText.equals("已解决")) {
+                    component.setForeground(new Color(0, 128, 0)); // 绿色
+                    component.setBackground(isSelected ? table.getSelectionBackground() : new Color(240, 255, 240));
+                } else if (statusText.equals("已忽略")) {
+                    component.setForeground(new Color(128, 128, 128)); // 灰色
+                    component.setBackground(isSelected ? table.getSelectionBackground() : new Color(248, 248, 248));
+                } else if (statusText.equals("处理中")) {
+                    component.setForeground(new Color(255, 140, 0)); // 橙色
+                    component.setBackground(isSelected ? table.getSelectionBackground() : new Color(255, 248, 220));
+                } else { // 待处理
+                    component.setForeground(new Color(220, 20, 60)); // 红色
+                    component.setBackground(isSelected ? table.getSelectionBackground() : new Color(255, 240, 240));
                 }
-            } else if (column == 3) { // 状态列
-                if ("已解决".equals(value)) {
-                    if (!isSelected) {
-                        setBackground(new Color(200, 255, 200));
-                        setForeground(Color.BLACK);
-                    }
-                } else {
-                    if (!isSelected) {
-                        setBackground(new Color(255, 200, 200));
-                        setForeground(Color.BLACK);
-                    }
-                }
+            } else {
+                component.setForeground(isSelected ? table.getSelectionForeground() : table.getForeground());
+                component.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
             }
-
-            return this;
+            
+            return component;
         }
     }
 }
