@@ -52,6 +52,37 @@ public class DomesticAITranslationAPI {
     }
     
     /**
+     * 使用国内大模型进行AI文本分析（非纯翻译场景）
+     * @param prompt 分析提示词
+     * @param instruction 具体指令
+     * @return AI分析结果
+     * @throws IOException 分析过程中的异常
+     */
+    public String translateTextWithAI(String prompt, String instruction) throws IOException {
+        PluginSettings settings = PluginSettings.getInstance();
+        String modelType = settings.getDomesticAIModel();
+        String apiKey = settings.getDomesticAIApiKey();
+        
+        if (apiKey == null || apiKey.isEmpty()) {
+            throw new IOException("国内大模型API密钥不能为空");
+        }
+        
+        // 构建AI分析的提示词，结合用户指令
+        String fullPrompt = instruction + "\n\n" + prompt;
+        
+        switch (modelType) {
+            case "qianwen":
+                return analyzeWithQianwen(fullPrompt, apiKey);
+            case "wenxin":
+                return analyzeWithWenxin(fullPrompt, apiKey);
+            case "zhipu":
+                return analyzeWithZhipu(fullPrompt, apiKey);
+            default:
+                return analyzeWithQianwen(fullPrompt, apiKey); // 默认使用通义千问
+        }
+    }
+
+    /**
      * 使用通义千问进行翻译
      */
     private static String translateWithQianwen(String text, String apiKey) throws IOException {
@@ -118,6 +149,68 @@ public class DomesticAITranslationAPI {
         requestBody.add("messages", messages);
         requestBody.addProperty("temperature", 0.1);
         requestBody.addProperty("max_tokens", 100);
+        
+        return sendRequest(ZHIPU_API_URL, requestBody.toString(), apiKey, "zhipu");
+    }
+
+    /**
+     * 使用通义千问进行AI分析
+     */
+    private String analyzeWithQianwen(String prompt, String apiKey) throws IOException {
+        JsonObject requestBody = new JsonObject();
+        requestBody.addProperty("model", "qwen-turbo");
+        
+        JsonObject input = new JsonObject();
+        JsonArray messages = new JsonArray();
+        JsonObject message = new JsonObject();
+        message.addProperty("role", "user");
+        message.addProperty("content", prompt);
+        messages.add(message);
+        input.add("messages", messages);
+        requestBody.add("input", input);
+        
+        JsonObject parameters = new JsonObject();
+        parameters.addProperty("max_tokens", 1000); // 增加token数量用于详细分析
+        parameters.addProperty("temperature", 0.3); // 稍微提高创造性
+        requestBody.add("parameters", parameters);
+        
+        return sendRequest(QIANWEN_API_URL, requestBody.toString(), apiKey, "qianwen");
+    }
+    
+    /**
+     * 使用文心一言进行AI分析
+     */
+    private String analyzeWithWenxin(String prompt, String apiKey) throws IOException {
+        JsonArray messages = new JsonArray();
+        JsonObject message = new JsonObject();
+        message.addProperty("role", "user");
+        message.addProperty("content", prompt);
+        messages.add(message);
+        
+        JsonObject requestBody = new JsonObject();
+        requestBody.add("messages", messages);
+        requestBody.addProperty("temperature", 0.3);
+        requestBody.addProperty("max_output_tokens", 1000);
+        
+        String urlWithToken = WENXIN_API_URL + "?access_token=" + apiKey;
+        return sendRequest(urlWithToken, requestBody.toString(), "", "wenxin");
+    }
+    
+    /**
+     * 使用智谱AI进行分析
+     */
+    private String analyzeWithZhipu(String prompt, String apiKey) throws IOException {
+        JsonArray messages = new JsonArray();
+        JsonObject message = new JsonObject();
+        message.addProperty("role", "user");
+        message.addProperty("content", prompt);
+        messages.add(message);
+        
+        JsonObject requestBody = new JsonObject();
+        requestBody.addProperty("model", "glm-4");
+        requestBody.add("messages", messages);
+        requestBody.addProperty("temperature", 0.3);
+        requestBody.addProperty("max_tokens", 1000);
         
         return sendRequest(ZHIPU_API_URL, requestBody.toString(), apiKey, "zhipu");
     }

@@ -190,7 +190,7 @@ public final class BugAnalysisService {
             String simplePrompt = "分析Java错误：" + prompt.substring(0, Math.min(200, prompt.length()));
             String result = googleTranslate.translateText(simplePrompt, "zh", "en");
             if (result != null) {
-                return "基于错误信息的基本分析：这是一个" + getBugRecord().getErrorType().getDisplayName() + "，需要进一步排查。";
+                return "基于错误信息的基本分析：这是一个编译/运行时错误，需要进一步排查。";
             }
         } catch (Exception e) {
             LOG.debug("Google Translate failed for analysis", e);
@@ -304,9 +304,10 @@ public final class BugAnalysisService {
     }
 
     // 临时方法，需要被实际的bugRecord参数替代
-    private BugRecord getBugRecord() {
-        return null; // 这个方法需要在实际使用时被移除或修复
-    }
+    // 这个方法已经不再使用，被删除
+    // private BugRecord getBugRecord() {
+    //     return null; // 这个方法需要在实际使用时被移除或修复
+    // }
 
     /**
      * AI分析结果

@@ -20,7 +20,7 @@ public class BugRecorderToolWindowFactory implements ToolWindowFactory {
         BugRecorderToolWindow bugRecorderToolWindow = new BugRecorderToolWindow(project);
 
         // 创建内容并添加到工具窗口
-        ContentFactory contentFactory = ContentFactory.SERVICE.getInstance();
+        ContentFactory contentFactory = ContentFactory.getInstance();
         Content content = contentFactory.createContent(bugRecorderToolWindow, "", false);
         toolWindow.getContentManager().addContent(content);
     }

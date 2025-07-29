@@ -109,7 +109,7 @@ public class BugRecorderToolWindow extends JPanel {
 
         // 搜索框
         searchField = new JBTextField(15);
-        searchField.getEmptyText().setText("搜索Bug记录...");
+        searchField.setToolTipText("搜索Bug记录...");
         toolbar.add(new JBLabel("搜索: "));
         toolbar.add(searchField);
 
