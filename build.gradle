@@ -37,6 +37,16 @@ intellij {
     updateSinceUntilBuild = false
 }
 
+// 确保图标资源被正确包含
+sourceSets {
+    main {
+        resources {
+            srcDirs = ['src/main/resources']
+            includes = ['**/*.svg', '**/*.png', '**/*.xml', '**/*.properties', '**/*.gdsl']
+        }
+    }
+}
+
 tasks.withType(org.jetbrains.intellij.tasks.BuildSearchableOptionsTask) {
     enabled = false
 }

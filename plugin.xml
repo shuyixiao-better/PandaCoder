@@ -11,4 +11,7 @@
 
     <name>PandaCoder</name>
     <vendor email="yixiaoshu88@163.com" url="https://github.com/shuyixiao/PandaCoder">舒一笑</vendor>
+    
+    <!-- 插件图标配置 -->
+    <icon>pluginIcon.svg</icon>
 </idea-plugin>
