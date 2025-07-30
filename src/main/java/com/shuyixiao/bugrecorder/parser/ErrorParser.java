@@ -43,9 +43,12 @@ public class ErrorParser {
             Pattern.MULTILINE | Pattern.DOTALL
     );
 
-    // 数据库连接错误模式
+    // 数据库连接错误模式 - 扩展支持的数据库类型
     private static final Pattern DB_ERROR_PATTERN = Pattern.compile(
-            "(com\\.mysql\\.cj\\.jdbc|org\\.postgresql|oracle\\.jdbc)\\..*?(\\w+(?:Exception|Error)):\\s*(.+?)(?=\n|$)",
+            "(com\\.mysql\\.cj\\.jdbc|org\\.postgresql|oracle\\.jdbc|" +
+            "com\\.microsoft\\.sqlserver|org\\.hibernate|org\\.springframework\\.orm|" +
+            "org\\.springframework\\.data\\.jpa|org\\.springframework\\.jdbc|" +
+            "javax\\.persistence|java\\.sql)\\..*?(\\w+(?:Exception|Error)):\\s*(.+?)(?=\n|$)",
             Pattern.MULTILINE | Pattern.DOTALL
     );
 
@@ -97,11 +100,11 @@ public class ErrorParser {
      * 解析异常信息
      */
     private void parseExceptionInfo(String errorText, BugRecord.Builder builder) {
-        // 首先尝试匹配主异常
-        Matcher matcher = EXCEPTION_PATTERN.matcher(errorText);
+        // 首先尝试匹配数据库错误（更具体，优先级最高）
+        Matcher matcher = DB_ERROR_PATTERN.matcher(errorText);
         if (matcher.find()) {
-            builder.exceptionClass(matcher.group(1))
-                    .errorMessage(matcher.group(2).trim());
+            builder.exceptionClass(matcher.group(2))
+                    .errorMessage(matcher.group(3).trim());
             return;
         }
 
@@ -113,11 +116,19 @@ public class ErrorParser {
             return;
         }
 
-        // 尝试匹配数据库错误
-        matcher = DB_ERROR_PATTERN.matcher(errorText);
+        // 尝试匹配Caused by模式
+        matcher = CAUSED_BY_PATTERN.matcher(errorText);
         if (matcher.find()) {
-            builder.exceptionClass(matcher.group(2))
-                    .errorMessage(matcher.group(3).trim());
+            builder.exceptionClass(matcher.group(1))
+                    .errorMessage(matcher.group(2).trim());
+            return;
+        }
+
+        // 最后尝试匹配通用异常
+        matcher = EXCEPTION_PATTERN.matcher(errorText);
+        if (matcher.find()) {
+            builder.exceptionClass(matcher.group(1))
+                    .errorMessage(matcher.group(2).trim());
             return;
         }
 
@@ -157,18 +168,35 @@ public class ErrorParser {
      * 确定错误类型
      */
     private ErrorType determineErrorType(String errorText, List<StackTraceElement> stackTrace) {
+        // 首先基于堆栈跟踪进行分类（更准确）
+        for (StackTraceElement element : stackTrace) {
+            String className = element.getClassName().toLowerCase();
+            if (className.contains("jdbc") || className.contains("hibernate") || 
+                className.contains("jpa") || className.contains("sql") ||
+                className.contains("mysql") || className.contains("postgresql") ||
+                className.contains("oracle") || className.contains("sqlserver")) {
+                return ErrorType.DATABASE;
+            }
+        }
+
         String lowerText = errorText.toLowerCase();
 
-        // 数据库相关错误
+        // 数据库相关错误 - 优先检查数据库特定的关键词
         if (lowerText.contains("sql") || lowerText.contains("database") ||
-                lowerText.contains("connection") || lowerText.contains("mysql") ||
-                lowerText.contains("postgresql") || lowerText.contains("oracle")) {
+                lowerText.contains("mysql") || lowerText.contains("postgresql") ||
+                lowerText.contains("oracle") || lowerText.contains("jdbc") ||
+                lowerText.contains("hibernate") || lowerText.contains("jpa") ||
+                lowerText.contains("persistence")) {
             return ErrorType.DATABASE;
         }
 
-        // 网络相关错误
-        if (lowerText.contains("connection") || lowerText.contains("timeout") ||
-                lowerText.contains("socket") || lowerText.contains("http")) {
+        // 网络相关错误 - 排除数据库连接，只处理纯网络连接
+        if ((lowerText.contains("connection") && !lowerText.contains("database") && 
+             !lowerText.contains("jdbc") && !lowerText.contains("sql") &&
+             !lowerText.contains("mysql") && !lowerText.contains("postgresql") &&
+             !lowerText.contains("oracle")) ||
+            lowerText.contains("timeout") || lowerText.contains("socket") || 
+            lowerText.contains("http") || lowerText.contains("tcp")) {
             return ErrorType.NETWORK;
         }
 
@@ -195,6 +223,18 @@ public class ErrorParser {
         // 内存相关错误
         if (lowerText.contains("outofmemory") || lowerText.contains("heap")) {
             return ErrorType.MEMORY;
+        }
+
+        // IO操作错误
+        if (lowerText.contains("ioexception") || lowerText.contains("filenotfound") ||
+            lowerText.contains("accessdenied")) {
+            return ErrorType.IO;
+        }
+
+        // 安全相关错误
+        if (lowerText.contains("security") || lowerText.contains("authentication") ||
+            lowerText.contains("authorization")) {
+            return ErrorType.SECURITY;
         }
 
         return ErrorType.UNKNOWN;
@@ -227,5 +267,51 @@ public class ErrorParser {
         }
 
         return summary.toString();
+    }
+
+    /**
+     * 检查是否为数据库相关异常
+     */
+    private boolean isDatabaseException(String exceptionClass) {
+        if (exceptionClass == null) return false;
+        
+        String lowerClass = exceptionClass.toLowerCase();
+        return lowerClass.contains("sql") || lowerClass.contains("jdbc") ||
+               lowerClass.contains("hibernate") || lowerClass.contains("jpa") ||
+               lowerClass.contains("persistence") || lowerClass.contains("mysql") ||
+               lowerClass.contains("postgresql") || lowerClass.contains("oracle") ||
+               lowerClass.contains("sqlserver");
+    }
+
+    /**
+     * 检查是否为数据库连接相关异常
+     */
+    private boolean isDatabaseConnectionException(String exceptionClass, String errorMessage) {
+        if (!isDatabaseException(exceptionClass)) return false;
+        
+        if (errorMessage == null) return false;
+        String lowerMessage = errorMessage.toLowerCase();
+        
+        return lowerMessage.contains("connection") || lowerMessage.contains("connect") ||
+               lowerMessage.contains("timeout") || lowerMessage.contains("refused") ||
+               lowerMessage.contains("authentication") || lowerMessage.contains("access denied");
+    }
+
+    /**
+     * 获取数据库类型
+     */
+    private String getDatabaseType(String exceptionClass) {
+        if (exceptionClass == null) return "Unknown";
+        
+        String lowerClass = exceptionClass.toLowerCase();
+        if (lowerClass.contains("mysql")) return "MySQL";
+        if (lowerClass.contains("postgresql") || lowerClass.contains("postgres")) return "PostgreSQL";
+        if (lowerClass.contains("oracle")) return "Oracle";
+        if (lowerClass.contains("sqlserver") || lowerClass.contains("mssql")) return "SQL Server";
+        if (lowerClass.contains("h2")) return "H2";
+        if (lowerClass.contains("hsqldb")) return "HSQLDB";
+        if (lowerClass.contains("sqlite")) return "SQLite";
+        
+        return "Unknown";
     }
 }

@@ -2,6 +2,12 @@ package com.shuyixiao.bugrecorder.service;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
@@ -9,6 +15,7 @@ import com.intellij.openapi.project.Project;
 import com.shuyixiao.bugrecorder.model.BugRecord;
 import com.shuyixiao.bugrecorder.model.BugStatus;
 import com.shuyixiao.bugrecorder.model.ErrorType;
+import com.shuyixiao.bugrecorder.parser.ErrorParser;
 import com.shuyixiao.bugrecorder.util.LocalDateTimeAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -459,6 +466,50 @@ public final class BugRecordService {
 
         } catch (Exception e) {
             LOG.error("Failed to create test records", e);
+        }
+    }
+
+    /**
+     * 测试数据库错误识别逻辑
+     */
+    public void testDatabaseErrorRecognition() {
+        try {
+            // 测试不同类型的数据库错误
+            String[] testErrors = {
+                // MySQL连接错误
+                "com.mysql.cj.jdbc.exceptions.CommunicationsException: Communications link failure\n" +
+                "The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.",
+                
+                // PostgreSQL连接错误
+                "org.postgresql.util.PSQLException: Connection to localhost:5432 refused. Check that the hostname and port are correct and that the postmaster is accepting TCP/IP connections.",
+                
+                // Hibernate错误
+                "org.hibernate.exception.JDBCConnectionException: Could not open connection",
+                
+                // Spring Data JPA错误
+                "org.springframework.dao.DataAccessException: Could not open JPA EntityManager for transaction",
+                
+                // 网络连接错误（应该被识别为网络错误，不是数据库错误）
+                "java.net.ConnectException: Connection refused (Connection refused)",
+                
+                // SQL语法错误
+                "java.sql.SQLSyntaxErrorException: You have an error in your SQL syntax"
+            };
+
+            ErrorParser errorParser = new ErrorParser();
+            
+            for (int i = 0; i < testErrors.length; i++) {
+                BugRecord record = errorParser.parseError(testErrors[i], project);
+                if (record != null) {
+                    LOG.info(String.format("测试错误 %d: %s -> %s", 
+                        i + 1, 
+                        record.getExceptionClass(), 
+                        record.getErrorType().getDisplayName()));
+                }
+            }
+
+        } catch (Exception e) {
+            LOG.error("Failed to test database error recognition", e);
         }
     }
 
