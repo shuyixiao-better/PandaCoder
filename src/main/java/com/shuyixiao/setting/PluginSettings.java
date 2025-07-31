@@ -29,6 +29,7 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
             " * version 1.0.0\n" +
             " * Description TODO\n" +
             " * createTime ${TIME}\n" +
+            " 技术分享 · 公众号：舒一笑的架构笔记\n" +
             " */\n";
 
                 // 类名前缀配置，多个前缀用逗号分隔
@@ -81,6 +82,7 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
                     " * version 1.0.0\n" +
                     " * Description TODO\n" +
                     " * createTime ${TIME}\n" +
+                    " 技术分享 · 公众号：舒一笑的架构笔记\n" +
                     " */\n"; // 设置默认模板
         }
         return template;
@@ -183,6 +185,7 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
                     " * version 1.0.0\n" +
                     " * Description TODO\n" +
                     " * createTime ${TIME}\n" +
+                    " 技术分享 · 公众号：舒一笑的架构笔记\n" +
                     " */\n";  // 初始化默认模板
         }
 

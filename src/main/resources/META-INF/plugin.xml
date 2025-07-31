@@ -125,6 +125,12 @@
                     factoryClass="com.shuyixiao.bugrecorder.toolwindow.BugRecorderToolWindowFactory"
                     anchor="bottom"
                     icon="/icons/bug-recorder.svg"/>
+
+        <!-- 更新设置状态服务 -->
+        <applicationService serviceImplementation="com.shuyixiao.update.UpdateSettingsState"/>
+
+        <!-- 版本更新检查启动活动 -->
+        <postStartupActivity implementation="com.shuyixiao.update.UpdateCheckService"/>
     </extensions>
     <actions>
         <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="关于PandaCoder"
