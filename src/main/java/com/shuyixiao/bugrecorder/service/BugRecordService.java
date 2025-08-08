@@ -2,12 +2,6 @@ package com.shuyixiao.bugrecorder.service;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
@@ -18,7 +12,6 @@ import com.shuyixiao.bugrecorder.model.ErrorType;
 import com.shuyixiao.bugrecorder.parser.ErrorParser;
 import com.shuyixiao.bugrecorder.util.LocalDateTimeAdapter;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -30,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -48,7 +42,7 @@ public final class BugRecordService {
 
     private final Project project;
     private final Gson gson;
-    private final Map<String, List<BugRecord>> cache = new ConcurrentHashMap<>();
+    private final Map<String, CopyOnWriteArrayList<BugRecord>> cache = new ConcurrentHashMap<>();
 
     public BugRecordService(@NotNull Project project) {
         this.project = project;
@@ -74,7 +68,7 @@ public final class BugRecordService {
         try {
             boolean hasChanges = false;
             
-            for (Map.Entry<String, List<BugRecord>> entry : cache.entrySet()) {
+            for (Map.Entry<String, CopyOnWriteArrayList<BugRecord>> entry : cache.entrySet()) {
                 String dateKey = entry.getKey();
                 List<BugRecord> records = entry.getValue();
                 List<BugRecord> updatedRecords = new ArrayList<>();
@@ -94,7 +88,7 @@ public final class BugRecordService {
                 }
                 
                 if (hasChanges) {
-                    cache.put(dateKey, updatedRecords);
+                    cache.put(dateKey, new CopyOnWriteArrayList<>(updatedRecords));
                     saveDailyRecords(dateKey, updatedRecords);
                 }
             }
@@ -116,7 +110,7 @@ public final class BugRecordService {
             String dateKey = bugRecord.getTimestamp().format(DATE_FORMATTER);
 
             // 添加到缓存
-            cache.computeIfAbsent(dateKey, k -> new ArrayList<>()).add(bugRecord);
+            cache.computeIfAbsent(dateKey, k -> new CopyOnWriteArrayList<>()).add(bugRecord);
 
             // 持久化到文件
             saveDailyRecords(dateKey, cache.get(dateKey));
@@ -134,7 +128,7 @@ public final class BugRecordService {
     @NotNull
     public List<BugRecord> getTodayRecords() {
         String today = LocalDate.now().format(DATE_FORMATTER);
-        return cache.getOrDefault(today, new ArrayList<>());
+        return new ArrayList<>(cache.getOrDefault(today, new CopyOnWriteArrayList<>()));
     }
 
     /**
@@ -149,7 +143,7 @@ public final class BugRecordService {
             loadRecordsByDate(dateKey);
         }
 
-        return cache.getOrDefault(dateKey, new ArrayList<>());
+        return new ArrayList<>(cache.getOrDefault(dateKey, new CopyOnWriteArrayList<>()));
     }
 
     /**
@@ -230,7 +224,7 @@ public final class BugRecordService {
     public void updateBugStatus(@NotNull String recordId, @NotNull BugStatus newStatus) {
         try {
             // 在所有缓存中查找记录
-            for (Map.Entry<String, List<BugRecord>> entry : cache.entrySet()) {
+            for (Map.Entry<String, CopyOnWriteArrayList<BugRecord>> entry : cache.entrySet()) {
                 List<BugRecord> records = entry.getValue();
                 for (int i = 0; i < records.size(); i++) {
                     BugRecord record = records.get(i);
@@ -266,12 +260,11 @@ public final class BugRecordService {
     public void deleteBugRecord(@NotNull String recordId) {
         try {
             // 在所有缓存中查找并删除记录
-            for (Map.Entry<String, List<BugRecord>> entry : cache.entrySet()) {
+            for (Map.Entry<String, CopyOnWriteArrayList<BugRecord>> entry : cache.entrySet()) {
                 List<BugRecord> records = entry.getValue();
+                int beforeSize = records.size();
                 records.removeIf(record -> record.getId().equals(recordId));
-                
-                if (records.size() != entry.getValue().size()) {
-                    // 记录被删除了
+                if (records.size() != beforeSize) {
                     saveDailyRecords(entry.getKey(), records);
                     LOG.info("Deleted bug record: " + recordId);
                     return;
@@ -337,7 +330,7 @@ public final class BugRecordService {
             LocalDate cutoffDate = LocalDate.now().minusDays(days);
             int removedCount = 0;
 
-            for (Map.Entry<String, List<BugRecord>> entry : cache.entrySet()) {
+            for (Map.Entry<String, CopyOnWriteArrayList<BugRecord>> entry : cache.entrySet()) {
                 String dateKey = entry.getKey();
                 List<BugRecord> records = entry.getValue();
                 
@@ -351,7 +344,7 @@ public final class BugRecordService {
                         
                         if (filteredRecords.size() != records.size()) {
                             removedCount += records.size() - filteredRecords.size();
-                            cache.put(dateKey, filteredRecords);
+                            cache.put(dateKey, new CopyOnWriteArrayList<>(filteredRecords));
                             saveDailyRecords(dateKey, filteredRecords);
                         }
                     }
@@ -385,7 +378,7 @@ public final class BugRecordService {
             int totalRecords = 0;
             int migratedRecords = 0;
             
-            for (Map.Entry<String, List<BugRecord>> entry : cache.entrySet()) {
+            for (Map.Entry<String, CopyOnWriteArrayList<BugRecord>> entry : cache.entrySet()) {
                 String dateKey = entry.getKey();
                 List<BugRecord> records = entry.getValue();
                 List<BugRecord> validatedRecords = new ArrayList<>();
@@ -406,7 +399,7 @@ public final class BugRecordService {
                 }
                 
                 if (migratedRecords > 0) {
-                    cache.put(dateKey, validatedRecords);
+                    cache.put(dateKey, new CopyOnWriteArrayList<>(validatedRecords));
                     saveDailyRecords(dateKey, validatedRecords);
                 }
             }
@@ -591,10 +584,10 @@ public final class BugRecordService {
                     
                     if (hasChanges) {
                         // 保存迁移后的记录
-                        cache.put(dateKey, migratedRecords);
+                        cache.put(dateKey, new CopyOnWriteArrayList<>(migratedRecords));
                         saveDailyRecords(dateKey, migratedRecords);
                     } else {
-                        cache.put(dateKey, records);
+                        cache.put(dateKey, new CopyOnWriteArrayList<>(records));
                     }
                 }
             }
@@ -609,7 +602,11 @@ public final class BugRecordService {
      */
     private void saveDailyRecords(String dateKey, List<BugRecord> records) throws IOException {
         Path filePath = getStorageDirectory().resolve(DAILY_LOG_PREFIX + dateKey + DAILY_LOG_SUFFIX);
-        String content = gson.toJson(records);
+        // 使用快照避免序列化期间的并发修改
+        List<BugRecord> snapshot = (records instanceof CopyOnWriteArrayList)
+                ? records
+                : new ArrayList<>(records);
+        String content = gson.toJson(snapshot);
         Files.writeString(filePath, content);
     }
 

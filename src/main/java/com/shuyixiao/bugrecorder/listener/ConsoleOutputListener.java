@@ -12,8 +12,7 @@ import com.shuyixiao.bugrecorder.model.BugRecord;
 import com.shuyixiao.bugrecorder.service.BugRecordService;
 import org.jetbrains.annotations.NotNull;
 
-import java.time.LocalDateTime;
-import java.util.concurrent.ConcurrentLinkedQueue;
+ 
 
 /**
  * 控制台输出监听器
@@ -28,9 +27,9 @@ public class ConsoleOutputListener implements ProcessListener {
     private final ErrorParser errorParser;
     private final BugRecordService bugRecordService;
 
-    // 使用线程安全的队列来缓存输出文本，避免阻塞控制台
-    private final ConcurrentLinkedQueue<String> outputBuffer = new ConcurrentLinkedQueue<>();
+    // 线程安全地拼接错误文本
     private final StringBuilder currentErrorBuffer = new StringBuilder();
+    private final Object errorBufferLock = new Object();
 
     // 用于识别错误输出的关键词
     private static final String[] ERROR_INDICATORS = {
@@ -51,9 +50,7 @@ public class ConsoleOutputListener implements ProcessListener {
         // 只处理标准错误输出和包含错误关键词的标准输出
         if (ProcessOutputTypes.STDERR.equals(outputType) || containsErrorIndicator(text)) {
             // 异步处理文本，避免阻塞控制台输出
-            ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                processErrorText(text);
-            });
+            ApplicationManager.getApplication().executeOnPooledThread(() -> processErrorText(text));
         }
     }
 
@@ -80,14 +77,17 @@ public class ConsoleOutputListener implements ProcessListener {
     private void processErrorText(String text) {
         try {
             // 将文本添加到当前错误缓冲区
-            currentErrorBuffer.append(text);
+            String completeError = null;
+            synchronized (errorBufferLock) {
+                currentErrorBuffer.append(text);
+                if (isCompleteError(currentErrorBuffer.toString())) {
+                    completeError = currentErrorBuffer.toString();
+                    currentErrorBuffer.setLength(0);
+                }
+            }
 
-            // 检查是否是一个完整的错误信息
-            if (isCompleteError(currentErrorBuffer.toString())) {
-                String completeError = currentErrorBuffer.toString();
-                currentErrorBuffer.setLength(0); // 清空缓冲区
-
-                // 解析错误并创建Bug记录
+            // 如果形成了完整错误，进行解析与保存
+            if (completeError != null) {
                 BugRecord bugRecord = errorParser.parseError(completeError, project);
                 if (bugRecord != null) {
                     bugRecordService.saveBugRecord(bugRecord);
@@ -128,10 +128,11 @@ public class ConsoleOutputListener implements ProcessListener {
     public void processTerminated(@NotNull ProcessEvent event) {
         LOG.debug("Process terminated, stopping console monitoring");
         // 处理缓冲区中剩余的文本
-        if (currentErrorBuffer.length() > 0) {
-            ApplicationManager.getApplication().executeOnPooledThread(() -> {
-                processErrorText("\n"); // 添加换行符触发最终处理
-            });
+        synchronized (errorBufferLock) {
+            if (currentErrorBuffer.length() > 0) {
+                // 直接触发一次检测
+                ApplicationManager.getApplication().executeOnPooledThread(() -> processErrorText("\n"));
+            }
         }
     }
 }
