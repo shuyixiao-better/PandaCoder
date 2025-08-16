@@ -28,6 +28,18 @@ dependencies {
     // Jenkins Pipeline支持所需依赖
     implementation 'org.apache.commons:commons-lang3:3.12.0'
     implementation 'org.jetbrains:annotations:24.1.0'
+    
+    // 增强版Bug记录功能所需依赖
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.15.2'
+    
+    // 机器学习相关依赖（用于错误模式学习）
+    implementation 'org.apache.commons:commons-math3:3.6.1'
+    implementation 'org.apache.commons:commons-lang3:3.12.0'
+    
+    // 并发处理相关依赖
+    implementation 'com.google.guava:guava:32.1.2-jre'
 }
 
 intellij {

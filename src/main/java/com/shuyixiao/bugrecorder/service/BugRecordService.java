@@ -103,19 +103,47 @@ public final class BugRecordService {
     }
 
     /**
-     * 保存Bug记录
+     * 保存Bug记录（支持去重）
      */
     public void saveBugRecord(@NotNull BugRecord bugRecord) {
         try {
             String dateKey = bugRecord.getTimestamp().format(DATE_FORMATTER);
 
-            // 添加到缓存
-            cache.computeIfAbsent(dateKey, k -> new CopyOnWriteArrayList<>()).add(bugRecord);
+            // 检查是否已存在相同指纹的记录
+            CopyOnWriteArrayList<BugRecord> records = cache.computeIfAbsent(dateKey, k -> new CopyOnWriteArrayList<>());
+            
+            // 如果有指纹，尝试去重
+            if (bugRecord.getFingerprint() != null) {
+                BugRecord existingRecord = records.stream()
+                        .filter(record -> bugRecord.getFingerprint().equals(record.getFingerprint()))
+                        .findFirst()
+                        .orElse(null);
+                
+                if (existingRecord != null) {
+                    // 更新现有记录的发生次数和时间戳
+                    BugRecord updatedRecord = existingRecord
+                            .withOccurrenceCount(existingRecord.getOccurrenceCount() + 1)
+                            .withTimestamp(bugRecord.getTimestamp());
+                    
+                    // 从列表中移除旧记录
+                    records.remove(existingRecord);
+                    // 添加更新后的记录
+                    records.add(updatedRecord);
+                    
+                    // 持久化到文件
+                    saveDailyRecords(dateKey, records);
+                    LOG.info("Updated existing bug record: " + bugRecord.getId() + " (fingerprint: " + bugRecord.getFingerprint() + ")");
+                    return;
+                }
+            }
+            
+            // 如果没有重复，添加新记录
+            records.add(bugRecord);
 
             // 持久化到文件
-            saveDailyRecords(dateKey, cache.get(dateKey));
+            saveDailyRecords(dateKey, records);
 
-            LOG.info("Saved bug record: " + bugRecord.getId());
+            LOG.info("Saved new bug record: " + bugRecord.getId() + " (fingerprint: " + bugRecord.getFingerprint() + ")");
 
         } catch (Exception e) {
             LOG.error("Failed to save bug record", e);

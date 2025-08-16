@@ -57,6 +57,66 @@ public enum ErrorType {
     THIRD_PARTY("第三方库错误", "📦", "#87CEEB"),
 
     /**
+     * HTTP客户端错误（调用外部服务）
+     */
+    HTTP_CLIENT("HTTP客户端错误", "📡", "#8EC5FC"),
+
+    /**
+     * HTTP服务端错误（本服务或下游返回5xx）
+     */
+    HTTP_SERVER("HTTP服务端错误", "🛰️", "#E0C3FC"),
+
+    /**
+     * 参数校验/数据校验错误
+     */
+    VALIDATION("校验错误", "✅", "#B8F2E6"),
+
+    /**
+     * 序列化/反序列化错误（JSON/XML等）
+     */
+    SERIALIZATION("序列化错误", "🧩", "#FDE68A"),
+
+    /**
+     * Spring Bean/DI相关错误
+     */
+    BEAN("Bean装配错误", "🫘", "#A7F3D0"),
+
+    /**
+     * 超时类错误（细化自网络/数据库等）
+     */
+    TIMEOUT("超时错误", "⏱️", "#FECACA"),
+
+    /**
+     * 连接建立错误（细化自网络）
+     */
+    CONNECTIVITY("连接错误", "🔌", "#C7D2FE"),
+
+    /**
+     * 缓存相关错误（Redis/本地缓存等）
+     */
+    CACHE("缓存错误", "🧠", "#D1FAE5"),
+
+    /**
+     * 消息队列相关错误
+     */
+    MQ("消息队列错误", "📬", "#FBCFE8"),
+
+    /**
+     * DNS解析错误
+     */
+    DNS("DNS错误", "🗺️", "#FDE68A"),
+
+    /**
+     * TLS/SSL错误
+     */
+    TLS("TLS/SSL错误", "🔐", "#F9A8D4"),
+
+    /**
+     * 并发/锁竞争错误
+     */
+    CONCURRENCY("并发错误", "🧵", "#FECACA"),
+
+    /**
      * 未知类型错误
      */
     UNKNOWN("未知错误", "❓", "#CCCCCC");
@@ -121,13 +181,13 @@ public enum ErrorType {
      * 判断是否为严重错误
      */
     public boolean isSevere() {
-        return this == DATABASE || this == MEMORY || this == SECURITY;
+        return this == DATABASE || this == MEMORY || this == SECURITY || this == HTTP_SERVER || this == TLS;
     }
 
     /**
      * 判断是否为可能自动修复的错误
      */
     public boolean isAutoFixable() {
-        return this == CONFIGURATION || this == COMPILATION;
+        return this == CONFIGURATION || this == COMPILATION || this == VALIDATION || this == SERIALIZATION;
     }
 }

@@ -29,6 +29,13 @@ public class BugRecord {
     private final String solution;
     private final BugStatus status;
 
+    // 新增字段
+    private final String rootCause;
+    private final List<String> causeChain;
+    private final StackTraceElement topFrame;
+    private final String fingerprint;
+    private final int occurrenceCount;
+
     private BugRecord(Builder builder) {
         this.id = builder.id != null ? builder.id : UUID.randomUUID().toString();
         this.project = builder.project;
@@ -43,6 +50,11 @@ public class BugRecord {
         this.aiAnalysis = builder.aiAnalysis;
         this.solution = builder.solution;
         this.status = builder.status;
+        this.rootCause = builder.rootCause;
+        this.causeChain = builder.causeChain;
+        this.topFrame = builder.topFrame;
+        this.fingerprint = builder.fingerprint;
+        this.occurrenceCount = builder.occurrenceCount;
     }
 
     // Getters
@@ -111,6 +123,33 @@ public class BugRecord {
     }
 
     /**
+     * 新增字段的getter
+     */
+    @Nullable
+    public String getRootCause() {
+        return rootCause;
+    }
+
+    @Nullable
+    public List<String> getCauseChain() {
+        return causeChain;
+    }
+
+    @Nullable
+    public StackTraceElement getTopFrame() {
+        return topFrame;
+    }
+
+    @Nullable
+    public String getFingerprint() {
+        return fingerprint;
+    }
+
+    public int getOccurrenceCount() {
+        return occurrenceCount;
+    }
+
+    /**
      * 获取格式化的时间字符串
      */
     public String getFormattedTimestamp() {
@@ -146,6 +185,14 @@ public class BugRecord {
 
     public BugRecord withStatus(BugStatus status) {
         return new Builder(this).status(status).build();
+    }
+
+    public BugRecord withOccurrenceCount(int newCount) {
+        return new Builder(this).occurrenceCount(newCount).build();
+    }
+
+    public BugRecord withTimestamp(LocalDateTime newTimestamp) {
+        return new Builder(this).timestamp(newTimestamp).build();
     }
 
     @Override
@@ -190,6 +237,11 @@ public class BugRecord {
         private String aiAnalysis;
         private String solution;
         private BugStatus status = BugStatus.PENDING;
+        private String rootCause;
+        private List<String> causeChain;
+        private StackTraceElement topFrame;
+        private String fingerprint;
+        private int occurrenceCount = 1;
 
         public Builder() {}
 
@@ -207,6 +259,11 @@ public class BugRecord {
             this.aiAnalysis = bugRecord.aiAnalysis;
             this.solution = bugRecord.solution;
             this.status = bugRecord.status;
+            this.rootCause = bugRecord.rootCause;
+            this.causeChain = bugRecord.causeChain;
+            this.topFrame = bugRecord.topFrame;
+            this.fingerprint = bugRecord.fingerprint;
+            this.occurrenceCount = bugRecord.occurrenceCount;
         }
 
         public Builder id(String id) {
@@ -271,6 +328,31 @@ public class BugRecord {
 
         public Builder solution(String solution) {
             this.solution = solution;
+            return this;
+        }
+
+        public Builder rootCause(String rootCause) {
+            this.rootCause = rootCause;
+            return this;
+        }
+
+        public Builder causeChain(List<String> causeChain) {
+            this.causeChain = causeChain;
+            return this;
+        }
+
+        public Builder topFrame(StackTraceElement topFrame) {
+            this.topFrame = topFrame;
+            return this;
+        }
+
+        public Builder fingerprint(String fingerprint) {
+            this.fingerprint = fingerprint;
+            return this;
+        }
+
+        public Builder occurrenceCount(int occurrenceCount) {
+            this.occurrenceCount = occurrenceCount;
             return this;
         }
 

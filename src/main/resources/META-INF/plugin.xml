@@ -131,6 +131,14 @@
 
         <!-- 版本更新检查启动活动 -->
         <postStartupActivity implementation="com.shuyixiao.update.UpdateCheckService"/>
+
+        <!-- 项目级服务 -->
+        <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.EnhancedConsoleMonitoringService"/>
+        <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.EnhancedExecutionListener"/>
+        <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.EnhancedBugRecordManager"/>
+        <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.EnhancedBugAnalysisService"/>
+        <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.BugAggregationService"/>
+        <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.ErrorPatternLearningService"/>
     </extensions>
     <actions>
         <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="关于PandaCoder"
@@ -158,4 +166,10 @@
             <add-to-group group-id="NewGroup" anchor="first"/>
         </action>
     </actions>
+
+    <!-- 启动活动 -->
+<!--    <applicationListeners>-->
+<!--        <listener class="com.shuyixiao.bugrecorder.enhanced.EnhancedBugRecorderStartupActivity"-->
+<!--                  topic="com.intellij.openapi.project.ProjectManagerListener"/>-->
+<!--    </applicationListeners>-->
 </idea-plugin>
