@@ -267,6 +267,19 @@ public class QRCodeDialog extends DialogWrapper {
         dialog.show();
     }
 
+    public static void showNotification(@Nullable Project project) {
+        QRCodeDialog dialog = new QRCodeDialog(
+                project,
+                "📱 如有问题或建议，添加微信：Tobeabetterman1001",
+                "或者扫描二维码<br>" +
+                        "备注来意-PandaCoder问题交流",
+                "https://shuyixiao.oss-cn-hangzhou.aliyuncs.com/%E4%B8%80%E7%AC%91%E6%8A%80%E6%9C%AF%E4%BA%A4%E6%B5%81%E7%BE%A4/%E5%BE%AE%E4%BF%A1%E4%BA%8C%E7%BB%B4%E7%A0%81%E5%8A%A0%E6%88%91.jpg",
+                "复制链接",
+                "https://shuyixiao.oss-cn-hangzhou.aliyuncs.com/%E4%B8%80%E7%AC%91%E6%8A%80%E6%9C%AF%E4%BA%A4%E6%B5%81%E7%BE%A4/%E5%BE%AE%E4%BF%A1%E4%BA%8C%E7%BB%B4%E7%A0%81%E5%8A%A0%E6%88%91.jpg" // 替换为实际的公众号链接
+        );
+        dialog.show();
+    }
+
     /**
      * 显示GitHub二维码对话框
      */

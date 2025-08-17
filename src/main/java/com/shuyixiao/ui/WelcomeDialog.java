@@ -189,6 +189,7 @@ public class WelcomeDialog extends DialogWrapper {
         JButton feedbackButton = new JButton("💬 问题反馈");
         feedbackButton.putClientProperty("JButton.buttonType", "borderless");
         feedbackButton.addActionListener(e -> {
+            QRCodeDialog.showNotification(null);
             showNotification("如有问题或建议，请联系微信：Tobeabetterman1001,备注来意-PandaCoder问题交流");
         });
         buttonPanel.add(feedbackButton);
