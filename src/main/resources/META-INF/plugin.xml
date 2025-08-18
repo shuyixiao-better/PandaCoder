@@ -166,10 +166,4 @@
             <add-to-group group-id="NewGroup" anchor="first"/>
         </action>
     </actions>
-
-    <!-- 启动活动 -->
-<!--    <applicationListeners>-->
-<!--        <listener class="com.shuyixiao.bugrecorder.enhanced.EnhancedBugRecorderStartupActivity"-->
-<!--                  topic="com.intellij.openapi.project.ProjectManagerListener"/>-->
-<!--    </applicationListeners>-->
 </idea-plugin>
