@@ -121,11 +121,13 @@ public class QRCodeDialog extends DialogWrapper {
                         int originalWidth = qrCodeIcon.getIconWidth();
                         int originalHeight = qrCodeIcon.getIconHeight();
                         
-                        // 如果图片太大，等比例缩放
-                        if (originalWidth > 250 || originalHeight > 250) {
-                            double scale = Math.min(250.0 / originalWidth, 250.0 / originalHeight);
-                            int newWidth = (int) (originalWidth * scale);
-                            int newHeight = (int) (originalHeight * scale);
+                        // 如果图片太大，等比例缩放（最大边长300）
+                        int maxWidth = 300;
+                        int maxHeight = 300;
+                        if (originalWidth > maxWidth || originalHeight > maxHeight) {
+                            double scale = Math.min(maxWidth / (double) originalWidth, maxHeight / (double) originalHeight);
+                            int newWidth = (int) Math.round(originalWidth * scale);
+                            int newHeight = (int) Math.round(originalHeight * scale);
                             
                             // 创建一个新的ImageIcon来显示缩放后的gif
                             Image img = qrCodeIcon.getImage();
@@ -135,16 +137,25 @@ public class QRCodeDialog extends DialogWrapper {
                             System.out.println("缩放后尺寸: " + newWidth + "x" + newHeight);
                         }
                     } else {
-                        // 非gif文件，按原来方式处理
-                        Image img = qrCodeIcon.getImage();
-                        Image scaledImg = img.getScaledInstance(200, 200, Image.SCALE_SMOOTH);
-                        qrCodeIcon = new ImageIcon(scaledImg);
+                        // 非gif文件，等比缩放，保持清晰不变形（最大边长300，不放大小图）
+                        int originalWidth = qrCodeIcon.getIconWidth();
+                        int originalHeight = qrCodeIcon.getIconHeight();
+                        int maxWidth = 300;
+                        int maxHeight = 300;
+                        if (originalWidth > maxWidth || originalHeight > maxHeight) {
+                            double scale = Math.min(maxWidth / (double) originalWidth, maxHeight / (double) originalHeight);
+                            int newWidth = (int) Math.round(originalWidth * scale);
+                            int newHeight = (int) Math.round(originalHeight * scale);
+                            Image img = qrCodeIcon.getImage();
+                            Image scaledImg = img.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
+                            qrCodeIcon = new ImageIcon(scaledImg);
+                        }
                     }
-
-                    JBLabel qrCodeLabel = new JBLabel(qrCodeIcon);
-                    qrCodeLabel.setHorizontalAlignment(SwingConstants.CENTER);
-                    qrCodeLabel.setBorder(JBUI.Borders.empty(10));
-                    imagePanel.add(qrCodeLabel, BorderLayout.CENTER);
+ 
+                     JBLabel qrCodeLabel = new JBLabel(qrCodeIcon);
+                     qrCodeLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                     qrCodeLabel.setBorder(JBUI.Borders.empty(10));
+                     imagePanel.add(qrCodeLabel, BorderLayout.CENTER);
                     
                     System.out.println("图片显示成功!");
                 } else {
