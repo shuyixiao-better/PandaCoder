@@ -4,7 +4,6 @@ import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.lang.properties.psi.PropertiesFile;
-import com.intellij.lang.properties.psi.impl.PropertyKeyImpl;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
@@ -56,7 +55,8 @@ public class SpringBootConfigCompletionContributor extends CompletionContributor
             Project project = file.getProject();
             SpringBootConfigPropertyManager propertyManager = SpringBootConfigPropertyManager.getInstance(project);
             
-            PsiElement position = parameters.getPosition();
+            // 获取当前位置（如需）
+            // PsiElement position = parameters.getPosition();
             String currentText = getCurrentText(parameters);
             
             // 获取当前输入的前缀

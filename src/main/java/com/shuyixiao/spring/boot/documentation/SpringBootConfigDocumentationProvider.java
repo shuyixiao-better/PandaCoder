@@ -1,7 +1,7 @@
 package com.shuyixiao.spring.boot.documentation;
 
 import com.intellij.lang.documentation.AbstractDocumentationProvider;
-import com.intellij.lang.properties.psi.impl.PropertyKeyImpl;
+import com.intellij.lang.properties.psi.Property;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
@@ -89,16 +89,15 @@ public class SpringBootConfigDocumentationProvider extends AbstractDocumentation
      */
     @Nullable
     private String extractPropertyKey(@NotNull PsiElement element) {
-        if (element instanceof PropertyKeyImpl) {
-            PropertyKeyImpl propertyKey = (PropertyKeyImpl) element;
-            return propertyKey.getText();
+        if (element instanceof Property) {
+            String key = ((Property) element).getKey();
+            return key;
         }
         
         // 尝试从父元素中提取
         PsiElement parent = element.getParent();
-        if (parent instanceof PropertyKeyImpl) {
-            PropertyKeyImpl propertyKey = (PropertyKeyImpl) parent;
-            return propertyKey.getText();
+        if (parent instanceof Property) {
+            return ((Property) parent).getKey();
         }
         
         return null;
