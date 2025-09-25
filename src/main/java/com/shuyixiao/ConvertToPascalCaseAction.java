@@ -14,8 +14,8 @@ import com.intellij.openapi.ui.popup.ListPopup;
 import com.intellij.openapi.ui.popup.PopupStep;
 import com.intellij.openapi.ui.popup.util.BaseListPopupStep;
 import com.intellij.openapi.util.NlsContexts;
-import com.intellij.openapi.wm.StatusBar;
-import com.intellij.openapi.wm.WindowManager;
+import com.intellij.notification.NotificationGroupManager;
+import com.intellij.notification.NotificationType;
 import com.shuyixiao.converter.TranslationConverter;
 import com.shuyixiao.notification.NotificationUtil;
 import org.jetbrains.annotations.NotNull;
@@ -280,13 +280,13 @@ public class ConvertToPascalCaseAction extends AnAction {
     }
 
     /**
-     * 在状态栏显示消息
+     * 显示通知消息
      */
     private void showStatusBarMessage(Project project, @NlsContexts.StatusBarText String message) {
-        StatusBar statusBar = WindowManager.getInstance().getStatusBar(project);
-        if (statusBar != null) {
-            statusBar.setInfo(message);
-        }
+        NotificationGroupManager.getInstance()
+                .getNotificationGroup("PandaCoder.Notifications")
+                .createNotification(message, NotificationType.INFORMATION)
+                .notify(project);
     }
 
     /**

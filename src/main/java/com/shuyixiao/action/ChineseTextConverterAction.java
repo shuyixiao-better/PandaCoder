@@ -6,8 +6,8 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.wm.StatusBar;
-import com.intellij.openapi.wm.WindowManager;
+import com.intellij.notification.NotificationGroupManager;
+import com.intellij.notification.NotificationType;
 
 /**
  * 中文文本转换基础类
@@ -55,10 +55,10 @@ public abstract class ChineseTextConverterAction extends AnAction {
      * @param message 要显示的消息
      */
     protected void showStatusBarMessage(Project project, String message) {
-        StatusBar statusBar = WindowManager.getInstance().getStatusBar(project);
-        if (statusBar != null) {
-            statusBar.setInfo(message);
-        }
+        NotificationGroupManager.getInstance()
+                .getNotificationGroup("PandaCoder.Notifications")
+                .createNotification(message, NotificationType.INFORMATION)
+                .notify(project);
     }
 
     /**

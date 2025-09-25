@@ -1,8 +1,8 @@
 package com.shuyixiao.ui;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.wm.StatusBar;
-import com.intellij.openapi.wm.WindowManager;
+import com.intellij.notification.NotificationGroupManager;
+import com.intellij.notification.NotificationType;
 import com.shuyixiao.util.TranslationUtil;
 
 /**
@@ -16,10 +16,10 @@ public class UserExperienceHelper {
      */
     public static void showStatusMessage(Project project, String message) {
         if (project != null) {
-            StatusBar statusBar = WindowManager.getInstance().getStatusBar(project);
-            if (statusBar != null) {
-                statusBar.setInfo("PandaCoder: " + message);
-            }
+            NotificationGroupManager.getInstance()
+                    .getNotificationGroup("PandaCoder.Notifications")
+                    .createNotification("PandaCoder: " + message, NotificationType.INFORMATION)
+                    .notify(project);
         }
     }
 

@@ -139,6 +139,9 @@
         <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.EnhancedBugAnalysisService"/>
         <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.BugAggregationService"/>
         <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.ErrorPatternLearningService"/>
+        
+        <!-- 通知组定义 -->
+        <notificationGroup id="PandaCoder.Notifications" displayType="BALLOON" key="notification.group.pandacoder"/>
     </extensions>
     <actions>
         <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="关于PandaCoder"
