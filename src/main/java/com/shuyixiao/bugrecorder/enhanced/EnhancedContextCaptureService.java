@@ -158,7 +158,9 @@ public class EnhancedContextCaptureService {
             for (Module module : modules) {
                 Map<String, Object> moduleData = new HashMap<>();
                 moduleData.put("name", module.getName());
-                moduleData.put("file.path", module.getModuleFilePath());
+                // 使用公开API获取模块文件信息
+                VirtualFile moduleFile = module.getModuleFile();
+                moduleData.put("file.path", moduleFile != null ? moduleFile.getPath() : "unknown");
                 
                 // 模块依赖
                 ModuleRootManager rootManager = ModuleRootManager.getInstance(module);
