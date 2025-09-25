@@ -280,7 +280,7 @@ public class EnhancedContextCaptureService {
             // 这里可以添加插件相关的信息收集
             // 由于插件API的限制，可能需要通过其他方式获取
             runtimeContext.put("plugin.name", "PandaCoder");
-            runtimeContext.put("plugin.version", "1.1.6");
+            runtimeContext.put("plugin.version", com.shuyixiao.version.VersionInfo.getVersion());
             
         } catch (Exception e) {
             LOG.warn("Failed to collect plugin info", e);

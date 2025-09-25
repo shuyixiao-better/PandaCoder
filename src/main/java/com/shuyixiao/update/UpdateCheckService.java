@@ -29,7 +29,7 @@ import java.util.Properties;
 public class UpdateCheckService implements ProjectActivity {
 
     private static final Logger LOG = Logger.getInstance(UpdateCheckService.class);
-    private static final String CURRENT_VERSION = "1.1.7";
+    private static final String CURRENT_VERSION = com.shuyixiao.version.VersionInfo.getVersion();
     private static final String UPDATE_CHECK_URL = "https://api.github.com/repos/your-username/PandaCoder/releases/latest";
     private static final String PLUGIN_PAGE_URL = "https://plugins.jetbrains.com/plugin/your-plugin-id";
 

@@ -24,7 +24,7 @@ import java.net.URISyntaxException;
  */
 public class WelcomeDialog extends DialogWrapper {
     
-    private static final String VERSION = "1.1.7";
+    private static final String VERSION = com.shuyixiao.version.VersionInfo.getVersion();
     
     public WelcomeDialog(@Nullable Project project) {
         super(project);
@@ -206,6 +206,13 @@ public class WelcomeDialog extends DialogWrapper {
         });
         buttonPanel.add(authorsCompanyIsAwesome);
         
+        // 版本历史按钮
+        JButton versionHistoryButton = new JButton("📋 版本历史");
+        versionHistoryButton.putClientProperty("JButton.buttonType", "borderless");
+        versionHistoryButton.setPreferredSize(new Dimension(120, 30));
+        versionHistoryButton.addActionListener(e -> showVersionHistory());
+        buttonPanel.add(versionHistoryButton);
+        
         footerPanel.add(buttonPanel, BorderLayout.CENTER);
         
         return footerPanel;
@@ -216,6 +223,16 @@ public class WelcomeDialog extends DialogWrapper {
             getContentPanel(),
             message,
             "提示",
+            JOptionPane.INFORMATION_MESSAGE
+        );
+    }
+    
+    private void showVersionHistory() {
+        String versionHistory = com.shuyixiao.version.VersionInfo.getSimpleVersionHistory();
+        JOptionPane.showMessageDialog(
+            getContentPanel(),
+            "<html><body style='width: 400px'>" + versionHistory + "</body></html>",
+            "PandaCoder 版本历史",
             JOptionPane.INFORMATION_MESSAGE
         );
     }

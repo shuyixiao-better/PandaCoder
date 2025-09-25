@@ -668,7 +668,26 @@ public class SettingConfigurable implements SearchableConfigurable {
         gbc.gridy = row++; gbc.insets = JBUI.insets(15, 5, 5, 5);
         bugStoragePanel.add(infoLabel, gbc);
         
+        // 添加版本历史按钮
+        JButton versionHistoryButton = new JButton("📋 查看版本历史");
+        versionHistoryButton.addActionListener(e -> showVersionHistory());
+        gbc.gridy = row++; gbc.insets = JBUI.insets(10, 5, 5, 5);
+        bugStoragePanel.add(versionHistoryButton, gbc);
+        
         return bugStoragePanel;
+    }
+    
+    /**
+     * 显示版本历史
+     */
+    private void showVersionHistory() {
+        String versionHistory = com.shuyixiao.version.VersionInfo.getSimpleVersionHistory();
+        JOptionPane.showMessageDialog(
+            panel,
+            "<html><body style='width: 400px'>" + versionHistory + "</body></html>",
+            "PandaCoder 版本历史",
+            JOptionPane.INFORMATION_MESSAGE
+        );
     }
 }
 
