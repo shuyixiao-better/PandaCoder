@@ -158,12 +158,13 @@ public class EnhancedContextCaptureService {
             for (Module module : modules) {
                 Map<String, Object> moduleData = new HashMap<>();
                 moduleData.put("name", module.getName());
-                // 使用公开API获取模块文件信息
-                VirtualFile moduleFile = module.getModuleFile();
-                moduleData.put("file.path", moduleFile != null ? moduleFile.getPath() : "unknown");
+                // 使用模块根管理器获取模块内容根路径和依赖信息
+                ModuleRootManager rootManager = ModuleRootManager.getInstance(module);
+                VirtualFile[] contentRoots = rootManager.getContentRoots();
+                String modulePath = contentRoots.length > 0 ? contentRoots[0].getPath() : module.getName();
+                moduleData.put("file.path", modulePath);
                 
                 // 模块依赖
-                ModuleRootManager rootManager = ModuleRootManager.getInstance(module);
                 List<String> dependencies = new ArrayList<>();
                 for (Module dependency : rootManager.getModuleDependencies()) {
                     dependencies.add(dependency.getName());
