@@ -290,36 +290,4 @@ public class QRCodeDialog extends DialogWrapper {
         );
         dialog.show();
     }
-
-    /**
-     * 显示GitHub二维码对话框
-     */
-    public static void showGitHubQRCode(@Nullable Project project) {
-        QRCodeDialog dialog = new QRCodeDialog(
-                project,
-                "🐙 GitHub 项目",
-                "扫描二维码访问 PandaCoder 项目<br>" +
-                        "获取最新版本、提交问题和贡献代码",
-                "/images/GitHubQRCode.png",
-                "复制链接",
-                "https://github.com/shuyixiao-better/PandaCoder"
-        );
-        dialog.show();
-    }
-
-    /**
-     * 显示博客二维码对话框
-     */
-    public static void showBlogQRCode(@Nullable Project project) {
-        QRCodeDialog dialog = new QRCodeDialog(
-                project,
-                "🌐 个人博客",
-                "扫描二维码访问「舒一笑的架构笔记」<br>" +
-                        "阅读技术文章和开发心得",
-                "/images/BlogQRCode.png",
-                "复制链接",
-                "https://www.shuyixiao.cloud"
-        );
-        dialog.show();
-    }
 }

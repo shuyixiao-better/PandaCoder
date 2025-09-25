@@ -36,7 +36,7 @@ public class WelcomeDialog extends DialogWrapper {
     @Override
     protected @Nullable JComponent createCenterPanel() {
         JBPanel<?> mainPanel = new JBPanel<>(new BorderLayout());
-        mainPanel.setPreferredSize(JBUI.size(550, 400)); // 增加宽度
+        mainPanel.setPreferredSize(JBUI.size(650, 450)); // 增加宽度和高度以容纳更多按钮
         mainPanel.setBorder(JBUI.Borders.empty(20));
         
         // 创建头部面板
@@ -172,9 +172,10 @@ public class WelcomeDialog extends DialogWrapper {
         JBPanel<?> footerPanel = new JBPanel<>(new BorderLayout());
         footerPanel.setBorder(JBUI.Borders.emptyTop(15));
         
-        // 操作按钮
-        JBPanel<?> buttonPanel = new JBPanel<>(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        // 操作按钮 - 使用两行布局
+        JBPanel<?> buttonPanel = new JBPanel<>(new GridLayout(2, 3, 5, 5));
         
+        // 第一行按钮
         // 公众号按钮
         JButton wechatButton = new JButton("📱 关注公众号");
         wechatButton.putClientProperty("JButton.buttonType", "borderless");
@@ -195,7 +196,7 @@ public class WelcomeDialog extends DialogWrapper {
         buttonPanel.add(feedbackButton);
 
         // 作者公司网站按钮
-        JButton authorsCompanyIsAwesome = new JButton("🏢 作者所在的牛逼公司");
+        JButton authorsCompanyIsAwesome = new JButton("🏢 作者所在公司");
         authorsCompanyIsAwesome.putClientProperty("JButton.buttonType", "borderless");
         authorsCompanyIsAwesome.addActionListener(e -> {
             try {
@@ -206,12 +207,28 @@ public class WelcomeDialog extends DialogWrapper {
         });
         buttonPanel.add(authorsCompanyIsAwesome);
         
+        // 第二行按钮
         // 版本历史按钮
         JButton versionHistoryButton = new JButton("📋 版本历史");
         versionHistoryButton.putClientProperty("JButton.buttonType", "borderless");
-        versionHistoryButton.setPreferredSize(new Dimension(120, 30));
         versionHistoryButton.addActionListener(e -> showVersionHistory());
         buttonPanel.add(versionHistoryButton);
+        
+        // 项目信息按钮
+        JButton projectInfoButton = new JButton("📁 项目信息");
+        projectInfoButton.putClientProperty("JButton.buttonType", "borderless");
+        projectInfoButton.addActionListener(e -> {
+            try {
+                Desktop.getDesktop().browse(new URI("https://github.com/shuyixiao-better/PandaCoder"));
+            } catch (Exception ex) {
+                showNotification("无法打开浏览器，请手动访问：https://github.com/shuyixiao-better/PandaCoder");
+            }
+        });
+        buttonPanel.add(projectInfoButton);
+        
+        // 空位（保持布局平衡）
+        JPanel emptyPanel = new JPanel();
+        buttonPanel.add(emptyPanel);
         
         footerPanel.add(buttonPanel, BorderLayout.CENTER);
         
