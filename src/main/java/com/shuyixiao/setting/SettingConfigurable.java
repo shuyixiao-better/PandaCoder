@@ -16,7 +16,7 @@ import java.awt.event.ItemListener;
 /**
  * Copyright © 2024年 integration-projects-maven. All rights reserved.
  * ClassName SettingConfigurable.java
- * author 舒一笑 yixiaoshu88@163.com
+ * author 舒一笑不秃头 yixiaoshu88@163.com
  * version 1.0.0
  * Description 设置面板增加配置项
  * createTime 2024年09月07日 19:39:00

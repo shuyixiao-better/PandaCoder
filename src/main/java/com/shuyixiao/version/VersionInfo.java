@@ -4,7 +4,7 @@ package com.shuyixiao.version;
  * PandaCoder 插件版本信息管理
  * 统一管理插件版本号、版本历史和功能说明
  *
- * @author 舒一笑
+ * @author 舒一笑不秃头
  * @version 1.1.7
  * @since 2024-01-01
  */

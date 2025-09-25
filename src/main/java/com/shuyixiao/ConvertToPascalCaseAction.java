@@ -25,7 +25,7 @@ import javax.swing.*;
 /**
  * Copyright © 2025年 integration-projects-maven. All rights reserved.
  * ClassName ConvertToPascalCaseAction.java
- * author 舒一笑 yixiaoshu88@163.com
+ * author 舒一笑不秃头 yixiaoshu88@163.com
  * version 1.0.0
  * Description 中文转大驼峰
  * createTime 2025年06月02日 16:00:00

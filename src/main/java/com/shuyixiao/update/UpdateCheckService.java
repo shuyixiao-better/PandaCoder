@@ -20,7 +20,7 @@ import java.util.Properties;
 /**
  * Copyright © 2025 integration-projects-maven. All rights reserved.
  * ClassName UpdateCheckService.java
- * author 舒一笑
+ * author 舒一笑不秃头
  * version 1.0.0
  * Description 版本更新检查服务 在项目启动时检查插件版本更新
  * createTime 2025年07月31日 11:48:56

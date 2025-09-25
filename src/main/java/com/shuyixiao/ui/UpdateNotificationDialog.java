@@ -19,7 +19,7 @@ import java.net.URI;
 /**
  * Copyright © 2025 integration-projects-maven. All rights reserved.
  * ClassName UpdateNotificationDialog.java
- * author 舒一笑
+ * author 舒一笑不秃头
  * version 1.0.0
  * Description 版本更新提示对话框 显示新版本信息和更新选项
  * createTime 2025年07月31日 11:50:01

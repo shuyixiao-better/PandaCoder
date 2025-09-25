@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Copyright © 2024年 integration-projects-maven. All rights reserved.
  * ClassName PluginSettings.java
- * author 舒一笑 yixiaoshu88@163.com
+ * author 舒一笑不秃头 yixiaoshu88@163.com
  * version 1.0.0
  * Description TODO
  * createTime 2024年09月07日 21:01:00
@@ -25,7 +25,7 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
     private String template = "/**\n" +
             " * Copyright © ${YEAR} integration-projects-maven. All rights reserved.\n" +
             " * ClassName ${NAME}.java\n" +
-            " * author 舒一笑\n" +
+            " * author 舒一笑不秃头\n" +
             " * version 1.0.0\n" +
             " * Description TODO\n" +
             " * createTime ${TIME}\n" +
@@ -81,7 +81,7 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
             template = "/**\n" +
                     " * Copyright © ${YEAR} integration-projects-maven. All rights reserved.\n" +
                     " * ClassName ${NAME}.java\n" +
-                    " * author 舒一笑\n" +
+                    " * author 舒一笑不秃头\n" +
                     " * version 1.0.0\n" +
                     " * Description TODO\n" +
                     " * createTime ${TIME}\n" +
@@ -184,7 +184,7 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
             this.template = "/**\n" +
                     " * Copyright © ${YEAR} integration-projects-maven. All rights reserved.\n" +
                     " * ClassName ${NAME}.java\n" +
-                    " * author 舒一笑\n" +
+                    " * author 舒一笑不秃头\n" +
                     " * version 1.0.0\n" +
                     " * Description TODO\n" +
                     " * createTime ${TIME}\n" +

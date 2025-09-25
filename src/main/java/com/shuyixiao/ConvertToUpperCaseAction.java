@@ -25,7 +25,7 @@ import javax.swing.*;
 /**
  * Copyright © 2024年 integration-projects-maven. All rights reserved.
  * ClassName ConvertToUpperCaseAction.java
- * author 舒一笑 yixiaoshu88@163.com
+ * author 舒一笑不秃头 yixiaoshu88@163.com
  * version 1.0.0
  * Description 中文转全大写
  * createTime 2024年08月21日 23:31:00

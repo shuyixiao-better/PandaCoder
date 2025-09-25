@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Copyright © 2025 integration-projects-maven. All rights reserved.
  * ClassName UpdateCheckService.java
- * author 舒一笑
+ * author 舒一笑不秃头
  * version 1.0.0
  * Description 更新设置状态持久化组件 保存更新检查相关的用户设置
  * createTime 2025年07月31日 11:34:35
