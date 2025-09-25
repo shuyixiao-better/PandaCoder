@@ -66,6 +66,9 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
             "待翻译中文：";
     private boolean useCustomPrompt = false;
 
+    // Bug记录存储配置
+    private boolean enableLocalBugStorage = false; // 默认关闭本地存储
+
     // 单例模式获取实例
     public static PluginSettings getInstance() {
         // 使用新的API代替已弃用的ServiceManager
@@ -263,6 +266,15 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
     
     public void setUseCustomPrompt(boolean useCustomPrompt) {
         this.useCustomPrompt = useCustomPrompt;
+    }
+
+    // Bug记录存储相关方法
+    public boolean isEnableLocalBugStorage() {
+        return enableLocalBugStorage;
+    }
+
+    public void setEnableLocalBugStorage(boolean enableLocalBugStorage) {
+        this.enableLocalBugStorage = enableLocalBugStorage;
     }
 }
 

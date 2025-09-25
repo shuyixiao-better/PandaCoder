@@ -11,6 +11,7 @@ import com.shuyixiao.bugrecorder.model.BugStatus;
 import com.shuyixiao.bugrecorder.model.ErrorType;
 import com.shuyixiao.bugrecorder.parser.ErrorParser;
 import com.shuyixiao.bugrecorder.util.LocalDateTimeAdapter;
+import com.shuyixiao.setting.PluginSettings;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -107,6 +108,12 @@ public final class BugRecordService {
      */
     public void saveBugRecord(@NotNull BugRecord bugRecord) {
         try {
+            // 检查是否启用本地存储
+            if (!PluginSettings.getInstance().isEnableLocalBugStorage()) {
+                LOG.info("Local bug storage disabled, skipping file save for bug record: " + bugRecord.getId());
+                return;
+            }
+
             String dateKey = bugRecord.getTimestamp().format(DATE_FORMATTER);
 
             // 检查是否已存在相同指纹的记录

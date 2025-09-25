@@ -1,6 +1,7 @@
 package com.shuyixiao.setting;
 
 import com.intellij.openapi.options.SearchableConfigurable;
+import com.intellij.util.ui.JBUI;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,6 +43,11 @@ public class SettingConfigurable implements SearchableConfigurable {
     private JPasswordField baiduApiKeyField = new JPasswordField(40);
     private JTextField baiduAppIdField = new JTextField(40);
     private JButton testBaiduApiButton = new JButton("验证百度API配置");
+    
+    // Bug记录存储配置
+    private JCheckBox enableLocalBugStorageCheckBox = new JCheckBox("启用本地Bug记录存储");
+    private JLabel bugStorageHintLabel = new JLabel("<html><font color='gray'>启用后会在项目目录下生成 .pandacoder/bug-records/ 文件夹存储错误信息</font></html>");
+    
     private JPanel panel;
 
     // 模型映射：中文名称 -> 英文值
@@ -85,6 +91,7 @@ public class SettingConfigurable implements SearchableConfigurable {
         tabbedPane.addTab("提示词配置", createPromptPanel());
         tabbedPane.addTab("模板配置", createTemplatePanel());
         tabbedPane.addTab("百度翻译", createBaiduPanel());
+        tabbedPane.addTab("Bug记录", createBugStoragePanel());
         
         panel.add(tabbedPane, BorderLayout.CENTER);
         
@@ -334,6 +341,9 @@ public class SettingConfigurable implements SearchableConfigurable {
         translationPromptArea.setText(PluginSettings.getInstance().getTranslationPrompt());
         translationPromptArea.setLineWrap(true);
         translationPromptArea.setWrapStyleWord(true);
+        
+        // Bug记录存储设置
+        enableLocalBugStorageCheckBox.setSelected(PluginSettings.getInstance().isEnableLocalBugStorage());
     }
     
     /**
@@ -580,6 +590,7 @@ public class SettingConfigurable implements SearchableConfigurable {
         settings.setDomesticAIApiKey(String.valueOf(domesticAIApiKeyField.getPassword()));
         settings.setUseCustomPrompt(useCustomPromptCheckBox.isSelected());
         settings.setTranslationPrompt(translationPromptArea.getText());
+        settings.setEnableLocalBugStorage(enableLocalBugStorageCheckBox.isSelected());
         com.shuyixiao.util.TranslationUtil.clearValidationCache();
     }
 
@@ -598,6 +609,7 @@ public class SettingConfigurable implements SearchableConfigurable {
         domesticAIApiKeyField.setText(settings.getDomesticAIApiKey());
         useCustomPromptCheckBox.setSelected(settings.isUseCustomPrompt());
         translationPromptArea.setText(settings.getTranslationPrompt());
+        enableLocalBugStorageCheckBox.setSelected(settings.isEnableLocalBugStorage());
         updateGoogleFieldsState();
         updateDomesticAIFieldsState();
         updateTranslationPromptState();
@@ -625,6 +637,38 @@ public class SettingConfigurable implements SearchableConfigurable {
             }
         }
         return modelMapping[0][1]; // 默认返回第一个
+    }
+    
+    /**
+     * 创建Bug记录存储配置面板
+     */
+    private JPanel createBugStoragePanel() {
+        JPanel bugStoragePanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = JBUI.insets(5);
+        int row = 0;
+        
+        // Bug记录存储配置
+        JLabel bugStorageSectionLabel = new JLabel("<html><b>Bug记录存储配置</b></html>");
+        gbc.gridx = 0; gbc.gridy = row++; gbc.gridwidth = 2;
+        bugStoragePanel.add(bugStorageSectionLabel, gbc);
+        
+        gbc.gridy = row++;
+        bugStoragePanel.add(enableLocalBugStorageCheckBox, gbc);
+        
+        gbc.gridy = row++;
+        bugStoragePanel.add(bugStorageHintLabel, gbc);
+        
+        // 添加说明信息
+        JLabel infoLabel = new JLabel("<html><br><b>说明：</b><br>" +
+                "• 启用：会在项目根目录下创建 .pandacoder/bug-records/ 文件夹<br>" +
+                "• 禁用：不会生成任何本地文件，错误信息仅在内存中保存<br>" +
+                "• 默认禁用，可根据需要开启以更好保存bug信息，由于该功能还在内测阶段默认禁用</html>");
+        gbc.gridy = row++; gbc.insets = JBUI.insets(15, 5, 5, 5);
+        bugStoragePanel.add(infoLabel, gbc);
+        
+        return bugStoragePanel;
     }
 }
 
