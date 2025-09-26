@@ -48,7 +48,7 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
 
     // 国内大模型配置
     private boolean enableDomesticAI = false;
-    private String domesticAIModel = "qianwen"; // qianwen, wenxin, zhipu
+    private String domesticAIModel = "hunyuan"; // 默认使用腾讯混元，支持从配置文件读取
     private String domesticAIApiKey = "";
     
     // 翻译提示词配置
@@ -156,7 +156,8 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
     }
     public String getDomesticAIModel() {
         if (domesticAIModel == null || domesticAIModel.isEmpty()) {
-            domesticAIModel = "qianwen";
+            // 从配置文件读取默认模型
+            domesticAIModel = com.shuyixiao.config.TranslationModelConfig.getInstance().getDefaultDomesticAIModel();
         }
         return domesticAIModel;
     }
@@ -217,7 +218,7 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
         
         // 确保国内大模型配置不为null
         if (this.domesticAIModel == null || this.domesticAIModel.isEmpty()) {
-            this.domesticAIModel = "qianwen";
+            this.domesticAIModel = com.shuyixiao.config.TranslationModelConfig.getInstance().getDefaultDomesticAIModel();
         }
         if (this.domesticAIApiKey == null) {
             this.domesticAIApiKey = "";

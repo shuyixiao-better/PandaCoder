@@ -1,6 +1,7 @@
 package com.shuyixiao;
 
 import com.shuyixiao.setting.PluginSettings;
+import com.shuyixiao.config.TranslationModelConfig;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -52,7 +53,22 @@ public class DomesticAITranslationAPI {
             case "hunyuan":
                 return translateWithHunyuan(text, apiKey);
             default:
-                return translateWithQianwen(text, apiKey); // 默认使用通义千问
+                // 使用配置文件中的默认模型
+                String defaultModel = TranslationModelConfig.getInstance().getDefaultDomesticAIModel();
+                System.out.println("[INFO] 使用配置文件默认模型: " + defaultModel);
+
+                if ("hunyuan".equals(defaultModel)) {
+                    return translateWithHunyuan(text, apiKey);
+                } else if ("qianwen".equals(defaultModel)) {
+                    return translateWithQianwen(text, apiKey);
+                } else if ("zhipu".equals(defaultModel)) {
+                    return translateWithZhipu(text, apiKey);
+                } else if ("wenxin".equals(defaultModel)) {
+                    return translateWithWenxin(text, apiKey);
+                } else {
+                    // 最终回退到腾讯混元
+                    return translateWithHunyuan(text, apiKey);
+                }
         }
     }
     
@@ -85,7 +101,22 @@ public class DomesticAITranslationAPI {
             case "hunyuan":
                 return analyzeWithHunyuan(fullPrompt, apiKey);
             default:
-                return analyzeWithQianwen(fullPrompt, apiKey); // 默认使用通义千问
+                // 使用配置文件中的默认模型
+                String defaultModel = TranslationModelConfig.getInstance().getDefaultDomesticAIModel();
+                System.out.println("[INFO] AI分析使用配置文件默认模型: " + defaultModel);
+
+                if ("hunyuan".equals(defaultModel)) {
+                    return analyzeWithHunyuan(fullPrompt, apiKey);
+                } else if ("qianwen".equals(defaultModel)) {
+                    return analyzeWithQianwen(fullPrompt, apiKey);
+                } else if ("zhipu".equals(defaultModel)) {
+                    return analyzeWithZhipu(fullPrompt, apiKey);
+                } else if ("wenxin".equals(defaultModel)) {
+                    return analyzeWithWenxin(fullPrompt, apiKey);
+                } else {
+                    // 最终回退到腾讯混元
+                    return analyzeWithHunyuan(fullPrompt, apiKey);
+                }
         }
     }
 
