@@ -13,7 +13,7 @@ plugins {
 }
 
 group = 'com.shuyixiao'
-version = '1.1.8' // 内测版本：新增Bug记录功能开始关闭功能 - 统一版本管理
+version = '1.1.9' // 内测版本：新增Bug记录功能开始关闭功能 - 统一版本管理
 
 repositories {
     mavenCentral()
@@ -161,6 +161,11 @@ patchPluginXml {
 
     changeNotes.set("""
         <ul>
+            <li><b>1.1.9</b> - 🧪 <b>新增功能</b>：模力方舟腾讯混元模型翻译为默认值
+                <ul>
+                    <li>🐛 <b>Bug记录工具窗口</b>：模力方舟腾讯混元模型翻译为默认值</li>
+                </ul>
+            </li>
             <li><b>1.1.8</b> - 🧪 <b>内测版本</b>：新增Bug记录功能本地文件启用禁用功能
                 <ul>
                     <li>🐛 <b>Bug记录工具窗口</b>：新增Bug记录功能本地文件启用禁用功能</li>
