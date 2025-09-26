@@ -54,7 +54,8 @@ public class SettingConfigurable implements SearchableConfigurable {
     private final String[][] modelMapping = {
         {"通义千问 (Qianwen)", "qianwen"},
         {"文心一言 (Wenxin)", "wenxin"},
-        {"智谱AI (GLM-4)", "zhipu"}
+        {"智谱AI (GLM-4)", "zhipu"},
+        {"腾讯混元 (Hunyuan)", "hunyuan"}
     };
 
     public SettingConfigurable() {
@@ -114,7 +115,7 @@ public class SettingConfigurable implements SearchableConfigurable {
         JPanel enginePanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = JBUI.insets(5);
         int row = 0;
         
         // Google Cloud Translation 配置
@@ -155,9 +156,9 @@ public class SettingConfigurable implements SearchableConfigurable {
         
         // 分隔线
         JSeparator separator1 = new JSeparator();
-        gbc.gridy = row++; gbc.insets = new Insets(15, 5, 15, 5);
+        gbc.gridy = row++; gbc.insets = JBUI.insets(15, 5);
         enginePanel.add(separator1, gbc);
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = JBUI.insets(5);
         
         // 国内大模型配置
         JLabel domesticAISectionLabel = new JLabel("<html><b>国内大模型翻译</b></html>");
@@ -194,7 +195,7 @@ public class SettingConfigurable implements SearchableConfigurable {
         JPanel promptPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = JBUI.insets(5);
         int row = 0;
         
         JLabel promptSectionLabel = new JLabel("<html><b>翻译提示词配置</b></html>");
@@ -233,7 +234,7 @@ public class SettingConfigurable implements SearchableConfigurable {
         JPanel templatePanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = JBUI.insets(5);
         int row = 0;
         
         JLabel templateSectionLabel = new JLabel("<html><b>文件注释模板</b></html>");
@@ -265,7 +266,7 @@ public class SettingConfigurable implements SearchableConfigurable {
         JPanel baiduPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.insets = JBUI.insets(5);
         int row = 0;
         
         JLabel baiduSectionLabel = new JLabel("<html><b>百度翻译 API 配置</b></html>");

@@ -24,6 +24,9 @@ public class DomesticAITranslationAPI {
     // 智谱API
     private static final String ZHIPU_API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
 
+    // 腾讯混元API（码云）
+    private static final String HUNYUAN_API_URL = "https://ai.gitee.com/api/v1/chat/completions";
+
     /**
      * 使用国内大模型进行翻译
      * @param text 待翻译的中文文本
@@ -46,6 +49,8 @@ public class DomesticAITranslationAPI {
                 return translateWithWenxin(text, apiKey);
             case "zhipu":
                 return translateWithZhipu(text, apiKey);
+            case "hunyuan":
+                return translateWithHunyuan(text, apiKey);
             default:
                 return translateWithQianwen(text, apiKey); // 默认使用通义千问
         }
@@ -77,6 +82,8 @@ public class DomesticAITranslationAPI {
                 return analyzeWithWenxin(fullPrompt, apiKey);
             case "zhipu":
                 return analyzeWithZhipu(fullPrompt, apiKey);
+            case "hunyuan":
+                return analyzeWithHunyuan(fullPrompt, apiKey);
             default:
                 return analyzeWithQianwen(fullPrompt, apiKey); // 默认使用通义千问
         }
@@ -131,6 +138,29 @@ public class DomesticAITranslationAPI {
         return sendRequest(urlWithToken, requestBody.toString(), "", "wenxin");
     }
     
+    /**
+     * 使用腾讯混元进行翻译
+     */
+    private static String translateWithHunyuan(String text, String apiKey) throws IOException {
+        PluginSettings settings = PluginSettings.getInstance();
+        String prompt = buildTranslationPrompt(text, settings);
+
+        JsonArray messages = new JsonArray();
+        JsonObject message = new JsonObject();
+        message.addProperty("role", "user");
+        message.addProperty("content", prompt);
+        messages.add(message);
+
+        JsonObject requestBody = new JsonObject();
+        requestBody.addProperty("model", "Hunyuan-MT-Chimera-7B");
+        requestBody.add("messages", messages);
+        requestBody.addProperty("stream", false);
+        requestBody.addProperty("max_tokens", 100);
+        requestBody.addProperty("temperature", 0.1);
+
+        return sendRequest(HUNYUAN_API_URL, requestBody.toString(), apiKey, "hunyuan");
+    }
+
     /**
      * 使用智谱AI进行翻译
      */
@@ -197,6 +227,26 @@ public class DomesticAITranslationAPI {
     }
     
     /**
+     * 使用腾讯混元进行分析
+     */
+    private String analyzeWithHunyuan(String prompt, String apiKey) throws IOException {
+        JsonArray messages = new JsonArray();
+        JsonObject message = new JsonObject();
+        message.addProperty("role", "user");
+        message.addProperty("content", prompt);
+        messages.add(message);
+
+        JsonObject requestBody = new JsonObject();
+        requestBody.addProperty("model", "Hunyuan-MT-Chimera-7B");
+        requestBody.add("messages", messages);
+        requestBody.addProperty("stream", false);
+        requestBody.addProperty("max_tokens", 1000);
+        requestBody.addProperty("temperature", 0.3);
+
+        return sendRequest(HUNYUAN_API_URL, requestBody.toString(), apiKey, "hunyuan");
+    }
+
+    /**
      * 使用智谱AI进行分析
      */
     private String analyzeWithZhipu(String prompt, String apiKey) throws IOException {
@@ -253,6 +303,9 @@ public class DomesticAITranslationAPI {
             case "zhipu":
                 conn.setRequestProperty("Authorization", "Bearer " + apiKey);
                 break;
+            case "hunyuan":
+                conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+                break;
         }
         
         // 发送请求体
@@ -297,6 +350,8 @@ public class DomesticAITranslationAPI {
                     return parseWenxinResponse(json);
                 case "zhipu":
                     return parseZhipuResponse(json);
+                case "hunyuan":
+                    return parseHunyuanResponse(json);
                 default:
                     throw new IOException("不支持的模型类型: " + modelType);
             }
@@ -389,6 +444,31 @@ public class DomesticAITranslationAPI {
         }
     }
     
+    /**
+     * 解析腾讯混元响应
+     */
+    private static String parseHunyuanResponse(JsonObject json) throws IOException {
+        try {
+            if (json.has("error")) {
+                JsonObject error = json.getAsJsonObject("error");
+                String errorMessage = error.has("message") ? error.get("message").getAsString() : "未知错误";
+                throw new IOException("腾讯混元API错误: " + errorMessage);
+            }
+
+            if (json.has("choices") && json.getAsJsonArray("choices").size() > 0) {
+                JsonObject choice = json.getAsJsonArray("choices").get(0).getAsJsonObject();
+                if (choice.has("message")) {
+                    JsonObject message = choice.getAsJsonObject("message");
+                    return message.get("content").getAsString().trim();
+                }
+            }
+
+            throw new IOException("腾讯混元响应格式异常");
+        } catch (Exception e) {
+            throw new IOException("腾讯混元响应解析失败: " + e.getMessage());
+        }
+    }
+
     /**
      * 解析智谱AI响应
      */
