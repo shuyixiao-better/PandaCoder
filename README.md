@@ -14,7 +14,7 @@
     <img src="https://img.shields.io/badge/IntelliJ%20IDEA-Plugin-green.svg" alt="IntelliJ IDEA Plugin">
   </a>
   <a href="https://github.com/shuyixiao-better/PandaCoder/releases">
-    <img src="https://img.shields.io/badge/Version-1.1.8-blue.svg" alt="Version">
+    <img src="https://img.shields.io/badge/Version-1.1.9-blue.svg" alt="Version">
   </a>
   <a href="https://github.com/shuyixiao-better/PandaCoder/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License">
