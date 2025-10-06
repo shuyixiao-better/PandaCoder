@@ -2,6 +2,8 @@
     <id>com.shuyixiao.yixiaoPlugins</id>
 
     <name>PandaCoder</name>
+    <vendor email="yixiaoshu88@163.com" url="https://www.shuyixiao.top">舒一笑不秃头</vendor>
+    
     <description>PandaCoder 是一款专为中文开发人员设计的智能编程助手，集成了中文编程转换、Jenkins Pipeline支持、SpringBoot配置文件图标显示等多项强大功能。
 
 ## 🚀 核心功能
@@ -46,7 +48,6 @@
 • **团队协作**：统一代码命名规范，提升代码质量
 
 大幅提升中文开发人员的编程效率和开发体验，让编程更加高效、专业、愉悦！</description>
-    <vendor email="yixiaoshu88@163.com" url="https://www.shuyixiao.top">舒一笑不秃头</vendor>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
