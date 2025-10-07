@@ -19,6 +19,10 @@
 </p>
 
 <p align="center">
+  <small>🌐 <strong>访问地址</strong>：主站 <a href="https://www.shuyixiao.cn" target="_blank">www.shuyixiao.cn</a> | 备用站 <a href="https://www.shuyixiao.top" target="_blank">www.shuyixiao.top</a></small>
+</p>
+
+<p align="center">
   <a href="https://plugins.jetbrains.com/plugin/your-plugin-id">
     <img src="https://img.shields.io/badge/IntelliJ%20IDEA-Plugin-green.svg" alt="IntelliJ IDEA Plugin">
   </a>
@@ -34,7 +38,8 @@
 
 PandaCoder 是一款专为中文开发者设计的 IntelliJ IDEA 插件，集成了中文编程转换、Jenkins Pipeline支持、SpringBoot配置文件图标显示等多项强大功能。通过智能翻译引擎和专业的开发工具支持，大幅提升中文开发人员的编程效率和开发体验。
 
-> 📚 **详细功能介绍**：查看 [PandaCoder 完整功能介绍文章](https://www.shuyixiao.cn/articles/panda-coder-intro.html) 了解更多技术细节和使用场景
+> 📚 **详细功能介绍**：查看 [PandaCoder 完整功能介绍文章](https://www.shuyixiao.cn/articles/panda-coder-intro.html) 了解更多技术细节和使用场景  
+> 🌐 **访问地址**：主站 [www.shuyixiao.cn](https://www.shuyixiao.cn) | 备用站 [www.shuyixiao.top](https://www.shuyixiao.top)
 
 ### 🎯 核心价值
 - **中文思维编程**：支持中文输入，自动转换为规范的英文代码
@@ -322,7 +327,8 @@ PandaCoder 是一款专为中文开发者设计的 IntelliJ IDEA 插件，集成
 
 **联系方式**
 - **个人博客**：[www.shuyixiao.cloud](https://www.shuyixiao.cloud)
-- **插件详细介绍**：[PandaCoder 完整功能介绍](https://www.shuyixiao.cn/articles/panda-coder-intro.html) 📖
+- **插件详细介绍**：[PandaCoder 完整功能介绍](https://www.shuyixiao.cn/articles/panda-coder-intro.html) 📖  
+  🌐 **访问地址**：主站 [www.shuyixiao.cn](https://www.shuyixiao.cn) | 备用站 [www.shuyixiao.top](https://www.shuyixiao.top)
 - **公众号**：「舒一笑的架构笔记」
 - **GitHub**：[github.com/shuyixiao-better](https://github.com/shuyixiao-better)
 - **邮箱**：yixiaoshu88@163.com
