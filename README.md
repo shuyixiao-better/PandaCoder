@@ -326,7 +326,7 @@ PandaCoder 是一款专为中文开发者设计的 IntelliJ IDEA 插件，集成
 - 开源项目维护
 
 **联系方式**
-- **个人博客**：[www.shuyixiao.cloud](https://www.shuyixiao.cloud)
+- **个人博客**：<small>🌐 <strong>访问地址</strong>：主站 <a href="https://www.shuyixiao.cn" target="_blank">www.shuyixiao.cn</a> | 备用站 <a href="https://www.shuyixiao.top" target="_blank">www.shuyixiao.top</a></small>
 - **插件详细介绍**：[PandaCoder 完整功能介绍](https://www.shuyixiao.cn/articles/panda-coder-intro.html) 📖  
   🌐 **访问地址**：主站 [www.shuyixiao.cn](https://www.shuyixiao.cn) | 备用站 [www.shuyixiao.top](https://www.shuyixiao.top)
 - **公众号**：「舒一笑的架构笔记」
