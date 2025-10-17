@@ -115,17 +115,30 @@
         <projectService serviceImplementation="com.shuyixiao.bugrecorder.service.ConsoleMonitoringService"/>
         <projectService serviceImplementation="com.shuyixiao.bugrecorder.service.BugAnalysisService"/>
 
+        <!-- ES DSL 监控相关服务 -->
+        <projectService serviceImplementation="com.shuyixiao.esdsl.service.EsDslRecordService"/>
+        <projectService serviceImplementation="com.shuyixiao.esdsl.service.EsDslMonitoringService"/>
+
         <!-- 现有的启动活动 -->
         <postStartupActivity implementation="com.shuyixiao.spring.boot.startup.YamlConfigStartupActivity"/>
 
         <!-- Bug记录器启动活动 -->
         <postStartupActivity implementation="com.shuyixiao.bugrecorder.startup.BugRecorderStartupActivity"/>
 
+        <!-- ES DSL 监控启动活动 -->
+        <postStartupActivity implementation="com.shuyixiao.esdsl.startup.EsDslStartupActivity"/>
+
         <!-- Bug记录器工具窗口 -->
         <toolWindow id="Bug Recorder"
                     factoryClass="com.shuyixiao.bugrecorder.toolwindow.BugRecorderToolWindowFactory"
                     anchor="bottom"
                     icon="/icons/bug-recorder.svg"/>
+
+        <!-- ES DSL 监控工具窗口 -->
+        <toolWindow id="ES DSL Monitor"
+                    factoryClass="com.shuyixiao.esdsl.toolwindow.EsDslToolWindowFactory"
+                    anchor="bottom"
+                    icon="/icons/elasticsearch.svg"/>
 
         <!-- 更新设置状态服务 -->
         <applicationService serviceImplementation="com.shuyixiao.update.UpdateSettingsState"/>

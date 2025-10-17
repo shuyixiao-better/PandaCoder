@@ -101,6 +101,16 @@ PandaCoder 是一款专为中文开发者设计的 IntelliJ IDEA 插件，集成
 - **搜索引擎**：Elasticsearch
 - **框架**：Spring Boot
 
+### 🔍 Elasticsearch DSL 监控
+
+#### 实时查询监控
+- **自动捕获**：实时监控控制台输出，自动捕获 ES 查询 DSL
+- **智能解析**：支持多种格式（REST Client、cURL、Spring Data Elasticsearch）
+- **可视化展示**：独立工具窗口展示查询详情
+- **查询管理**：搜索、过滤、导出查询记录
+- **本地存储**：自动保存查询历史，最多 1000 条记录
+- **彩色标识**：HTTP 方法和状态码带颜色区分
+
 #### 智能图标显示
 - **编辑器左侧显示**：在gutter区域显示彩色技术栈图标
 - **多格式支持**：YAML和Properties格式配置文件
@@ -168,6 +178,15 @@ PandaCoder 是一款专为中文开发者设计的 IntelliJ IDEA 插件，集成
 - **代码规范**：统一的英文命名规范
 - **可读性提升**：清晰的语法高亮和图标标识
 - **维护性增强**：规范的代码结构和注释
+
+### 🐛 Bug 记录器
+
+#### 智能错误捕获
+- **实时监控**：自动监控控制台输出，捕获错误信息
+- **错误分类**：自动识别编译错误、运行时错误、警告等
+- **状态管理**：支持标记 Bug 状态（新建、处理中、已解决、已关闭）
+- **AI 分析**：智能分析错误原因和解决方案
+- **本地存储**：Bug 记录保存在本地，确保数据安全
 
 ## 📦 安装指南
 
@@ -273,6 +292,29 @@ PandaCoder 是一款专为中文开发者设计的 IntelliJ IDEA 插件，集成
 - **YAML格式**：application.yml、application.yaml
 - **Properties格式**：application.properties
 - **配置文件**：支持多环境配置文件
+
+### Elasticsearch DSL 监控
+
+#### 打开工具窗口
+- **位置**：在 IDEA 底部工具栏找到 "ES DSL Monitor"
+- **启用监听**：确保"启用ES监听"复选框已勾选
+
+#### 查看查询记录
+- **实时更新**：运行应用后自动捕获 ES 查询
+- **搜索过滤**：使用搜索框和过滤器定位特定查询
+- **查看详情**：点击记录查看完整 DSL 和响应信息
+- **导出查询**：选中记录后点击"导出选中"复制到剪贴板
+
+#### 日志配置
+建议配置日志级别为 DEBUG：
+```yaml
+logging:
+  level:
+    org.elasticsearch.client: DEBUG
+    org.springframework.data.elasticsearch: DEBUG
+```
+
+详细使用说明请参考 [ES DSL Monitor 使用指南](docs/EsDslMonitor使用指南.md)
 
 ## 📊 功能统计
 
