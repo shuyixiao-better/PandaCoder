@@ -175,10 +175,11 @@ public class EsDslToolWindow extends JPanel {
         // 设置列宽
         dslTable.getColumnModel().getColumn(0).setPreferredWidth(60);  // 方法
         dslTable.getColumnModel().getColumn(1).setPreferredWidth(100); // 索引
-        dslTable.getColumnModel().getColumn(2).setPreferredWidth(300); // DSL摘要
-        dslTable.getColumnModel().getColumn(3).setPreferredWidth(80);  // 执行时间
-        dslTable.getColumnModel().getColumn(4).setPreferredWidth(100); // 时间戳
-        dslTable.getColumnModel().getColumn(5).setPreferredWidth(60);  // 状态
+        dslTable.getColumnModel().getColumn(2).setPreferredWidth(200); // API路径
+        dslTable.getColumnModel().getColumn(3).setPreferredWidth(250); // DSL摘要
+        dslTable.getColumnModel().getColumn(4).setPreferredWidth(80);  // 执行时间
+        dslTable.getColumnModel().getColumn(5).setPreferredWidth(100); // 时间戳
+        dslTable.getColumnModel().getColumn(6).setPreferredWidth(60);  // 状态
         
         // 设置自定义渲染器
         dslTable.setDefaultRenderer(Object.class, new DslTableCellRenderer());
@@ -352,6 +353,13 @@ public class EsDslToolWindow extends JPanel {
             detail.append("状态码: ").append(record.getHttpStatus()).append("\n");
             if (record.getExecutionTime() != null) {
                 detail.append("执行时间: ").append(record.getExecutionTime()).append(" ms\n");
+            }
+            // ✅ 显示API路径和调用类
+            if (record.getApiPath() != null) {
+                detail.append("API路径: ").append(record.getApiPath()).append("\n");
+            }
+            if (record.getCallerClass() != null) {
+                detail.append("调用类: ").append(record.getCallerClass()).append("\n");
             }
             detail.append("\n=== DSL 查询 ===\n");
             detail.append(record.getDslQuery());
@@ -528,7 +536,7 @@ public class EsDslToolWindow extends JPanel {
      * DSL 表格模型
      */
     private static class DslTableModel extends AbstractTableModel {
-        private final String[] columnNames = {"方法", "索引", "DSL摘要", "执行时间", "时间戳", "状态"};
+        private final String[] columnNames = {"方法", "索引", "API路径", "DSL摘要", "执行时间", "时间戳", "状态"};
         private List<EsDslRecord> records = List.of();
         
         public void updateData(List<EsDslRecord> newRecords) {
@@ -566,13 +574,15 @@ public class EsDslToolWindow extends JPanel {
                     return record.getMethod();
                 case 1: // 索引
                     return record.getIndex() != null ? record.getIndex() : "N/A";
-                case 2: // DSL摘要
+                case 2: // API路径
+                    return record.getApiPath() != null ? record.getApiPath() : "N/A";
+                case 3: // DSL摘要
                     return record.getShortQuery();
-                case 3: // 执行时间
+                case 4: // 执行时间
                     return record.getExecutionTime() != null ? record.getExecutionTime() + " ms" : "N/A";
-                case 4: // 时间戳
+                case 5: // 时间戳
                     return record.getFormattedTimestamp();
-                case 5: // 状态
+                case 6: // 状态
                     return record.getHttpStatus();
                 default:
                     return null;
@@ -599,7 +609,7 @@ public class EsDslToolWindow extends JPanel {
             }
             
             // 状态列着色
-            if (column == 5 && value != null) {
+            if (column == 6 && value != null) {
                 try {
                     int status = Integer.parseInt(value.toString());
                     if (status >= 200 && status < 300) {

@@ -74,6 +74,20 @@ public class EsDslParser {
         Pattern.CASE_INSENSITIVE
     );
     
+    // ✅ 匹配API接口路径（Controller层）
+    // 格式示例: "API:/kl/api/saas/element/detail/list" 或 "uri:/kl/api/saas/element/detail/list"
+    private static final Pattern API_PATH_PATTERN = Pattern.compile(
+        "(?:API|uri)\\s*[:：]\\s*(/[^\\s,，;；\\)）}]+)",
+        Pattern.CASE_INSENSITIVE
+    );
+    
+    // ✅ 匹配调用ES的Java类
+    // 格式示例: "VectorDataRetrieverElastic.java:450" 或 "INFO (VectorDataRetrieverElastic.java:450)"
+    private static final Pattern CALLER_CLASS_PATTERN = Pattern.compile(
+        "\\(([A-Z][a-zA-Z0-9]+\\.java:\\d+)\\)",
+        Pattern.CASE_INSENSITIVE
+    );
+    
     /**
      * 判断文本是否包含 ES DSL 查询
      */
@@ -305,6 +319,18 @@ public class EsDslParser {
             }
         }
         
+        // ✅ 提取API接口路径
+        String apiPath = extractApiPath(fullText);
+        if (apiPath != null) {
+            builder.apiPath(apiPath);
+        }
+        
+        // ✅ 提取调用ES的Java类
+        String callerClass = extractCallerClass(fullText);
+        if (callerClass != null) {
+            builder.callerClass(callerClass);
+        }
+        
         // 如果没有状态码，默认为 200
         EsDslRecord tempRecord = builder.build();
         if (tempRecord.getHttpStatus() == null) {
@@ -525,5 +551,52 @@ public class EsDslParser {
             // 格式化失败时返回原始字符串
             return json;
         }
+    }
+    
+    /**
+     * ✅ 提取API接口路径
+     * 从日志文本中提取Controller层的API路径（公开方法供测试使用）
+     */
+    public static String extractApiPath(String text) {
+        if (text == null || text.isEmpty()) {
+            return null;
+        }
+        
+        Matcher matcher = API_PATH_PATTERN.matcher(text);
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+        
+        return null;
+    }
+    
+    /**
+     * ✅ 提取调用ES的Java类
+     * 从日志文本中提取最接近ES请求的Java类信息
+     */
+    public static String extractCallerClass(String text) {
+        if (text == null || text.isEmpty()) {
+            return null;
+        }
+        
+        // 查找所有匹配的类信息
+        Matcher matcher = CALLER_CLASS_PATTERN.matcher(text);
+        String lastMatch = null;
+        String lastRelevantMatch = null;
+        
+        while (matcher.find()) {
+            String className = matcher.group(1);
+            lastMatch = className;
+            
+            // 优先选择ES相关的类（VectorDataRetriever, ElasticSearch等）
+            if (className.toLowerCase().contains("elastic") || 
+                className.toLowerCase().contains("vector") ||
+                className.toLowerCase().contains("retriev")) {
+                lastRelevantMatch = className;
+            }
+        }
+        
+        // 优先返回ES相关的类，否则返回最后一个匹配的类
+        return lastRelevantMatch != null ? lastRelevantMatch : lastMatch;
     }
 }

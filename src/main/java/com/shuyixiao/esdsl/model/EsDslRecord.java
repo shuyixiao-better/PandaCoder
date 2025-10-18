@@ -23,6 +23,8 @@ public class EsDslRecord {
     private final Long executionTime; // 执行时间（毫秒）
     private final Integer httpStatus; // HTTP状态码
     private final String source;  // 来源（RestHighLevelClient, RestClient等）
+    private final String apiPath;  // API接口路径（如：/kl/api/saas/element/detail/list）
+    private final String callerClass; // 调用ES的类（如：VectorDataRetrieverElastic.java:450）
     
     private EsDslRecord(Builder builder) {
         this.id = builder.id;
@@ -36,6 +38,8 @@ public class EsDslRecord {
         this.executionTime = builder.executionTime;
         this.httpStatus = builder.httpStatus;
         this.source = builder.source;
+        this.apiPath = builder.apiPath;
+        this.callerClass = builder.callerClass;
     }
     
     public static Builder builder() {
@@ -87,6 +91,14 @@ public class EsDslRecord {
         return source;
     }
     
+    public String getApiPath() {
+        return apiPath;
+    }
+    
+    public String getCallerClass() {
+        return callerClass;
+    }
+    
     public String getFormattedTimestamp() {
         return timestamp.format(FORMATTER);
     }
@@ -129,6 +141,8 @@ public class EsDslRecord {
         private Long executionTime;
         private Integer httpStatus;
         private String source;
+        private String apiPath;
+        private String callerClass;
         
         public Builder id(String id) {
             this.id = id;
@@ -182,6 +196,16 @@ public class EsDslRecord {
         
         public Builder source(String source) {
             this.source = source;
+            return this;
+        }
+        
+        public Builder apiPath(String apiPath) {
+            this.apiPath = apiPath;
+            return this;
+        }
+        
+        public Builder callerClass(String callerClass) {
+            this.callerClass = callerClass;
             return this;
         }
         

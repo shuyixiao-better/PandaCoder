@@ -22,12 +22,12 @@ public class EsDslOutputListener implements ProcessListener {
     
     private static final Logger LOG = Logger.getInstance(EsDslOutputListener.class);
     
-    // 合理的缓冲区大小：200K 足够容纳包含向量的 DSL
+    // 合理的缓冲区大小：300K 足够容纳包含向量的 DSL + API路径上下文
     // 超过这个大小会严重影响性能
-    private static final int MAX_BUFFER_SIZE = 200000;
+    private static final int MAX_BUFFER_SIZE = 300000;
     
-    // 跨行保留的字符数：10K 足够处理跨行情况
-    private static final int CROSS_LINE_RETAIN_SIZE = 10000;
+    // 跨行保留的字符数：50K 用于保留API路径等上下文信息（需要保留足够多的历史日志）
+    private static final int CROSS_LINE_RETAIN_SIZE = 50000;
     
     // 触发解析的最小缓冲区大小 (降低门槛)
     private static final int MIN_PARSE_TRIGGER_SIZE = 200;
@@ -110,7 +110,7 @@ public class EsDslOutputListener implements ProcessListener {
                     // ✅ 只有当时间戳不同时，才说明是新请求，需要先处理旧的DSL
                     if (lastTraceTime != null && newTraceTime != null && !lastTraceTime.equals(newTraceTime)) {
                         if (DEBUG_MODE) {
-                            LOG.warn("[ES DSL] 🧹 时间戳不同,先提取旧DSL再清空缓冲区 (" + (buffer.length() / 1024) + "KB)");
+                            LOG.warn("[ES DSL] 🧹 时间戳不同,先提取旧DSL,然后清理缓冲区保留上下文 (" + (buffer.length() / 1024) + "KB)");
                         }
                         // ✅ 关键修复：先同步解析提取旧的DSL（不能异步，否则缓冲区会被清空）
                         String oldBufferContent = currentBuffer; // 已经获取了
@@ -118,7 +118,13 @@ public class EsDslOutputListener implements ProcessListener {
                             // 直接调用parseAndSave处理旧内容
                             parseAndSave(oldBufferContent);
                         }
-                        buffer.setLength(0);  // 然后清空缓冲区
+                        
+                        // ✅ 不完全清空缓冲区，保留最后的部分用于API路径提取
+                        if (buffer.length() > CROSS_LINE_RETAIN_SIZE) {
+                            String remaining = buffer.substring(buffer.length() - CROSS_LINE_RETAIN_SIZE);
+                            buffer.setLength(0);
+                            buffer.append(remaining);
+                        }
                     } else if (lastTraceTime != null && lastTraceTime.equals(newTraceTime)) {
                         // ✅ 时间戳相同，说明是ES客户端重复输出的TRACE日志（每个请求会输出2次）
                         // 需要先解析缓冲区中的第一条完整日志，然后忽略这条重复的
@@ -133,11 +139,15 @@ public class EsDslOutputListener implements ProcessListener {
                             parseAndSave(oldBufferContent);
                         }
                         
-                        // 清空缓冲区，忽略这条重复的TRACE日志
-                        buffer.setLength(0);
+                        // ✅ 不完全清空缓冲区，保留最后的部分用于API路径提取
+                        if (buffer.length() > CROSS_LINE_RETAIN_SIZE) {
+                            String remaining = buffer.substring(buffer.length() - CROSS_LINE_RETAIN_SIZE);
+                            buffer.setLength(0);
+                            buffer.append(remaining);
+                        }
                         
                         if (DEBUG_MODE) {
-                            LOG.warn("[ES DSL] ✅ 已处理并忽略重复日志");
+                            LOG.warn("[ES DSL] ✅ 已处理并忽略重复日志，保留缓冲区上下文");
                         }
                         return;  // 不添加重复的TRACE日志到缓冲区
                     } else if (DEBUG_MODE) {
@@ -245,6 +255,7 @@ public class EsDslOutputListener implements ProcessListener {
         String lowerText = text.toLowerCase();
         
         // ❌ 明确过滤掉Spring框架日志和数据库日志
+        // ⚠️ 注意：不要过滤掉包含API路径的Controller日志和调用ES的Service日志
         if (lowerText.contains("repositoryconfigurationdelegate") ||
             lowerText.contains("tomcatwebserver") ||
             lowerText.contains("dingtalkstreammanager") ||
@@ -262,12 +273,17 @@ public class EsDslOutputListener implements ProcessListener {
             lowerText.contains("preparing:") ||       // ✅ 过滤SQL准备
             lowerText.contains("parameters:") ||      // ✅ 过滤SQL参数
             lowerText.contains("==>") ||              // ✅ 过滤SQL执行标记
-            lowerText.contains("<==") ||              // ✅ 过滤SQL结果标记
-            lowerText.contains("platformauthserviceimpl") ||  // ✅ 业务日志
-            lowerText.contains("knowledgeelementdetailcontroller") ||
-            lowerText.contains("vectordataretrieverelastic") ||
-            lowerText.contains("vectorassistant")) {
+            lowerText.contains("<==")) {              // ✅ 过滤SQL结果标记
             return false;
+        }
+        
+        // ✅ 保留包含API路径的日志（Controller、Service等）
+        if (lowerText.contains("api:") || lowerText.contains("uri:") || 
+            lowerText.contains("controller") || 
+            lowerText.contains("vectordataretrieverelastic") ||
+            lowerText.contains("vectorassistant") ||
+            lowerText.contains("platformauthserviceimpl")) {
+            return true;
         }
         
         // ✅ 只保留RequestLogger的TRACE日志(完整行),不保留DEBUG日志
@@ -466,14 +482,21 @@ public class EsDslOutputListener implements ProcessListener {
                 LOG.info("  ├─ 方法: " + record.getMethod());
                 LOG.info("  ├─ 端点: " + record.getEndpoint());
                 LOG.info("  ├─ 来源: " + record.getSource());
+                LOG.info("  ├─ API路径: " + (record.getApiPath() != null ? record.getApiPath() : "N/A"));
+                LOG.info("  ├─ 调用类: " + (record.getCallerClass() != null ? record.getCallerClass() : "N/A"));
                 LOG.info("  └─ DSL 长度: " + ((record.getDslQuery() != null ? record.getDslQuery().length() : 0) / 1024) + "K");
                 
-                // 清空缓冲区（在 UI 线程）
+                // ✅ 不完全清空缓冲区，保留上下文用于后续请求的API路径提取（在 UI 线程）
                 ApplicationManager.getApplication().invokeLater(() -> {
                     if (buffer.toString().equals(bufferedText)) {
-                        buffer.setLength(0);
-                        if (DEBUG_MODE) {
-                            LOG.debug("[ES DSL] 🧹 已清空缓冲区");
+                        // 保留最后的部分用于API路径提取
+                        if (buffer.length() > CROSS_LINE_RETAIN_SIZE) {
+                            String remaining = buffer.substring(buffer.length() - CROSS_LINE_RETAIN_SIZE);
+                            buffer.setLength(0);
+                            buffer.append(remaining);
+                            if (DEBUG_MODE) {
+                                LOG.debug("[ES DSL] 🧹 已清理缓冲区，保留 " + (remaining.length() / 1024) + "KB 上下文");
+                            }
                         }
                     }
                 });
