@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -36,6 +37,9 @@ public final class EsDslRecordService {
     private final CopyOnWriteArrayList<EsDslRecord> records = new CopyOnWriteArrayList<>();
     private final Gson gson;
     private final File storageFile;
+    
+    // ✅ 记录更新监听器列表（用于实时通知UI）
+    private final List<Consumer<EsDslRecord>> recordListeners = new CopyOnWriteArrayList<>();
     
     public EsDslRecordService(Project project) {
         this.project = project;
@@ -80,8 +84,44 @@ public final class EsDslRecordService {
             saveRecordsAsync();
             
             LOG.debug("Added ES DSL record: " + record.getId());
+            
+            // ✅ 通知所有监听器（实时更新UI）
+            notifyListeners(record);
+            
         } catch (Exception e) {
             LOG.error("Failed to add ES DSL record", e);
+        }
+    }
+    
+    /**
+     * 添加记录监听器
+     * @param listener 监听器回调函数，当添加新记录时会被调用
+     */
+    public void addRecordListener(Consumer<EsDslRecord> listener) {
+        if (listener != null && !recordListeners.contains(listener)) {
+            recordListeners.add(listener);
+            LOG.debug("Added record listener, total listeners: " + recordListeners.size());
+        }
+    }
+    
+    /**
+     * 移除记录监听器
+     */
+    public void removeRecordListener(Consumer<EsDslRecord> listener) {
+        recordListeners.remove(listener);
+        LOG.debug("Removed record listener, total listeners: " + recordListeners.size());
+    }
+    
+    /**
+     * 通知所有监听器
+     */
+    private void notifyListeners(EsDslRecord record) {
+        for (Consumer<EsDslRecord> listener : recordListeners) {
+            try {
+                listener.accept(record);
+            } catch (Exception e) {
+                LOG.warn("Error notifying record listener", e);
+            }
         }
     }
     

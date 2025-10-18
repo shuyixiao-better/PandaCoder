@@ -1,0 +1,144 @@
+/**
+ * Jenkins Pipeline GDSL Script
+ * 为Jenkins Pipeline文件提供智能补全和语法支持
+ */
+
+// 检查是否为Jenkins文件的函数
+def isJenkinsFile(context) {
+    def file = context.file
+    if (!file) return false
+    
+    def fileName = file.name
+    if (fileName == 'Jenkinsfile' || fileName.startsWith('Jenkinsfile.')) {
+        return true
+    }
+    
+    def content = file.text
+    return content.contains('pipeline {') || content.contains('node {') || content.contains('@Library')
+}
+
+// 为Jenkins文件提供补全支持
+contributor(context(ctype: 'groovy.lang.Script', scope: 'scriptScope')) {
+    if (!isJenkinsFile(context)) return
+    
+    // Pipeline结构
+    method name: 'pipeline', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '定义一个声明式Pipeline'
+    method name: 'node', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '创建一个节点块（脚本式Pipeline）'
+    method name: 'node', type: 'void', params: [label: 'java.lang.String', body: 'groovy.lang.Closure'], doc: '在指定标签的节点上运行'
+    
+    // Pipeline指令
+    method name: 'agent', type: 'void', params: [config: 'java.lang.Object'], doc: '指定Pipeline的执行代理'
+    method name: 'stages', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '包含所有阶段的容器'
+    method name: 'stage', type: 'void', params: [name: 'java.lang.String', body: 'groovy.lang.Closure'], doc: '定义Pipeline中的一个阶段'
+    method name: 'steps', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '包含构建步骤的块'
+    method name: 'environment', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '定义环境变量'
+    method name: 'parameters', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '定义构建参数'
+    method name: 'options', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '配置Pipeline选项'
+    method name: 'tools', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '定义自动安装的工具'
+    method name: 'post', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '定义Pipeline完成后的操作'
+    method name: 'when', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '定义阶段执行条件'
+    method name: 'triggers', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '定义自动触发器'
+    
+    // 构建步骤
+    method name: 'sh', type: 'java.lang.String', params: [script: 'java.lang.String'], doc: '执行Shell命令'
+    method name: 'sh', type: 'java.lang.String', params: [script: 'java.util.Map'], doc: '执行Shell命令（带选项）'
+    method name: 'bat', type: 'java.lang.String', params: [script: 'java.lang.String'], doc: '执行Windows批处理命令'
+    method name: 'bat', type: 'java.lang.String', params: [script: 'java.util.Map'], doc: '执行Windows批处理命令（带选项）'
+    method name: 'powershell', type: 'java.lang.String', params: [script: 'java.lang.String'], doc: '执行PowerShell命令'
+    method name: 'echo', type: 'void', params: [message: 'java.lang.String'], doc: '输出消息到控制台'
+    method name: 'checkout', type: 'void', params: [scm: 'java.lang.Object'], doc: '检出源代码'
+    method name: 'git', type: 'void', params: [url: 'java.lang.String'], doc: '从Git仓库检出代码'
+    method name: 'script', type: 'java.lang.Object', params: [body: 'groovy.lang.Closure'], doc: '执行Groovy脚本'
+    method name: 'parallel', type: 'void', params: [branches: 'java.util.Map'], doc: '并行执行多个分支'
+    method name: 'build', type: 'java.lang.Object', params: [job: 'java.lang.String'], doc: '触发另一个Job'
+    
+    // 工件和测试
+    method name: 'archiveArtifacts', type: 'void', params: [artifacts: 'java.lang.String'], doc: '归档构建产物'
+    method name: 'publishTestResults', type: 'void', params: [testResultsPattern: 'java.lang.String'], doc: '发布测试结果'
+    method name: 'stash', type: 'void', params: [name: 'java.lang.String'], doc: '存储文件供其他节点使用'
+    method name: 'unstash', type: 'void', params: [name: 'java.lang.String'], doc: '恢复之前存储的文件'
+    method name: 'junit', type: 'void', params: [testResults: 'java.lang.String'], doc: '发布JUnit测试结果'
+    
+    // 文件操作
+    method name: 'readFile', type: 'java.lang.String', params: [file: 'java.lang.String'], doc: '读取文件内容'
+    method name: 'writeFile', type: 'void', params: [file: 'java.lang.String', text: 'java.lang.String'], doc: '写入文件内容'
+    method name: 'fileExists', type: 'java.lang.Boolean', params: [file: 'java.lang.String'], doc: '检查文件是否存在'
+    method name: 'deleteDir', type: 'void', doc: '删除当前目录下的所有内容'
+    method name: 'dir', type: 'void', params: [path: 'java.lang.String', body: 'groovy.lang.Closure'], doc: '在指定目录中执行操作'
+    method name: 'pwd', type: 'java.lang.String', doc: '获取当前工作目录'
+    
+    // 环境和凭据
+    method name: 'withEnv', type: 'void', params: [env: 'java.util.List', body: 'groovy.lang.Closure'], doc: '使用指定环境变量'
+    method name: 'withCredentials', type: 'void', params: [bindings: 'java.util.List', body: 'groovy.lang.Closure'], doc: '使用凭据'
+    
+    // 参数类型
+    method name: 'string', type: 'void', params: [name: 'java.lang.String', defaultValue: 'java.lang.String', description: 'java.lang.String'], doc: '字符串参数'
+    method name: 'booleanParam', type: 'void', params: [name: 'java.lang.String', defaultValue: 'java.lang.Boolean', description: 'java.lang.String'], doc: '布尔参数'
+    method name: 'choice', type: 'void', params: [name: 'java.lang.String', choices: 'java.util.List', description: 'java.lang.String'], doc: '选择参数'
+    method name: 'password', type: 'void', params: [name: 'java.lang.String', defaultValue: 'java.lang.String', description: 'java.lang.String'], doc: '密码参数'
+    method name: 'text', type: 'void', params: [name: 'java.lang.String', defaultValue: 'java.lang.String', description: 'java.lang.String'], doc: '文本参数'
+    method name: 'file', type: 'void', params: [name: 'java.lang.String', description: 'java.lang.String'], doc: '文件参数'
+    
+    // Post条件
+    method name: 'always', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '总是执行'
+    method name: 'success', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '成功时执行'
+    method name: 'failure', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '失败时执行'
+    method name: 'unstable', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '不稳定时执行'
+    method name: 'changed', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '状态改变时执行'
+    method name: 'fixed', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '修复时执行'
+    method name: 'regression', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '回归时执行'
+    
+    // 通知和交互
+    method name: 'emailext', type: 'void', params: [subject: 'java.lang.String', body: 'java.lang.String', to: 'java.lang.String'], doc: '发送扩展邮件'
+    method name: 'email', type: 'void', params: [subject: 'java.lang.String', body: 'java.lang.String', to: 'java.lang.String'], doc: '发送邮件'
+    method name: 'input', type: 'java.lang.String', params: [message: 'java.lang.String'], doc: '等待用户输入'
+    method name: 'slackSend', type: 'void', params: [message: 'java.lang.String'], doc: '发送Slack消息'
+    
+    // 其他常用方法
+    method name: 'timeout', type: 'void', params: [time: 'java.lang.Integer', unit: 'java.lang.String', body: 'groovy.lang.Closure'], doc: '设置超时'
+    method name: 'retry', type: 'void', params: [count: 'java.lang.Integer', body: 'groovy.lang.Closure'], doc: '重试执行'
+    method name: 'catchError', type: 'void', params: [body: 'groovy.lang.Closure'], doc: '捕获错误继续执行'
+    method name: 'tool', type: 'java.lang.String', params: [name: 'java.lang.String'], doc: '获取工具路径'
+    method name: 'isUnix', type: 'java.lang.Boolean', doc: '检查是否为Unix系统'
+    method name: 'sleep', type: 'void', params: [time: 'java.lang.Integer'], doc: '暂停执行'
+    method name: 'milestone', type: 'void', params: [ordinal: 'java.lang.Integer'], doc: '设置里程碑'
+    method name: 'lock', type: 'void', params: [resource: 'java.lang.String', body: 'groovy.lang.Closure'], doc: '资源锁定'
+    
+    // 全局变量
+    property name: 'env', type: 'java.util.Map', doc: '环境变量映射'
+    property name: 'params', type: 'java.util.Map', doc: '构建参数映射'
+    property name: 'currentBuild', type: 'java.lang.Object', doc: '当前构建对象'
+    property name: 'scm', type: 'java.lang.Object', doc: '源代码管理对象'
+    property name: 'workspace', type: 'java.lang.String', doc: '工作空间路径'
+    
+    // Agent配置选项
+    method name: 'any', type: 'void', doc: '任何可用代理'
+    method name: 'none', type: 'void', doc: '不分配代理'
+    method name: 'label', type: 'void', params: [name: 'java.lang.String'], doc: '指定标签的代理'
+    method name: 'docker', type: 'void', params: [image: 'java.lang.String'], doc: 'Docker代理'
+    method name: 'dockerfile', type: 'void', params: [filename: 'java.lang.String'], doc: '使用Dockerfile的代理'
+    
+    // When条件
+    method name: 'branch', type: 'void', params: [pattern: 'java.lang.String'], doc: '分支条件'
+    method name: 'buildingTag', type: 'void', doc: '构建标签条件'
+    method name: 'changelog', type: 'void', params: [pattern: 'java.lang.String'], doc: '变更日志条件'
+    method name: 'changeset', type: 'void', params: [pattern: 'java.lang.String'], doc: '变更集条件'
+    method name: 'environment', type: 'void', params: [name: 'java.lang.String', value: 'java.lang.String'], doc: '环境变量条件'
+    method name: 'expression', type: 'void', params: [expr: 'java.lang.String'], doc: '表达式条件'
+    method name: 'not', type: 'void', params: [condition: 'groovy.lang.Closure'], doc: '否定条件'
+    method name: 'allOf', type: 'void', params: [conditions: 'groovy.lang.Closure'], doc: '所有条件'
+    method name: 'anyOf', type: 'void', params: [conditions: 'groovy.lang.Closure'], doc: '任何条件'
+    
+    // Options
+    method name: 'buildDiscarder', type: 'void', params: [policy: 'java.lang.Object'], doc: '构建丢弃策略'
+    method name: 'disableConcurrentBuilds', type: 'void', doc: '禁用并发构建'
+    method name: 'skipDefaultCheckout', type: 'void', doc: '跳过默认检出'
+    method name: 'skipStagesAfterUnstable', type: 'void', doc: '不稳定后跳过阶段'
+    method name: 'timestamps', type: 'void', doc: '显示时间戳'
+    method name: 'retry', type: 'void', params: [count: 'java.lang.Integer'], doc: '设置重试次数'
+    
+    // Triggers
+    method name: 'cron', type: 'void', params: [schedule: 'java.lang.String'], doc: 'Cron定时触发'
+    method name: 'pollSCM', type: 'void', params: [schedule: 'java.lang.String'], doc: '轮询SCM触发'
+    method name: 'upstream', type: 'void', params: [jobs: 'java.lang.String', threshold: 'java.lang.String'], doc: '上游Job触发'
+} 

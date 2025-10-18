@@ -34,7 +34,7 @@ public class ConsoleOutputListener implements ProcessListener {
     private final Object errorBufferLock = new Object();
 
     // 错误缓冲配置
-    private static final int MAX_BUFFER_SIZE = 10000; // 最大缓冲大小
+    private static final int MAX_BUFFER_SIZE = 50000; // 最大缓冲大小（从10KB增加到50KB，避免大型堆栈跟踪被截断）
     private static final int BUFFER_TIMEOUT_MS = 5000; // 缓冲超时时间（毫秒）
     private long lastBufferUpdateTime = System.currentTimeMillis();
 
@@ -115,6 +115,18 @@ public class ConsoleOutputListener implements ProcessListener {
         }
 
         String lowerText = text.toLowerCase();
+        
+        // ✅ 过滤掉ES TRACE日志（避免误判为错误）
+        // ES的TRACE日志可能包含"Exception"、"Error"等关键词（在JSON数据或URL中）
+        if (lowerText.contains("requestlogger") && lowerText.contains("trace")) {
+            return false;
+        }
+        
+        // ✅ 过滤掉ES响应行（以 # 开头）
+        if (text.trim().startsWith("#") && (lowerText.contains("http") || lowerText.contains("elastic"))) {
+            return false;
+        }
+        
         for (String indicator : ERROR_INDICATORS) {
             if (lowerText.contains(indicator.toLowerCase())) {
                 return true;

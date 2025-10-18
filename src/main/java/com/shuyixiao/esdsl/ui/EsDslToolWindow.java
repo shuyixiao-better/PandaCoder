@@ -21,6 +21,7 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * ES DSL 工具窗口
@@ -50,12 +51,23 @@ public class EsDslToolWindow extends JPanel {
         setupEventHandlers();
         refreshData();
         
-        // 每10秒自动刷新一次
+        // ✅ 注册实时监听器（当有新记录时立即刷新UI）
+        Consumer<EsDslRecord> recordListener = record -> {
+            ApplicationManager.getApplication().invokeLater(() -> {
+                refreshData();
+            });
+        };
+        recordService.addRecordListener(recordListener);
+        
+        // 每10秒自动刷新一次（作为备用机制）
         Timer refreshTimer = new Timer(10000, e -> refreshData());
         refreshTimer.start();
         
-        // 确保 Timer 在窗口关闭时被清理
-        Disposer.register(project, () -> refreshTimer.stop());
+        // 确保 Timer 和监听器在窗口关闭时被清理
+        Disposer.register(project, () -> {
+            refreshTimer.stop();
+            recordService.removeRecordListener(recordListener);
+        });
     }
     
     /**

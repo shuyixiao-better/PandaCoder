@@ -27,3 +27,6 @@ lib/**/*.zip
 
 # 但不要忽略 gradlew 文件
 # 这些文件应该被提交到版本控制中
+
+#Ignore cursor AI rules
+.cursor\rules\codacy.mdc
