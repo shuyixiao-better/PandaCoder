@@ -65,7 +65,7 @@ public class WelcomeDialog extends DialogWrapper {
         // 加载插件图标
         Icon pluginIcon;
         try {
-            pluginIcon = IconLoader.getIcon("/META-INF/pluginIcon.svg", WelcomeDialog.class);
+            pluginIcon = IconLoader.getIcon("/icons/pluginIcon.svg", WelcomeDialog.class);
         } catch (Exception e) {
             pluginIcon = UIUtil.getInformationIcon();
         }
