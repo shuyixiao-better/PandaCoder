@@ -125,7 +125,6 @@ public class WelcomeDialog extends DialogWrapper {
                 "🎉 欢迎使用 PandaCoder！您的智能编码伙伴已就绪</p>" +
                 "<p style='margin-bottom: 8px; color: #666666'>专为中文开发者设计，让编码更高效、更智能</p>" +
                 "<p style='margin-bottom: 15px; color: #FF6B35; font-size: 12px; font-style: italic'>" +
-                "🧪 当前为内测版本，部分功能可能存在不稳定性，请谨慎使用</p>" +
                 "</body></html>");
         contentPanel.add(welcomeLabel, BorderLayout.NORTH);
         
