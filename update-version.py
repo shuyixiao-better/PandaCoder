@@ -16,14 +16,44 @@ if sys.platform == 'win32':
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 def read_properties(file_path):
-    """读取 properties 文件"""
+    """读取 properties 文件，支持多行值"""
     props = {}
+    current_key = None
+    current_value = []
+    
     with open(file_path, 'r', encoding='utf-8') as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith('#') and '=' in line:
-                key, value = line.split('=', 1)
-                props[key.strip()] = value.strip()
+        lines = f.readlines()
+        
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        
+        # 跳过空行和注释行
+        if not stripped or stripped.startswith('#'):
+            # 如果当前有正在读取的key，且遇到空行或注释，说明多行值结束
+            if current_key and stripped.startswith('#'):
+                props[current_key] = '\n'.join(current_value)
+                current_key = None
+                current_value = []
+            continue
+        
+        # 检查是否是新的 key=value 行
+        if '=' in stripped and not stripped.startswith('|'):
+            # 保存之前的 key-value
+            if current_key:
+                props[current_key] = '\n'.join(current_value)
+            
+            # 开始新的 key-value
+            key, value = stripped.split('=', 1)
+            current_key = key.strip()
+            current_value = [value.strip()]
+        elif current_key:
+            # 这是多行值的延续行
+            current_value.append(stripped)
+    
+    # 保存最后一个 key-value
+    if current_key:
+        props[current_key] = '\n'.join(current_value)
+    
     return props
 
 def update_version_properties(plugin_version, version_type, release_date, current_features):
