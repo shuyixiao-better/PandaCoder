@@ -419,6 +419,23 @@ PandaCoder 是一个开源项目，欢迎社区贡献。
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 打开 Pull Request
 
+### 💖 支持项目
+
+如果 PandaCoder 帮助到了您，欢迎通过以下方式支持项目发展：
+
+- ⭐ **Star 项目**：在 GitHub 上给项目点个 Star
+- 🔔 **关注公众号**：「舒一笑的架构笔记」获取最新动态
+- ☕ **赞助支持**：请作者喝杯咖啡，激励持续更新
+
+<p align="center">
+  <img src="src/main/resources/images/微信收款.jpg" width="200" alt="微信赞助">
+  <img src="src/main/resources/images/支付宝收款.jpg" width="200" alt="支付宝赞助">
+</p>
+
+<p align="center">
+  <sub>扫码赞助，金额随心 | 您的支持是最大的动力</sub>
+</p>
+
 ## 🚀 未来规划
 
 ### 短期计划 (v1.2.0)
@@ -458,5 +475,5 @@ PandaCoder 是一个开源项目，欢迎社区贡献。
 </p>
 
 <p align="center">
-  <em>如果这个项目对您有帮助，请给个 ⭐ Star 支持一下！</em>
+  <em>如果这个项目对您有帮助，欢迎 Star ⭐ 支持！</em>
 </p>
