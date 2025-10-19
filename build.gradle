@@ -50,6 +50,11 @@ intellij {
     updateSinceUntilBuild = false
 }
 
+// 禁用插件版本检查，避免网络问题导致的警告
+tasks.withType(org.jetbrains.intellij.tasks.InitializeIntelliJPluginTask) {
+    offline = true
+}
+
 // 确保图标资源被正确包含
 sourceSets {
     main {
