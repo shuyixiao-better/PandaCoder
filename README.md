@@ -341,6 +341,8 @@ logging:
 
 详细使用说明请参考 [ES DSL Monitor 使用指南](docs/EsDslMonitor使用指南.md)
 
+更多文档请查看 [docs](docs/) 目录。
+
 ## 📊 功能统计
 
 ### 支持的技术栈
