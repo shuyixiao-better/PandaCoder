@@ -22,12 +22,13 @@ public class EsDslOutputListener implements ProcessListener {
     
     private static final Logger LOG = Logger.getInstance(EsDslOutputListener.class);
     
-    // 合理的缓冲区大小：300K 足够容纳包含向量的 DSL + API路径上下文
-    // 超过这个大小会严重影响性能
-    private static final int MAX_BUFFER_SIZE = 300000;
+    // 合理的缓冲区大小：2MB 足够容纳包含大量向量数据的 ES 响应 + API路径上下文
+    // ⚠️ 从300KB增加到2MB以支持大型ES响应(包含vector数组可能超过700KB)
+    private static final int MAX_BUFFER_SIZE = 2000000;
     
-    // 跨行保留的字符数：50K 用于保留API路径等上下文信息（需要保留足够多的历史日志）
-    private static final int CROSS_LINE_RETAIN_SIZE = 50000;
+    // 跨行保留的字符数：200K 用于保留API路径等上下文信息（需要保留足够多的历史日志）
+    // ⚠️ 从50KB增加到200KB以确保大型响应不会丢失上下文
+    private static final int CROSS_LINE_RETAIN_SIZE = 200000;
     
     // 触发解析的最小缓冲区大小 (降低门槛)
     private static final int MIN_PARSE_TRIGGER_SIZE = 200;
@@ -117,6 +118,8 @@ public class EsDslOutputListener implements ProcessListener {
                     LOG.warn("[ES DSL] 当前缓冲区大小: " + (buffer.length() / 1024) + "KB");
                     LOG.warn("[ES DSL] 前150字符: " + text.substring(0, Math.min(150, text.length())));
                 }
+                
+                // ⚠️ 不要立即解析，等待后续的响应数据
                 return;  // ✅ 提前返回,不再执行shouldKeepText检查
             }
             
