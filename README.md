@@ -1,7 +1,7 @@
 # PandaCoder
 
 <p align="center">
-  <img src="src/main/resources/META-INF/pluginIcon.svg" width="128" alt="PandaCoder Logo">
+  <img src="src/main/resources/icons/pluginIcon.svg" width="128" alt="PandaCoder Logo">
 </p>
 
 <p align="center">
