@@ -46,13 +46,34 @@ gradlew clean build
 ./gradlew clean build
 ```
 
-### 4. 提交更改
+### 4. 同步到博客（可选）
+
+如果您维护了博客项目，可以自动同步版本信息：
 
 ```bash
+# 方式一：一键更新（推荐）
+python update-all.py  # 同时更新 PandaCoder 和博客
+
+# 方式二：单独同步
+python sync-to-blog.py
+```
+
+详细说明请参考：[BLOG_SYNC_GUIDE.md](BLOG_SYNC_GUIDE.md)
+
+### 5. 提交更改
+
+```bash
+# PandaCoder 项目
 git add .
 git commit -m "chore: update version to 1.2.0"
 git tag v1.2.0
 git push && git push --tags
+
+# 博客项目（如果已同步）
+cd E:\Project\博客项目\我的博客\shuyixiao-studio
+git add .
+git commit -m "docs: update PandaCoder to v1.2.0"
+git push
 ```
 
 ## 📝 自动更新的文件

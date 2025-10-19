@@ -102,6 +102,9 @@ def main():
     print(f"  2. 提交更改: git add . && git commit -m 'chore: update version to {plugin_version}'")
     print(f"  3. 创建标签: git tag v{plugin_version}")
     print("  4. 推送远程: git push && git push --tags")
+    print()
+    print("📝 同步到博客:")
+    print("  运行: python sync-to-blog.py")
     print("=" * 60)
 
 if __name__ == '__main__':

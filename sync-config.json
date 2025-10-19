@@ -1,0 +1,16 @@
+{
+  "blog": {
+    "projectPath": "E:\\Project\\博客项目\\我的博客\\shuyixiao-studio",
+    "articlePath": "docs/articles/panda-coder-intro.md",
+    "configPath": "docs/.vitepress/config.mts",
+    "devServerUrl": "http://localhost:5173",
+    "articleUrl": "/articles/panda-coder-intro.html"
+  },
+  "sync": {
+    "enabled": true,
+    "autoCommit": false,
+    "createChangelog": true,
+    "updateSidebar": true
+  }
+}
+
