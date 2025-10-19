@@ -220,10 +220,6 @@ public class EsDslToolWindow extends JPanel {
         copyAllButton.addActionListener(e -> copyAllToClipboard());
         buttonPanel.add(copyAllButton);
         
-        JButton formatButton = new JButton("格式化");
-        formatButton.addActionListener(e -> formatDetailArea());
-        buttonPanel.add(formatButton);
-        
         JButton kibanaButton = new JButton("一键Kibana");
         kibanaButton.setToolTipText("生成可在Kibana中直接使用的查询语句");
         kibanaButton.addActionListener(e -> copyKibanaFormat());
@@ -483,14 +479,6 @@ public class EsDslToolWindow extends JPanel {
         } catch (Exception e) {
             Messages.showErrorDialog(project, "复制失败: " + e.getMessage(), "错误");
         }
-    }
-    
-    /**
-     * 格式化详情区域
-     */
-    private void formatDetailArea() {
-        // 这里可以添加更高级的 JSON 格式化逻辑
-        Messages.showInfoMessage(project, "格式化功能开发中", "提示");
     }
     
     /**
