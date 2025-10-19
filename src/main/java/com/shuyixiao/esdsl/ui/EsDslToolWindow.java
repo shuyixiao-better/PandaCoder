@@ -401,17 +401,9 @@ public class EsDslToolWindow extends JPanel {
      * 清空所有记录
      */
     private void clearAllRecords() {
-        int result = Messages.showYesNoDialog(
-                project,
-                "确定要清空所有 ES DSL 查询记录吗？",
-                "清空确认",
-                Messages.getQuestionIcon()
-        );
-        if (result == Messages.YES) {
-            recordService.clearAllRecords();
-            refreshData();
-            Messages.showInfoMessage(project, "已清空所有记录", "操作成功");
-        }
+        // 直接清空，不需要确认弹窗
+        recordService.clearAllRecords();
+        refreshData();
     }
     
     /**

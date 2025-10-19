@@ -93,69 +93,21 @@ public class EsDslOutputListener implements ProcessListener {
         try {
             // ✅ 优先处理新的TRACE RequestLogger日志(不通过shouldKeepText检查)
             if (text.contains("TRACE") && text.contains("RequestLogger") && text.contains("curl")) {
-                // 如果缓冲区已有内容,需要判断是否是新的请求
-                if (buffer.length() > 100) {
-                    String currentBuffer = buffer.toString();
-                    
-                    // 提取当前缓冲区中最后一个TRACE日志的时间戳
-                    String lastTraceTime = extractLastTraceTimestamp(currentBuffer);
-                    String newTraceTime = extractTraceTimestamp(text);
-                    
+                // ✅ 如果缓冲区已有较多内容，先触发解析
+                if (buffer.length() > 10000) { // 超过10KB就先解析
                     if (DEBUG_MODE) {
-                        LOG.warn("[ES DSL] 🕐 时间戳检查:");
-                        LOG.warn("[ES DSL]   缓冲区最后TRACE: " + (lastTraceTime != null ? lastTraceTime : "null"));
-                        LOG.warn("[ES DSL]   新TRACE: " + (newTraceTime != null ? newTraceTime : "null"));
+                        LOG.warn("[ES DSL] 🔍 缓冲区较大(" + (buffer.length() / 1024) + "KB)，先解析旧内容");
                     }
-                    
-                    // ✅ 只有当时间戳不同时，才说明是新请求，需要先处理旧的DSL
-                    if (lastTraceTime != null && newTraceTime != null && !lastTraceTime.equals(newTraceTime)) {
-                        if (DEBUG_MODE) {
-                            LOG.warn("[ES DSL] 🧹 时间戳不同,先提取旧DSL,然后清理缓冲区保留上下文 (" + (buffer.length() / 1024) + "KB)");
-                        }
-                        // ✅ 关键修复：先同步解析提取旧的DSL（不能异步，否则缓冲区会被清空）
-                        String oldBufferContent = currentBuffer; // 已经获取了
-                        if (oldBufferContent.length() > 200) {
-                            // 直接调用parseAndSave处理旧内容
-                            parseAndSave(oldBufferContent);
-                        }
-                        
-                        // ✅ 不完全清空缓冲区，保留最后的部分用于API路径提取
-                        if (buffer.length() > CROSS_LINE_RETAIN_SIZE) {
-                            String remaining = buffer.substring(buffer.length() - CROSS_LINE_RETAIN_SIZE);
-                            buffer.setLength(0);
-                            buffer.append(remaining);
-                        }
-                    } else if (lastTraceTime != null && lastTraceTime.equals(newTraceTime)) {
-                        // ✅ 时间戳相同，说明是ES客户端重复输出的TRACE日志（每个请求会输出2次）
-                        // 需要先解析缓冲区中的第一条完整日志，然后忽略这条重复的
-                        if (DEBUG_MODE) {
-                            LOG.warn("[ES DSL] ⏭️  时间戳相同,检测到重复TRACE日志");
-                            LOG.warn("[ES DSL] 🔍 先解析缓冲区内容,然后忽略重复日志");
-                        }
-                        
-                        // 先解析缓冲区中的内容（第一条完整的TRACE日志）
-                        String oldBufferContent = currentBuffer;
-                        if (oldBufferContent.length() > 200) {
-                            parseAndSave(oldBufferContent);
-                        }
-                        
-                        // ✅ 不完全清空缓冲区，保留最后的部分用于API路径提取
-                        if (buffer.length() > CROSS_LINE_RETAIN_SIZE) {
-                            String remaining = buffer.substring(buffer.length() - CROSS_LINE_RETAIN_SIZE);
-                            buffer.setLength(0);
-                            buffer.append(remaining);
-                        }
-                        
-                        if (DEBUG_MODE) {
-                            LOG.warn("[ES DSL] ✅ 已处理并忽略重复日志，保留缓冲区上下文");
-                        }
-                        return;  // 不添加重复的TRACE日志到缓冲区
-                    } else if (DEBUG_MODE) {
-                        LOG.warn("[ES DSL] ⏸️  无法提取时间戳,保留缓冲区");
+                    // 先解析缓冲区中的内容
+                    String oldBufferContent = buffer.toString();
+                    if (oldBufferContent.length() > 200) {
+                        parseAndSave(oldBufferContent);
                     }
+                    // 清空缓冲区，准备接收新的TRACE日志
+                    buffer.setLength(0);
                 }
                 
-                // ✅ 无条件添加新TRACE日志(即使缓冲区为空)
+                // ✅ 添加新TRACE日志
                 buffer.append(text);
                 
                 // 调试：如果包含关键词，输出日志
@@ -198,50 +150,6 @@ public class EsDslOutputListener implements ProcessListener {
         }
     }
     
-    /**
-     * 从TRACE日志中提取时间戳
-     * 例如: "2025-10-18 21:07:07,119 TRACE" -> "21:07:07,119"
-     */
-    private String extractTraceTimestamp(String text) {
-        if (text == null || !text.contains("TRACE")) {
-            return null;
-        }
-        
-        try {
-            // 匹配格式: 2025-10-18 21:07:07,119 TRACE
-            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\d{4}-\\d{2}-\\d{2}\\s+(\\d{2}:\\d{2}:\\d{2},\\d{3})\\s+TRACE");
-            java.util.regex.Matcher matcher = pattern.matcher(text);
-            if (matcher.find()) {
-                return matcher.group(1);
-            }
-        } catch (Exception e) {
-            // 忽略提取失败
-        }
-        return null;
-    }
-    
-    /**
-     * 从缓冲区中提取最后一个TRACE日志的时间戳
-     */
-    private String extractLastTraceTimestamp(String buffer) {
-        if (buffer == null || !buffer.contains("TRACE")) {
-            return null;
-        }
-        
-        try {
-            // 查找最后一个TRACE日志
-            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("\\d{4}-\\d{2}-\\d{2}\\s+(\\d{2}:\\d{2}:\\d{2},\\d{3})\\s+TRACE");
-            java.util.regex.Matcher matcher = pattern.matcher(buffer);
-            String lastTimestamp = null;
-            while (matcher.find()) {
-                lastTimestamp = matcher.group(1);
-            }
-            return lastTimestamp;
-        } catch (Exception e) {
-            // 忽略提取失败
-        }
-        return null;
-    }
     
     /**
      * 判断是否应该保留该文本到缓冲区
