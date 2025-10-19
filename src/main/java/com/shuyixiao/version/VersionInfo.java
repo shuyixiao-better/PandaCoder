@@ -1,36 +1,57 @@
 package com.shuyixiao.version;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 /**
  * PandaCoder 插件版本信息管理
  * 统一管理插件版本号、版本历史和功能说明
- *
+ * 
+ * 版本信息从 gradle.properties 统一管理，通过构建时生成的 version.properties 文件读取
+ * 
  * @author 舒一笑不秃头
- * @version 1.1.7
+ * @version 1.1.9
  * @since 2024-01-01
  */
 public final class VersionInfo {
     
     // ==================== 当前版本信息 ====================
     
-    /**
-     * 当前版本号
-     */
-    public static final String CURRENT_VERSION = "1.1.9";
+    private static final Properties VERSION_PROPS = new Properties();
+    
+    static {
+        // 从构建时生成的 version.properties 文件加载版本信息
+        try (InputStream input = VersionInfo.class.getClassLoader().getResourceAsStream("version.properties")) {
+            if (input != null) {
+                VERSION_PROPS.load(input);
+            } else {
+                System.err.println("Warning: version.properties not found, using default values");
+            }
+        } catch (IOException e) {
+            System.err.println("Error loading version.properties: " + e.getMessage());
+        }
+    }
     
     /**
-     * 当前版本类型
+     * 当前版本号（从 gradle.properties 读取）
      */
-    public static final String VERSION_TYPE = "内测版本";
+    public static final String CURRENT_VERSION = VERSION_PROPS.getProperty("version", "1.1.9");
     
     /**
-     * 当前版本发布日期
+     * 当前版本类型（从 gradle.properties 读取）
      */
-    public static final String RELEASE_DATE = "2024-12-21";
+    public static final String VERSION_TYPE = VERSION_PROPS.getProperty("versionType", "内测版本");
     
     /**
-     * 当前版本主要功能
+     * 当前版本发布日期（从 gradle.properties 读取）
      */
-    public static final String CURRENT_FEATURES = "新增Bug记录功能本地文件启用禁用功能";
+    public static final String RELEASE_DATE = VERSION_PROPS.getProperty("releaseDate", "2024-12-21");
+    
+    /**
+     * 当前版本主要功能（从 gradle.properties 读取）
+     */
+    public static final String CURRENT_FEATURES = VERSION_PROPS.getProperty("currentFeatures", "模力方舟腾讯混元模型翻译为默认值");
     
     // ==================== 版本历史 ====================
     
