@@ -224,6 +224,11 @@ public class EsDslToolWindow extends JPanel {
         formatButton.addActionListener(e -> formatDetailArea());
         buttonPanel.add(formatButton);
         
+        JButton kibanaButton = new JButton("一键Kibana");
+        kibanaButton.setToolTipText("生成可在Kibana中直接使用的查询语句");
+        kibanaButton.addActionListener(e -> copyKibanaFormat());
+        buttonPanel.add(kibanaButton);
+        
         panel.add(buttonPanel, BorderLayout.SOUTH);
         
         return panel;
@@ -486,6 +491,59 @@ public class EsDslToolWindow extends JPanel {
     private void formatDetailArea() {
         // 这里可以添加更高级的 JSON 格式化逻辑
         Messages.showInfoMessage(project, "格式化功能开发中", "提示");
+    }
+    
+    /**
+     * 生成Kibana格式并复制到剪贴板
+     * 格式: METHOD /index/_search
+     * {
+     *   "query": {...}
+     * }
+     */
+    private void copyKibanaFormat() {
+        int selectedRow = dslTable.getSelectedRow();
+        if (selectedRow < 0) {
+            Messages.showWarningDialog(project, "请先选择一个查询记录", "提示");
+            return;
+        }
+        
+        EsDslRecord record = tableModel.getRecordAt(selectedRow);
+        if (record == null) {
+            Messages.showWarningDialog(project, "无法获取记录信息", "提示");
+            return;
+        }
+        
+        try {
+            StringBuilder kibanaQuery = new StringBuilder();
+            
+            // 第一行: 请求方法和路径
+            String method = record.getMethod() != null ? record.getMethod() : "POST";
+            String endpoint = record.getEndpoint() != null ? record.getEndpoint() : "your_index/_search";
+            
+            // ✅ endpoint已经包含完整路径(索引名/_search?参数)
+            // 不需要再拼接index,直接使用endpoint
+            kibanaQuery.append(method).append(" /").append(endpoint);
+            kibanaQuery.append("\n");
+            
+            // 第二行开始: DSL查询体
+            String dsl = record.getDslQuery();
+            if (dsl != null && !dsl.trim().isEmpty()) {
+                kibanaQuery.append(dsl);
+            } else {
+                kibanaQuery.append("{}");
+            }
+            
+            // 复制到剪贴板
+            copyToClipboard(kibanaQuery.toString());
+            
+            // 显示成功消息
+            Messages.showInfoMessage(project, 
+                "Kibana格式已复制到剪贴板\n\n可以直接粘贴到Kibana Dev Tools中使用", 
+                "操作成功");
+            
+        } catch (Exception e) {
+            Messages.showErrorDialog(project, "生成Kibana格式失败: " + e.getMessage(), "错误");
+        }
     }
     
     /**

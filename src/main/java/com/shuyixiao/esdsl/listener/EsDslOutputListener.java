@@ -94,21 +94,8 @@ public class EsDslOutputListener implements ProcessListener {
         try {
             // ✅ 优先处理新的TRACE RequestLogger日志(不通过shouldKeepText检查)
             if (text.contains("TRACE") && text.contains("RequestLogger") && text.contains("curl")) {
-                // ✅ 如果缓冲区已有较多内容，先触发解析
-                if (buffer.length() > 10000) { // 超过10KB就先解析
-                    if (DEBUG_MODE) {
-                        LOG.warn("[ES DSL] 🔍 缓冲区较大(" + (buffer.length() / 1024) + "KB)，先解析旧内容");
-                    }
-                    // 先解析缓冲区中的内容
-                    String oldBufferContent = buffer.toString();
-                    if (oldBufferContent.length() > 200) {
-                        parseAndSave(oldBufferContent);
-                    }
-                    // 清空缓冲区，准备接收新的TRACE日志
-                    buffer.setLength(0);
-                }
-                
-                // ✅ 添加新TRACE日志
+                // ✅ 不要清空缓冲区!保留之前的API路径等上下文信息
+                // 直接添加新TRACE日志到缓冲区
                 buffer.append(text);
                 
                 // 调试：如果包含关键词，输出日志
@@ -128,12 +115,20 @@ public class EsDslOutputListener implements ProcessListener {
                 buffer.append(text);
             }
             
-            // 快速检查：缓冲区太大时立即清理（避免性能问题）
+            // 快速检查：缓冲区太大时立即触发解析（避免丢失API路径等重要信息）
             if (buffer.length() > MAX_BUFFER_SIZE) {
-                // 保留最后的部分
-                String remaining = buffer.substring(buffer.length() - CROSS_LINE_RETAIN_SIZE);
-                buffer.setLength(0);
-                buffer.append(remaining);
+                if (DEBUG_MODE) {
+                    LOG.warn("[ES DSL] ⚠️ 缓冲区超过限制(" + (buffer.length() / 1024) + "KB)，立即触发解析");
+                }
+                // ✅ 立即解析缓冲区内容，不要丢弃前面的部分（API路径在前面）
+                ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                    try {
+                        String bufferedText = buffer.toString();
+                        parseAndSave(bufferedText);
+                    } catch (Exception e) {
+                        LOG.error("[ES DSL] 解析失败", e);
+                    }
+                });
                 return;
             }
             
@@ -219,7 +214,6 @@ public class EsDslOutputListener implements ProcessListener {
             // 检查缓冲区是否有RequestLogger日志
             if (bufferedText.contains("RequestLogger")) {
                 // 保留后续的行(可能是curl命令的continuation、响应头、JSON响应等)
-                // 排除明显不相关的新日志行(有时间戳+新的类名)
                 if (text.startsWith("#") ||                    // 响应行
                     text.contains("'") ||                       // curl参数
                     text.contains("-d") ||                      // curl data
@@ -227,6 +221,17 @@ public class EsDslOutputListener implements ProcessListener {
                     text.trim().isEmpty() ||                    // 空行
                     (!text.matches("^\\d{4}-\\d{2}-\\d{2}.*") && !lowerText.contains("info") && !lowerText.contains("debug"))) {  // 不是新日志行
                     return true;
+                }
+                
+                // ⚠️ 如果是新的日志行,但包含API路径或ES相关信息,也要保留
+                // 这种情况发生在:TRACE日志先到达,然后才是Controller日志
+                if (text.matches("^\\d{4}-\\d{2}-\\d{2}.*")) {
+                    // 检查是否包含API路径或ES相关信息
+                    if (lowerText.contains("api:") || lowerText.contains("uri:") ||
+                        lowerText.contains("controller") || lowerText.contains("vectordata") ||
+                        lowerText.contains("elastic")) {
+                        return true;
+                    }
                 }
             }
         }
