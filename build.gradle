@@ -242,6 +242,47 @@ patchPluginXml {
 
     changeNotes.set("""
         <ul>
+            <li><b>2.0.0</b> - 🎉 <b>重大版本更新</b>：新增 Elasticsearch DSL Monitor 和 SQL Monitor 功能 (2025-10-19)
+                <ul>
+                    <li>🔍 <b>Elasticsearch DSL Monitor</b>：实时监控和捕获 ES DSL 查询
+                        <ul>
+                            <li>实时查询捕获：自动监控控制台输出，实时捕获所有 ES DSL 查询</li>
+                            <li>智能格式解析：支持多种格式（REST Client、cURL、Spring Data Elasticsearch）</li>
+                            <li>可视化展示：独立工具窗口展示查询详情，支持JSON格式化</li>
+                            <li>查询管理：支持搜索、过滤（按HTTP方法、时间范围）、导出查询记录</li>
+                            <li>本地持久化：自动保存查询历史，最多存储1000条记录</li>
+                            <li>彩色标识：HTTP方法和状态码带颜色区分（GET蓝色、POST绿色、PUT橙色、DELETE红色）</li>
+                            <li>性能追踪：记录查询执行时间和HTTP状态码</li>
+                            <li>非侵入式：通过日志监听实现，无需修改应用代码</li>
+                        </ul>
+                    </li>
+                    <li>💾 <b>SQL Monitor</b>：实时监控和捕获 SQL 查询
+                        <ul>
+                            <li>实时SQL捕获：自动监控控制台输出，实时捕获所有 SQL 查询</li>
+                            <li>MyBatis日志解析：智能解析 MyBatis 日志格式（Preparing + Parameters + Total）</li>
+                            <li>操作类型识别：自动识别 SELECT/INSERT/UPDATE/DELETE 操作</li>
+                            <li>表名智能提取：自动提取数据库表名</li>
+                            <li>参数完整记录：完整记录 SQL 参数及类型</li>
+                            <li>API路径追踪：显示触发 SQL 的 API 接口路径</li>
+                            <li>调用链追踪：记录调用 SQL 的 Java 类和行号</li>
+                            <li>多维度筛选：支持按操作类型、表名、时间范围筛选</li>
+                            <li>彩色标识：不同操作类型用不同颜色标识（SELECT蓝色、INSERT绿色、UPDATE橙色、DELETE红色）</li>
+                            <li>统计信息：实时显示各类 SQL 统计数据</li>
+                            <li>导出功能：支持导出 SQL 到剪贴板</li>
+                        </ul>
+                    </li>
+                    <li>🎨 <b>用户体验优化</b>：
+                        <ul>
+                            <li>独立工具窗口：ES DSL Monitor 和 SQL Monitor 各自拥有独立的工具窗口</li>
+                            <li>实时开关控制：支持随时启用/禁用监控功能</li>
+                            <li>智能搜索过滤：支持关键字搜索和多维度过滤</li>
+                            <li>详情面板：点击记录查看完整的查询详情和响应信息</li>
+                            <li>一键复制：支持一键复制 DSL、SQL 或完整信息到剪贴板</li>
+                            <li>Kibana格式：ES Monitor 支持生成 Kibana 可直接使用的查询格式</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
             <li><b>1.1.9</b> - 🧪 <b>新增功能</b>：模力方舟腾讯混元模型翻译为默认值
                 <ul>
                     <li>🐛 <b>Bug记录工具窗口</b>：模力方舟腾讯混元模型翻译为默认值</li>

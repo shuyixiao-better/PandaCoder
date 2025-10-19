@@ -202,7 +202,8 @@ public class SqlToolWindow extends JPanel {
         
         detailArea = new JTextArea();
         detailArea.setEditable(false);
-        detailArea.setLineWrap(false);
+        detailArea.setLineWrap(true);
+        detailArea.setWrapStyleWord(false);  // 不在单词边界换行，保持代码完整性
         detailArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         
         JBScrollPane scrollPane = new JBScrollPane(detailArea);
