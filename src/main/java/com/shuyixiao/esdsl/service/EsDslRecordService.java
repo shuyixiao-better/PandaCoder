@@ -65,7 +65,7 @@ public final class EsDslRecordService {
     }
     
     /**
-     * 添加新的 ES DSL 记录
+     * 添加新的 ES DSL 记录（带去重）
      */
     public void addRecord(EsDslRecord record) {
         if (record == null) {
@@ -73,6 +73,16 @@ public final class EsDslRecordService {
         }
         
         try {
+            // ✅ 去重逻辑：检查是否存在相似的记录（5秒内的相同查询）
+            boolean isDuplicate = records.stream()
+                .filter(r -> r.getTimestamp().isAfter(LocalDateTime.now().minusSeconds(5)))
+                .anyMatch(r -> isSimilarRecord(r, record));
+            
+            if (isDuplicate) {
+                LOG.debug("Skipped duplicate ES DSL record: " + record.getId());
+                return;
+            }
+            
             records.add(0, record); // 添加到列表开头（最新的在前面）
             
             // 如果超过最大记录数，删除最旧的记录
@@ -91,6 +101,48 @@ public final class EsDslRecordService {
         } catch (Exception e) {
             LOG.error("Failed to add ES DSL record", e);
         }
+    }
+    
+    /**
+     * 判断两条记录是否相似（用于去重）
+     */
+    private boolean isSimilarRecord(EsDslRecord r1, EsDslRecord r2) {
+        // 比较方法、索引和端点
+        if (!safeEquals(r1.getMethod(), r2.getMethod())) {
+            return false;
+        }
+        
+        if (!safeEquals(r1.getIndex(), r2.getIndex())) {
+            return false;
+        }
+        
+        if (!safeEquals(r1.getEndpoint(), r2.getEndpoint())) {
+            return false;
+        }
+        
+        // 比较DSL查询（如果都有的话）
+        if (r1.getDslQuery() != null && r2.getDslQuery() != null) {
+            // 移除空白字符后比较
+            String dsl1 = r1.getDslQuery().replaceAll("\\s+", "");
+            String dsl2 = r2.getDslQuery().replaceAll("\\s+", "");
+            return dsl1.equals(dsl2);
+        }
+        
+        // 如果DSL为空，只比较方法、索引和端点
+        return true;
+    }
+    
+    /**
+     * 安全的字符串比较
+     */
+    private boolean safeEquals(String s1, String s2) {
+        if (s1 == null && s2 == null) {
+            return true;
+        }
+        if (s1 == null || s2 == null) {
+            return false;
+        }
+        return s1.equals(s2);
     }
     
     /**

@@ -254,7 +254,17 @@ public class EsDslOutputListener implements ProcessListener {
         
         String lowerText = text.toLowerCase();
         
-        // ❌ 明确过滤掉Spring框架日志和数据库日志
+        // ✅ 明确过滤掉SQL日志（让SQL Monitor处理）
+        // SQL日志特征：basejdbclogger, preparing:, parameters:, ==>, <==
+        if (lowerText.contains("basejdbclogger") ||
+            lowerText.contains("preparing:") ||
+            lowerText.contains("parameters:") ||
+            (lowerText.contains("==>") && (lowerText.contains("preparing") || lowerText.contains("parameters"))) ||
+            (lowerText.contains("<==") && lowerText.contains("total:"))) {
+            return false;
+        }
+        
+        // ❌ 明确过滤掉Spring框架日志
         // ⚠️ 注意：不要过滤掉包含API路径的Controller日志和调用ES的Service日志
         if (lowerText.contains("repositoryconfigurationdelegate") ||
             lowerText.contains("tomcatwebserver") ||
@@ -268,21 +278,22 @@ public class EsDslOutputListener implements ProcessListener {
             lowerText.contains("hikaripool") ||
             lowerText.contains("servlet") ||
             lowerText.contains("spring boot") ||
-            lowerText.contains("mybatisplus") ||
-            lowerText.contains("basejdbclogger") ||  // ✅ 过滤MyBatis日志
-            lowerText.contains("preparing:") ||       // ✅ 过滤SQL准备
-            lowerText.contains("parameters:") ||      // ✅ 过滤SQL参数
-            lowerText.contains("==>") ||              // ✅ 过滤SQL执行标记
-            lowerText.contains("<==")) {              // ✅ 过滤SQL结果标记
+            lowerText.contains("mybatisplus")) {
             return false;
         }
         
         // ✅ 保留包含API路径的日志（Controller、Service等）
-        if (lowerText.contains("api:") || lowerText.contains("uri:") || 
-            lowerText.contains("controller") || 
-            lowerText.contains("vectordataretrieverelastic") ||
+        // 但要排除SQL相关的Controller日志
+        if ((lowerText.contains("api:") || lowerText.contains("uri:") || 
+            lowerText.contains("controller")) && 
+            !lowerText.contains("basejdbclogger")) {
+            return true;
+        }
+        
+        // ✅ 保留调用ES的Service类日志
+        if (lowerText.contains("vectordataretrieverelastic") ||
             lowerText.contains("vectorassistant") ||
-            lowerText.contains("platformauthserviceimpl")) {
+            (lowerText.contains("elastic") && !lowerText.contains("basejdbclogger"))) {
             return true;
         }
         
@@ -310,38 +321,6 @@ public class EsDslOutputListener implements ProcessListener {
         }
         
         return false;
-    }
-    
-    /**
-     * 获取缓冲区最后一行
-     */
-    private String getLastLine(String text) {
-        if (text == null || text.isEmpty()) {
-            return null;
-        }
-        int lastNewline = text.lastIndexOf('\n');
-        if (lastNewline >= 0 && lastNewline < text.length() - 1) {
-            return text.substring(lastNewline + 1);
-        }
-        return text;
-    }
-    
-    /**
-     * 判断是否是ES相关的日志行
-     */
-    private boolean isEsRelatedLine(String line) {
-        if (line == null || line.isEmpty()) {
-            return false;
-        }
-        String lowerLine = line.toLowerCase();
-        return lowerLine.contains("requestlogger") ||
-               lowerLine.contains("elasticsearch") ||
-               lowerLine.contains("_search") ||
-               lowerLine.contains("curl") ||
-               lowerLine.contains("trace") ||
-               lowerLine.contains("-d '") ||
-               lowerLine.contains("# http") ||  // 响应行
-               lowerLine.contains("# {");        // JSON响应
     }
     
     /**
@@ -463,6 +442,8 @@ public class EsDslOutputListener implements ProcessListener {
                 if (DEBUG_MODE) {
                     LOG.debug("[ES DSL] ⚠️ 不包含 ES DSL 关键词，跳过");
                 }
+                // ✅ 即使不包含ES DSL，也要清理缓冲区
+                clearBufferInUIThread();
                 return;
             }
             
@@ -473,7 +454,7 @@ public class EsDslOutputListener implements ProcessListener {
             // 解析 DSL
             EsDslRecord record = EsDslParser.parseEsDsl(bufferedText, project.getName());
             if (record != null) {
-                // 保存记录（在后台线程）
+                // 保存记录（在后台线程，带去重）
                 recordService.addRecord(record);
                 
                 // 日志输出
@@ -486,24 +467,15 @@ public class EsDslOutputListener implements ProcessListener {
                 LOG.info("  ├─ 调用类: " + (record.getCallerClass() != null ? record.getCallerClass() : "N/A"));
                 LOG.info("  └─ DSL 长度: " + ((record.getDslQuery() != null ? record.getDslQuery().length() : 0) / 1024) + "K");
                 
-                // ✅ 不完全清空缓冲区，保留上下文用于后续请求的API路径提取（在 UI 线程）
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    if (buffer.toString().equals(bufferedText)) {
-                        // 保留最后的部分用于API路径提取
-                        if (buffer.length() > CROSS_LINE_RETAIN_SIZE) {
-                            String remaining = buffer.substring(buffer.length() - CROSS_LINE_RETAIN_SIZE);
-                            buffer.setLength(0);
-                            buffer.append(remaining);
-                            if (DEBUG_MODE) {
-                                LOG.debug("[ES DSL] 🧹 已清理缓冲区，保留 " + (remaining.length() / 1024) + "KB 上下文");
-                            }
-                        }
-                    }
-                });
+                // ✅ 立即清理缓冲区（在 UI 线程）
+                clearBufferInUIThread();
             } else {
                 if (DEBUG_MODE) {
                     LOG.warn("[ES DSL] ❌ 解析失败，返回 null (缓冲区: " + (bufferedText.length() / 1024) + "KB)");
                 }
+                
+                // ✅ 解析失败也要清理缓冲区，避免重复解析
+                clearBufferInUIThread();
                 
                 // ✅ 只在超详细模式下输出完整诊断信息
                 if (VERBOSE_MODE && bufferedText.contains("TRACE") && bufferedText.contains("RequestLogger")) {
@@ -521,7 +493,31 @@ public class EsDslOutputListener implements ProcessListener {
             }
         } catch (Exception e) {
             LOG.warn("[ES DSL] ❌ 解析异常", e);
+            // ✅ 异常时也要清理缓冲区
+            clearBufferInUIThread();
         }
+    }
+    
+    /**
+     * 在UI线程中清理缓冲区（保留上下文）
+     */
+    private void clearBufferInUIThread() {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            if (buffer.length() > CROSS_LINE_RETAIN_SIZE) {
+                String remaining = buffer.substring(buffer.length() - CROSS_LINE_RETAIN_SIZE);
+                buffer.setLength(0);
+                buffer.append(remaining);
+                if (DEBUG_MODE) {
+                    LOG.debug("[ES DSL] 🧹 已清理缓冲区，保留 " + (remaining.length() / 1024) + "KB 上下文");
+                }
+            } else {
+                // 如果缓冲区不大，完全清空
+                buffer.setLength(0);
+                if (DEBUG_MODE) {
+                    LOG.debug("[ES DSL] 🧹 已完全清空缓冲区");
+                }
+            }
+        });
     }
     
     /**

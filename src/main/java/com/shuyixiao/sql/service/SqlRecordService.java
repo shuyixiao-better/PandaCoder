@@ -65,7 +65,7 @@ public final class SqlRecordService {
     }
     
     /**
-     * 添加新的 SQL 记录
+     * 添加新的 SQL 记录（带去重）
      */
     public void addRecord(SqlRecord record) {
         if (record == null) {
@@ -73,6 +73,16 @@ public final class SqlRecordService {
         }
         
         try {
+            // ✅ 去重逻辑：检查是否存在相似的记录（3秒内的相同SQL）
+            boolean isDuplicate = records.stream()
+                .filter(r -> r.getTimestamp().isAfter(LocalDateTime.now().minusSeconds(3)))
+                .anyMatch(r -> isSimilarRecord(r, record));
+            
+            if (isDuplicate) {
+                LOG.debug("Skipped duplicate SQL record: " + record.getId());
+                return;
+            }
+            
             records.add(0, record); // 添加到列表开头（最新的在前面）
             
             // 如果超过最大记录数，删除最旧的记录
@@ -91,6 +101,50 @@ public final class SqlRecordService {
         } catch (Exception e) {
             LOG.error("Failed to add SQL record", e);
         }
+    }
+    
+    /**
+     * 判断两条记录是否相似（用于去重）
+     */
+    private boolean isSimilarRecord(SqlRecord r1, SqlRecord r2) {
+        // 比较操作类型和表名
+        if (!safeEquals(r1.getOperation(), r2.getOperation())) {
+            return false;
+        }
+        
+        if (!safeEquals(r1.getTableName(), r2.getTableName())) {
+            return false;
+        }
+        
+        // 比较SQL语句（移除空白字符后比较）
+        if (r1.getSqlStatement() != null && r2.getSqlStatement() != null) {
+            String sql1 = r1.getSqlStatement().replaceAll("\\s+", " ").trim();
+            String sql2 = r2.getSqlStatement().replaceAll("\\s+", " ").trim();
+            if (!sql1.equals(sql2)) {
+                return false;
+            }
+        }
+        
+        // 比较参数（如果都有的话）
+        if (r1.getParameters() != null && r2.getParameters() != null) {
+            return r1.getParameters().equals(r2.getParameters());
+        }
+        
+        // 如果参数为空，只比较SQL语句
+        return true;
+    }
+    
+    /**
+     * 安全的字符串比较
+     */
+    private boolean safeEquals(String s1, String s2) {
+        if (s1 == null && s2 == null) {
+            return true;
+        }
+        if (s1 == null || s2 == null) {
+            return false;
+        }
+        return s1.equals(s2);
     }
     
     /**

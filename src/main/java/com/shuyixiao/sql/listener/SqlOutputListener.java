@@ -72,11 +72,21 @@ public class SqlOutputListener implements ProcessListener {
         }
         
         try {
-            // 过滤掉ES相关日志（避免干扰）
             String lowerText = text.toLowerCase();
+            
+            // ✅ 明确过滤掉ES相关日志（避免干扰）
+            // ES日志特征：requestlogger, elasticsearch, curl -iX, _search
             if (lowerText.contains("requestlogger") || 
                 lowerText.contains("elasticsearch") ||
-                lowerText.contains("elastic")) {
+                lowerText.contains("_search") ||
+                lowerText.contains("_cluster") ||
+                (lowerText.contains("curl") && lowerText.contains("-ix")) ||
+                (lowerText.contains("elastic") && !lowerText.contains("basejdbclogger"))) {
+                return;
+            }
+            
+            // ✅ 过滤掉以#开头的响应行（ES的TRACE日志响应）
+            if (text.trim().startsWith("#")) {
                 return;
             }
             
@@ -118,39 +128,58 @@ public class SqlOutputListener implements ProcessListener {
         
         String lowerText = text.toLowerCase();
         
-        // 保留SQL相关的日志
+        // ✅ 优先保留SQL相关的日志（最精确的匹配）
+        if (lowerText.contains("basejdbclogger")) {
+            return true;
+        }
+        
         if (lowerText.contains("preparing:") || 
             lowerText.contains("parameters:") || 
-            lowerText.contains("total:") ||
-            lowerText.contains("basejdbclogger")) {
+            (lowerText.contains("total:") && lowerText.contains("<=="))) {
             return true;
         }
         
         // ✅ 保留包含API路径的日志行（多种格式）
-        if (lowerText.contains("api:") || 
+        // 但要排除ES相关的API日志
+        if ((lowerText.contains("api:") || 
             lowerText.contains("uri:") || 
             lowerText.contains("/api/") ||
             lowerText.contains("/kl/") ||
             lowerText.contains("/kb/") ||
-            lowerText.contains("controller")) {
+            lowerText.contains("controller")) &&
+            !lowerText.contains("requestlogger") &&
+            !lowerText.contains("_search") &&
+            !lowerText.contains("elasticsearch")) {
             return true;
         }
         
         // ✅ 保留包含常见业务日志的行（可能包含API信息）
-        if (lowerText.contains("分页查询") || 
-            lowerText.contains("查询") ||
+        // 但要排除ES相关的业务日志
+        if ((lowerText.contains("分页查询") || 
+            lowerText.contains("查询条件") ||
             lowerText.contains("根据") ||
             lowerText.contains("page:") ||
-            lowerText.contains("code:")) {
+            lowerText.contains("size:")) &&
+            !lowerText.contains("vector") &&
+            !lowerText.contains("elastic")) {
             return true;
         }
         
         // 如果缓冲区已经有SQL日志，保留后续的行（可能是参数或结果）
         if (buffer.length() > 0) {
             String bufferedText = buffer.toString();
-            if (bufferedText.contains("Preparing:") && !text.trim().isEmpty()) {
-                // 保留空行和可能的参数/结果行
-                return true;
+            if (bufferedText.contains("Preparing:")) {
+                // 检查是否是新的日志行（有时间戳）
+                if (text.matches("^\\d{4}-\\d{2}-\\d{2}.*")) {
+                    // 是新日志行，检查是否是SQL相关
+                    return lowerText.contains("basejdbclogger") || 
+                           lowerText.contains("preparing") || 
+                           lowerText.contains("parameters") ||
+                           lowerText.contains("total:");
+                } else {
+                    // 不是新日志行，可能是SQL的延续或参数
+                    return !text.trim().isEmpty();
+                }
             }
         }
         
@@ -193,6 +222,8 @@ public class SqlOutputListener implements ProcessListener {
                 if (DEBUG_MODE) {
                     LOG.debug("[SQL Monitor] ⚠️ 不包含 SQL 关键词，跳过");
                 }
+                // ✅ 即使不包含SQL，也要清理缓冲区
+                clearBufferInUIThread();
                 return;
             }
             
@@ -203,7 +234,7 @@ public class SqlOutputListener implements ProcessListener {
             // 解析 SQL
             SqlRecord record = SqlParser.parseSql(bufferedText, project.getName());
             if (record != null) {
-                // 保存记录
+                // 保存记录（带去重）
                 recordService.addRecord(record);
                 
                 // 日志输出
@@ -215,28 +246,44 @@ public class SqlOutputListener implements ProcessListener {
                 LOG.info("  ├─ 调用类: " + (record.getCallerClass() != null ? record.getCallerClass() : "N/A"));
                 LOG.info("  └─ SQL长度: " + (record.getSqlStatement() != null ? record.getSqlStatement().length() : 0) + " 字符");
                 
-                // 清理缓冲区但保留上下文（在 UI 线程）
-                ApplicationManager.getApplication().invokeLater(() -> {
-                    if (buffer.toString().equals(bufferedText)) {
-                        // 保留最后的部分用于API路径提取
-                        if (buffer.length() > CROSS_LINE_RETAIN_SIZE) {
-                            String remaining = buffer.substring(buffer.length() - CROSS_LINE_RETAIN_SIZE);
-                            buffer.setLength(0);
-                            buffer.append(remaining);
-                            if (DEBUG_MODE) {
-                                LOG.debug("[SQL Monitor] 🧹 已清理缓冲区，保留 " + (remaining.length() / 1024) + "KB 上下文");
-                            }
-                        }
-                    }
-                });
+                // ✅ 立即清理缓冲区（在 UI 线程）
+                clearBufferInUIThread();
             } else {
                 if (DEBUG_MODE) {
                     LOG.warn("[SQL Monitor] ❌ 解析失败，返回 null (缓冲区: " + (bufferedText.length() / 1024) + "KB)");
                 }
+                
+                // ✅ 解析失败也要清理缓冲区，避免重复解析
+                clearBufferInUIThread();
             }
         } catch (Exception e) {
             LOG.warn("[SQL Monitor] ❌ 解析异常", e);
+            // ✅ 异常时也要清理缓冲区
+            clearBufferInUIThread();
         }
     }
+    
+    /**
+     * 在UI线程中清理缓冲区（保留上下文）
+     */
+    private void clearBufferInUIThread() {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            if (buffer.length() > CROSS_LINE_RETAIN_SIZE) {
+                String remaining = buffer.substring(buffer.length() - CROSS_LINE_RETAIN_SIZE);
+                buffer.setLength(0);
+                buffer.append(remaining);
+                if (DEBUG_MODE) {
+                    LOG.debug("[SQL Monitor] 🧹 已清理缓冲区，保留 " + (remaining.length() / 1024) + "KB 上下文");
+                }
+            } else {
+                // 如果缓冲区不大，完全清空
+                buffer.setLength(0);
+                if (DEBUG_MODE) {
+                    LOG.debug("[SQL Monitor] 🧹 已完全清空缓冲区");
+                }
+            }
+        });
+    }
 }
+
 
