@@ -7,11 +7,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemListener;
+import java.awt.Desktop;
+import java.net.URI;
 
 /**
  * Copyright © 2024年 integration-projects-maven. All rights reserved.
@@ -671,24 +670,22 @@ public class SettingConfigurable implements SearchableConfigurable {
         
         // 添加版本历史按钮
         JButton versionHistoryButton = new JButton("📋 查看版本历史");
-        versionHistoryButton.addActionListener(e -> showVersionHistory());
+        versionHistoryButton.addActionListener(e -> {
+            try {
+                Desktop.getDesktop().browse(new URI("https://www.shuyixiao.cn/articles/panda-coder-intro.html"));
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(
+                    panel,
+                    "无法打开浏览器，请手动访问：https://www.shuyixiao.cn/articles/panda-coder-intro.html",
+                    "提示",
+                    JOptionPane.INFORMATION_MESSAGE
+                );
+            }
+        });
         gbc.gridy = row++; gbc.insets = JBUI.insets(10, 5, 5, 5);
         bugStoragePanel.add(versionHistoryButton, gbc);
         
         return bugStoragePanel;
-    }
-    
-    /**
-     * 显示版本历史
-     */
-    private void showVersionHistory() {
-        String versionHistory = com.shuyixiao.version.VersionInfo.getSimpleVersionHistory();
-        JOptionPane.showMessageDialog(
-            panel,
-            "<html><body style='width: 400px'>" + versionHistory + "</body></html>",
-            "PandaCoder 版本历史",
-            JOptionPane.INFORMATION_MESSAGE
-        );
     }
 }
 

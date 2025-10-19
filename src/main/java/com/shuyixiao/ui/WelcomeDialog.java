@@ -11,12 +11,9 @@ import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * 现代化的PandaCoder欢迎对话框
@@ -138,6 +135,8 @@ public class WelcomeDialog extends DialogWrapper {
         featuresPanel.add(featuresTitle, BorderLayout.NORTH);
         
         String[] features = {
+            "🔍 Elasticsearch DSL Monitor（ES查询监控）",
+            "💾 SQL Monitor（SQL查询监控）",
             "🔤 智能中文转大小驼峰 - 一键转换，支持多种命名规范",
             "📝 智能中文转大写带下划线 - 常量命名的最佳选择", 
             "🏷️ 中文类名自动转换 - 让类名更规范、更专业",
@@ -210,7 +209,13 @@ public class WelcomeDialog extends DialogWrapper {
         // 版本历史按钮
         JButton versionHistoryButton = new JButton("📋 版本历史");
         versionHistoryButton.putClientProperty("JButton.buttonType", "borderless");
-        versionHistoryButton.addActionListener(e -> showVersionHistory());
+        versionHistoryButton.addActionListener(e -> {
+            try {
+                Desktop.getDesktop().browse(new URI("https://www.shuyixiao.cn/articles/panda-coder-intro.html"));
+            } catch (Exception ex) {
+                showNotification("无法打开浏览器，请手动访问：https://www.shuyixiao.cn/articles/panda-coder-intro.html");
+            }
+        });
         buttonPanel.add(versionHistoryButton);
         
         // 项目信息按钮
@@ -243,15 +248,6 @@ public class WelcomeDialog extends DialogWrapper {
         );
     }
     
-    private void showVersionHistory() {
-        String versionHistory = com.shuyixiao.version.VersionInfo.getSimpleVersionHistory();
-        JOptionPane.showMessageDialog(
-            getContentPanel(),
-            "<html><body style='width: 400px'>" + versionHistory + "</body></html>",
-            "PandaCoder 版本历史",
-            JOptionPane.INFORMATION_MESSAGE
-        );
-    }
     
     @Override
     protected Action[] createActions() {
