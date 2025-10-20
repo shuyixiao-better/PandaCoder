@@ -259,7 +259,117 @@ public class SqlToolWindow extends JPanel {
                     showDetailDialog();
                 }
             }
+            
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showTableContextMenu(e);
+                }
+            }
+            
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showTableContextMenu(e);
+                }
+            }
         });
+    }
+    
+    /**
+     * 显示表格右键菜单
+     */
+    private void showTableContextMenu(MouseEvent e) {
+        int row = sqlTable.rowAtPoint(e.getPoint());
+        if (row >= 0 && row < sqlTable.getRowCount()) {
+            sqlTable.setRowSelectionInterval(row, row);
+            
+            JPopupMenu popupMenu = new JPopupMenu();
+            SqlRecord record = tableModel.getRecordAt(row);
+            
+            if (record != null) {
+                // 复制操作类型
+                JMenuItem copyOperationItem = new JMenuItem("复制操作类型");
+                copyOperationItem.addActionListener(ev -> {
+                    copyToClipboard(record.getOperation());
+                    Messages.showInfoMessage(project, "操作类型已复制", "操作成功");
+                });
+                popupMenu.add(copyOperationItem);
+                
+                // 复制表名
+                if (record.getTableName() != null) {
+                    JMenuItem copyTableNameItem = new JMenuItem("复制表名");
+                    copyTableNameItem.addActionListener(ev -> {
+                        copyToClipboard(record.getTableName());
+                        Messages.showInfoMessage(project, "表名已复制", "操作成功");
+                    });
+                    popupMenu.add(copyTableNameItem);
+                }
+                
+                // 复制API路径
+                if (record.getApiPath() != null) {
+                    JMenuItem copyApiPathItem = new JMenuItem("复制API路径");
+                    copyApiPathItem.addActionListener(ev -> {
+                        copyToClipboard(record.getApiPath());
+                        Messages.showInfoMessage(project, "API路径已复制", "操作成功");
+                    });
+                    popupMenu.add(copyApiPathItem);
+                }
+                
+                // 复制SQL摘要
+                JMenuItem copySqlSummaryItem = new JMenuItem("复制SQL摘要");
+                copySqlSummaryItem.addActionListener(ev -> {
+                    String executableSql = record.getExecutableSql();
+                    if (executableSql.length() > 100) {
+                        executableSql = executableSql.substring(0, 100) + "...";
+                    }
+                    copyToClipboard(executableSql);
+                    Messages.showInfoMessage(project, "SQL摘要已复制", "操作成功");
+                });
+                popupMenu.add(copySqlSummaryItem);
+                
+                popupMenu.addSeparator();
+                
+                // 复制可执行SQL
+                JMenuItem copyExecutableSqlItem = new JMenuItem("复制可执行SQL");
+                copyExecutableSqlItem.addActionListener(ev -> {
+                    copyToClipboard(record.getExecutableSql());
+                    Messages.showInfoMessage(project, "可执行SQL已复制", "操作成功");
+                });
+                popupMenu.add(copyExecutableSqlItem);
+                
+                // 复制原始SQL
+                JMenuItem copyOriginalSqlItem = new JMenuItem("复制原始SQL");
+                copyOriginalSqlItem.addActionListener(ev -> {
+                    copyToClipboard(record.getSqlStatement());
+                    Messages.showInfoMessage(project, "原始SQL已复制", "操作成功");
+                });
+                popupMenu.add(copyOriginalSqlItem);
+                
+                // 复制参数
+                if (record.getParameters() != null && !record.getParameters().isEmpty()) {
+                    JMenuItem copyParametersItem = new JMenuItem("复制参数");
+                    copyParametersItem.addActionListener(ev -> {
+                        copyToClipboard(record.getParameters());
+                        Messages.showInfoMessage(project, "参数已复制", "操作成功");
+                    });
+                    popupMenu.add(copyParametersItem);
+                }
+                
+                popupMenu.addSeparator();
+                
+                // 复制全部信息
+                JMenuItem copyAllInfoItem = new JMenuItem("复制全部信息");
+                copyAllInfoItem.addActionListener(ev -> {
+                    String allInfo = buildExportText(record);
+                    copyToClipboard(allInfo);
+                    Messages.showInfoMessage(project, "全部信息已复制", "操作成功");
+                });
+                popupMenu.add(copyAllInfoItem);
+            }
+            
+            popupMenu.show(e.getComponent(), e.getX(), e.getY());
+        }
     }
     
     /**
@@ -271,8 +381,16 @@ public class SqlToolWindow extends JPanel {
                 List<SqlRecord> records = getFilteredRecords();
                 
                 ApplicationManager.getApplication().invokeLater(() -> {
+                    // 保存当前选中的行
+                    int selectedRow = sqlTable.getSelectedRow();
+                    
                     tableModel.updateData(records);
                     updateStatusLabel();
+                    
+                    // 恢复选中状态
+                    if (selectedRow >= 0 && selectedRow < sqlTable.getRowCount()) {
+                        sqlTable.setRowSelectionInterval(selectedRow, selectedRow);
+                    }
                 });
                 
             } catch (Exception e) {

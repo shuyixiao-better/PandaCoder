@@ -265,7 +265,105 @@ public class EsDslToolWindow extends JPanel {
                     showDetailDialog();
                 }
             }
+            
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showTableContextMenu(e);
+                }
+            }
+            
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (e.isPopupTrigger()) {
+                    showTableContextMenu(e);
+                }
+            }
         });
+    }
+    
+    /**
+     * 显示表格右键菜单
+     */
+    private void showTableContextMenu(MouseEvent e) {
+        int row = dslTable.rowAtPoint(e.getPoint());
+        if (row >= 0 && row < dslTable.getRowCount()) {
+            dslTable.setRowSelectionInterval(row, row);
+            
+            JPopupMenu popupMenu = new JPopupMenu();
+            EsDslRecord record = tableModel.getRecordAt(row);
+            
+            if (record != null) {
+                // 复制方法
+                JMenuItem copyMethodItem = new JMenuItem("复制方法");
+                copyMethodItem.addActionListener(ev -> {
+                    copyToClipboard(record.getMethod());
+                    Messages.showInfoMessage(project, "方法已复制", "操作成功");
+                });
+                popupMenu.add(copyMethodItem);
+                
+                // 复制索引
+                if (record.getIndex() != null) {
+                    JMenuItem copyIndexItem = new JMenuItem("复制索引");
+                    copyIndexItem.addActionListener(ev -> {
+                        copyToClipboard(record.getIndex());
+                        Messages.showInfoMessage(project, "索引已复制", "操作成功");
+                    });
+                    popupMenu.add(copyIndexItem);
+                }
+                
+                // 复制API路径
+                if (record.getApiPath() != null) {
+                    JMenuItem copyApiPathItem = new JMenuItem("复制API路径");
+                    copyApiPathItem.addActionListener(ev -> {
+                        copyToClipboard(record.getApiPath());
+                        Messages.showInfoMessage(project, "API路径已复制", "操作成功");
+                    });
+                    popupMenu.add(copyApiPathItem);
+                }
+                
+                // 复制DSL摘要
+                JMenuItem copyDslSummaryItem = new JMenuItem("复制DSL摘要");
+                copyDslSummaryItem.addActionListener(ev -> {
+                    copyToClipboard(record.getShortQuery());
+                    Messages.showInfoMessage(project, "DSL摘要已复制", "操作成功");
+                });
+                popupMenu.add(copyDslSummaryItem);
+                
+                popupMenu.addSeparator();
+                
+                // 复制完整DSL
+                JMenuItem copyFullDslItem = new JMenuItem("复制完整DSL");
+                copyFullDslItem.addActionListener(ev -> {
+                    copyToClipboard(record.getDslQuery());
+                    Messages.showInfoMessage(project, "完整DSL已复制", "操作成功");
+                });
+                popupMenu.add(copyFullDslItem);
+                
+                // 复制端点
+                if (record.getEndpoint() != null) {
+                    JMenuItem copyEndpointItem = new JMenuItem("复制端点");
+                    copyEndpointItem.addActionListener(ev -> {
+                        copyToClipboard(record.getEndpoint());
+                        Messages.showInfoMessage(project, "端点已复制", "操作成功");
+                    });
+                    popupMenu.add(copyEndpointItem);
+                }
+                
+                popupMenu.addSeparator();
+                
+                // 复制全部信息
+                JMenuItem copyAllInfoItem = new JMenuItem("复制全部信息");
+                copyAllInfoItem.addActionListener(ev -> {
+                    String allInfo = buildExportText(record);
+                    copyToClipboard(allInfo);
+                    Messages.showInfoMessage(project, "全部信息已复制", "操作成功");
+                });
+                popupMenu.add(copyAllInfoItem);
+            }
+            
+            popupMenu.show(e.getComponent(), e.getX(), e.getY());
+        }
     }
     
     /**
@@ -277,8 +375,16 @@ public class EsDslToolWindow extends JPanel {
                 List<EsDslRecord> records = getFilteredRecords();
                 
                 ApplicationManager.getApplication().invokeLater(() -> {
+                    // 保存当前选中的行
+                    int selectedRow = dslTable.getSelectedRow();
+                    
                     tableModel.updateData(records);
                     updateStatusLabel();
+                    
+                    // 恢复选中状态
+                    if (selectedRow >= 0 && selectedRow < dslTable.getRowCount()) {
+                        dslTable.setRowSelectionInterval(selectedRow, selectedRow);
+                    }
                 });
                 
             } catch (Exception e) {
