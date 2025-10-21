@@ -114,7 +114,11 @@ public class EsDslToolWindow extends JPanel {
         
         // 搜索框
         searchField = new JBTextField(15);
-        searchField.setToolTipText("搜索 DSL 查询...");
+        searchField.setToolTipText("<html>搜索范围：<br>" +
+                "• DSL 查询内容<br>" +
+                "• 索引名称<br>" +
+                "• 端点路径<br>" +
+                "<i>提示：支持模糊搜索，不区分大小写</i></html>");
         toolbar.add(new JBLabel("搜索: "));
         toolbar.add(searchField);
         

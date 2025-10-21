@@ -114,7 +114,11 @@ public class SqlToolWindow extends JPanel {
         
         // 搜索框
         searchField = new JBTextField(15);
-        searchField.setToolTipText("搜索 SQL 查询...");
+        searchField.setToolTipText("<html>搜索范围：<br>" +
+                "• SQL 语句内容<br>" +
+                "• 表名<br>" +
+                "• API 路径<br>" +
+                "<i>提示：支持模糊搜索，不区分大小写</i></html>");
         toolbar.add(new JBLabel("搜索: "));
         toolbar.add(searchField);
         
