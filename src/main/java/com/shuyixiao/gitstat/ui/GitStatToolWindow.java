@@ -7,6 +7,12 @@ import com.intellij.ui.JBColor;
 import com.intellij.ui.components.*;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.JBUI;
+import com.shuyixiao.gitstat.email.config.GitStatEmailConfigState;
+import com.shuyixiao.gitstat.email.model.GitStatEmailConfig;
+import com.shuyixiao.gitstat.email.model.GitStatEmailRecord;
+import com.shuyixiao.gitstat.email.model.SmtpPreset;
+import com.shuyixiao.gitstat.email.service.GitStatEmailService;
+import com.shuyixiao.gitstat.email.util.PasswordEncryptor;
 import com.shuyixiao.gitstat.model.GitAuthorDailyStat;
 import com.shuyixiao.gitstat.model.GitAuthorStat;
 import com.shuyixiao.gitstat.model.GitDailyStat;
@@ -30,6 +36,7 @@ public class GitStatToolWindow extends JPanel {
     
     private final Project project;
     private final GitStatService gitStatService;
+    private final GitStatEmailService emailService;
     
     private JTabbedPane tabbedPane;
     
@@ -61,10 +68,12 @@ public class GitStatToolWindow extends JPanel {
     public GitStatToolWindow(@NotNull Project project) {
         this.project = project;
         this.gitStatService = project.getService(GitStatService.class);
+        this.emailService = project.getService(GitStatEmailService.class);
         
         initializeUI();
         setupEventHandlers();
         refreshData();
+        loadEmailConfig();
     }
     
     /**
@@ -83,6 +92,7 @@ public class GitStatToolWindow extends JPanel {
         tabbedPane.addTab("作者每日统计", createAuthorDailyStatsPanel());
         tabbedPane.addTab("项目代码统计", createProjectStatsPanel());
         tabbedPane.addTab("总览", createOverviewPanel());
+        tabbedPane.addTab("📧 邮件报告", createEmailReportPanel());
         
         add(tabbedPane, BorderLayout.CENTER);
         
@@ -748,6 +758,415 @@ public class GitStatToolWindow extends JPanel {
     /**
      * 数字表格单元格渲染器
      */
+    /**
+     * 创建邮件报告面板
+     */
+    private JComponent createEmailReportPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(JBUI.Borders.empty(10));
+        
+        // 创建滚动面板
+        JPanel contentPanel = new JPanel();
+        contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+        
+        // SMTP 配置区域
+        contentPanel.add(createSmtpConfigPanel());
+        contentPanel.add(Box.createVerticalStrut(10));
+        
+        // 定时发送配置区域
+        contentPanel.add(createScheduleConfigPanel());
+        contentPanel.add(Box.createVerticalStrut(10));
+        
+        // 手动发送区域
+        contentPanel.add(createManualSendPanel());
+        contentPanel.add(Box.createVerticalStrut(10));
+        
+        // 发送历史区域
+        contentPanel.add(createEmailHistoryPanel());
+        
+        JScrollPane scrollPane = new JScrollPane(contentPanel);
+        panel.add(scrollPane, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    /**
+     * 创建 SMTP 配置面板
+     */
+    private JPanel createSmtpConfigPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createTitledBorder("SMTP 配置"));
+        
+        // 邮箱服务选择下拉框
+        JComboBox<SmtpPreset> emailServiceComboBox = new JComboBox<>(SmtpPreset.getPresets());
+        JLabel serviceDescLabel = new JLabel(" ");
+        
+        // SMTP 字段
+        JTextField smtpHostField = new JTextField(20);
+        JTextField smtpPortField = new JTextField(5);
+        JTextField senderEmailField = new JTextField(20);
+        JPasswordField senderPasswordField = new JPasswordField(20);
+        JTextField recipientEmailField = new JTextField(20);
+        
+        JCheckBox tlsCheckBox = new JCheckBox("启用 TLS", true);
+        JCheckBox sslCheckBox = new JCheckBox("启用 SSL", false);
+        
+        // 添加邮箱服务选择
+        panel.add(createLabeledField("邮箱服务:", emailServiceComboBox));
+        
+        // 添加说明标签
+        JPanel descPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        serviceDescLabel.setForeground(new Color(128, 128, 128));
+        descPanel.add(new JLabel("   "));
+        descPanel.add(serviceDescLabel);
+        panel.add(descPanel);
+        
+        panel.add(Box.createVerticalStrut(5));
+        
+        panel.add(createLabeledField("SMTP服务器:", smtpHostField));
+        panel.add(createLabeledField("端口:", smtpPortField));
+        panel.add(createLabeledField("发送者邮箱:", senderEmailField));
+        panel.add(createLabeledField("SMTP密码:", senderPasswordField));
+        panel.add(createLabeledField("接收者邮箱:", recipientEmailField));
+        
+        JPanel checksPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        checksPanel.add(tlsCheckBox);
+        checksPanel.add(sslCheckBox);
+        panel.add(checksPanel);
+        
+        // 邮箱服务选择事件
+        emailServiceComboBox.addActionListener(e -> {
+            SmtpPreset preset = (SmtpPreset) emailServiceComboBox.getSelectedItem();
+            if (preset != null) {
+                // 如果不是"自定义"，则自动填充配置
+                if (!"自定义".equals(preset.getName())) {
+                    smtpHostField.setText(preset.getSmtpHost());
+                    smtpPortField.setText(String.valueOf(preset.getSmtpPort()));
+                    tlsCheckBox.setSelected(preset.isEnableTLS());
+                    sslCheckBox.setSelected(preset.isEnableSSL());
+                }
+                // 显示说明
+                serviceDescLabel.setText("💡 " + preset.getDescription());
+            }
+        });
+        
+        // 初始化时触发一次
+        if (emailServiceComboBox.getSelectedItem() != null) {
+            SmtpPreset initialPreset = (SmtpPreset) emailServiceComboBox.getSelectedItem();
+            serviceDescLabel.setText("💡 " + initialPreset.getDescription());
+        }
+        
+        // 按钮面板
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton testButton = new JButton("测试连接");
+        JButton saveButton = new JButton("保存配置");
+        
+        testButton.addActionListener(e -> {
+            if (saveSmtpConfig(smtpHostField, smtpPortField, senderEmailField, 
+                              senderPasswordField, recipientEmailField, tlsCheckBox, sslCheckBox)) {
+                if (emailService.testConnection()) {
+                    Messages.showInfoMessage(project, "SMTP 连接测试成功！", "测试成功");
+                } else {
+                    Messages.showErrorDialog(project, "SMTP 连接测试失败，请检查配置！", "测试失败");
+                }
+            }
+        });
+        
+        saveButton.addActionListener(e -> {
+            if (saveSmtpConfig(smtpHostField, smtpPortField, senderEmailField, 
+                              senderPasswordField, recipientEmailField, tlsCheckBox, sslCheckBox)) {
+                Messages.showInfoMessage(project, "配置已保存！", "保存成功");
+            }
+        });
+        
+        buttonPanel.add(testButton);
+        buttonPanel.add(saveButton);
+        panel.add(buttonPanel);
+        
+        // 从配置加载初始值
+        GitStatEmailConfig config = emailService.getConfig();
+        smtpHostField.setText(config.getSmtpHost());
+        smtpPortField.setText(String.valueOf(config.getSmtpPort()));
+        senderEmailField.setText(config.getSenderEmail());
+        recipientEmailField.setText(config.getRecipientEmail());
+        tlsCheckBox.setSelected(config.isEnableTLS());
+        sslCheckBox.setSelected(config.isEnableSSL());
+        
+        return panel;
+    }
+    
+    /**
+     * 创建定时发送配置面板
+     */
+    private JPanel createScheduleConfigPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createTitledBorder("定时发送"));
+        
+        JCheckBox enableScheduledCheckBox = new JCheckBox("启用每日定时发送", false);
+        JTextField scheduledTimeField = new JTextField("18:00", 5);
+        JComboBox<String> filterAuthorComboBox = new JComboBox<>();
+        JCheckBox includeTrendsCheckBox = new JCheckBox("包含趋势分析", true);
+        
+        // 填充作者列表
+        filterAuthorComboBox.addItem("(所有作者)");
+        gitStatService.getAllAuthorStats().forEach(author -> 
+            filterAuthorComboBox.addItem(author.getAuthorName())
+        );
+        
+        JPanel panel1 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panel1.add(enableScheduledCheckBox);
+        panel.add(panel1);
+        
+        panel.add(createLabeledField("发送时间:", scheduledTimeField));
+        panel.add(createLabeledField("筛选作者:", filterAuthorComboBox));
+        
+        JPanel panel2 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panel2.add(includeTrendsCheckBox);
+        panel.add(panel2);
+        
+        JButton applyScheduleButton = new JButton("应用定时设置");
+        applyScheduleButton.addActionListener(e -> {
+            GitStatEmailConfig config = emailService.getConfig();
+            config.setEnableScheduled(enableScheduledCheckBox.isSelected());
+            config.setScheduledTime(scheduledTimeField.getText());
+            
+            String selectedAuthor = (String) filterAuthorComboBox.getSelectedItem();
+            config.setFilterAuthor("(所有作者)".equals(selectedAuthor) ? null : selectedAuthor);
+            config.setIncludeTrends(includeTrendsCheckBox.isSelected());
+            
+            emailService.setConfig(config);
+            saveEmailConfigState(config);
+            
+            Messages.showInfoMessage(project, 
+                enableScheduledCheckBox.isSelected() ? 
+                "定时任务已启动，将在每天 " + scheduledTimeField.getText() + " 发送邮件" :
+                "定时任务已停止", 
+                "设置成功");
+        });
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        buttonPanel.add(applyScheduleButton);
+        panel.add(buttonPanel);
+        
+        // 从配置加载初始值
+        GitStatEmailConfig config = emailService.getConfig();
+        enableScheduledCheckBox.setSelected(config.isEnableScheduled());
+        scheduledTimeField.setText(config.getScheduledTime());
+        includeTrendsCheckBox.setSelected(config.isIncludeTrends());
+        if (config.getFilterAuthor() != null) {
+            filterAuthorComboBox.setSelectedItem(config.getFilterAuthor());
+        }
+        
+        return panel;
+    }
+    
+    /**
+     * 创建手动发送面板
+     */
+    private JPanel createManualSendPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(BorderFactory.createTitledBorder("手动发送"));
+        
+        // 作者选择下拉框
+        JComboBox<String> manualAuthorComboBox = new JComboBox<>();
+        manualAuthorComboBox.addItem("(所有作者)");
+        gitStatService.getAllAuthorStats().forEach(author -> 
+            manualAuthorComboBox.addItem(author.getAuthorName())
+        );
+        
+        panel.add(createLabeledField("选择作者:", manualAuthorComboBox));
+        panel.add(Box.createVerticalStrut(10));
+        
+        JButton sendTodayButton = new JButton("📧 发送今日统计");
+        JButton sendYesterdayButton = new JButton("📧 发送昨日统计");
+        
+        sendTodayButton.addActionListener(e -> {
+            // 临时设置筛选作者
+            String selectedAuthor = (String) manualAuthorComboBox.getSelectedItem();
+            String originalFilter = emailService.getConfig().getFilterAuthor();
+            
+            try {
+                GitStatEmailConfig tempConfig = emailService.getConfig();
+                tempConfig.setFilterAuthor("(所有作者)".equals(selectedAuthor) ? null : selectedAuthor);
+                emailService.setConfig(tempConfig);
+                
+                if (emailService.sendTodayEmail()) {
+                    Messages.showInfoMessage(project, 
+                        "今日统计邮件已发送！\n作者: " + selectedAuthor, 
+                        "发送成功");
+                } else {
+                    Messages.showErrorDialog(project, "邮件发送失败，请检查配置或网络！", "发送失败");
+                }
+            } finally {
+                // 恢复原始配置
+                GitStatEmailConfig restoreConfig = emailService.getConfig();
+                restoreConfig.setFilterAuthor(originalFilter);
+                emailService.setConfig(restoreConfig);
+            }
+        });
+        
+        sendYesterdayButton.addActionListener(e -> {
+            // 临时设置筛选作者
+            String selectedAuthor = (String) manualAuthorComboBox.getSelectedItem();
+            String originalFilter = emailService.getConfig().getFilterAuthor();
+            
+            try {
+                GitStatEmailConfig tempConfig = emailService.getConfig();
+                tempConfig.setFilterAuthor("(所有作者)".equals(selectedAuthor) ? null : selectedAuthor);
+                emailService.setConfig(tempConfig);
+                
+                if (emailService.sendEmail(java.time.LocalDate.now().minusDays(1))) {
+                    Messages.showInfoMessage(project, 
+                        "昨日统计邮件已发送！\n作者: " + selectedAuthor, 
+                        "发送成功");
+                } else {
+                    Messages.showErrorDialog(project, "邮件发送失败，请检查配置或网络！", "发送失败");
+                }
+            } finally {
+                // 恢复原始配置
+                GitStatEmailConfig restoreConfig = emailService.getConfig();
+                restoreConfig.setFilterAuthor(originalFilter);
+                emailService.setConfig(restoreConfig);
+            }
+        });
+        
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        buttonPanel.add(sendTodayButton);
+        buttonPanel.add(sendYesterdayButton);
+        panel.add(buttonPanel);
+        
+        return panel;
+    }
+    
+    /**
+     * 创建邮件历史面板
+     */
+    private JPanel createEmailHistoryPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("发送历史"));
+        
+        JTextArea historyArea = new JTextArea(10, 50);
+        historyArea.setEditable(false);
+        
+        JButton refreshButton = new JButton("刷新历史");
+        refreshButton.addActionListener(e -> {
+            List<GitStatEmailRecord> history = emailService.getEmailHistory();
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("%-20s %-15s %-8s %-6s %-6s\n", 
+                     "发送时间", "接收者", "状态", "提交", "代码"));
+            sb.append("─".repeat(70)).append("\n");
+            
+            for (GitStatEmailRecord record : history) {
+                sb.append(String.format("%-20s %-15s %-8s %-6d +%-6d\n",
+                    record.getSendTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),
+                    record.getRecipient(),
+                    record.isSuccess() ? "✅成功" : "❌失败",
+                    record.getCommits(),
+                    record.getAdditions()
+                ));
+            }
+            
+            historyArea.setText(sb.toString());
+        });
+        
+        panel.add(new JScrollPane(historyArea), BorderLayout.CENTER);
+        panel.add(refreshButton, BorderLayout.SOUTH);
+        
+        return panel;
+    }
+    
+    /**
+     * 创建带标签的字段
+     */
+    private JPanel createLabeledField(String label, JComponent field) {
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        panel.add(new JLabel(label));
+        panel.add(field);
+        return panel;
+    }
+    
+    /**
+     * 保存 SMTP 配置
+     */
+    private boolean saveSmtpConfig(JTextField smtpHostField, JTextField smtpPortField,
+                                   JTextField senderEmailField, JPasswordField senderPasswordField,
+                                   JTextField recipientEmailField, JCheckBox tlsCheckBox, 
+                                   JCheckBox sslCheckBox) {
+        try {
+            GitStatEmailConfig config = emailService.getConfig();
+            config.setSmtpHost(smtpHostField.getText().trim());
+            config.setSmtpPort(Integer.parseInt(smtpPortField.getText().trim()));
+            config.setSenderEmail(senderEmailField.getText().trim());
+            config.setRecipientEmail(recipientEmailField.getText().trim());
+            config.setEnableTLS(tlsCheckBox.isSelected());
+            config.setEnableSSL(sslCheckBox.isSelected());
+            
+            // 加密密码
+            String password = new String(senderPasswordField.getPassword());
+            if (!password.isEmpty()) {
+                config.setSenderPassword(PasswordEncryptor.encrypt(password, project));
+            }
+            
+            emailService.setConfig(config);
+            saveEmailConfigState(config);
+            
+            return true;
+        } catch (NumberFormatException ex) {
+            Messages.showErrorDialog(project, "端口号必须是数字！", "配置错误");
+            return false;
+        }
+    }
+    
+    /**
+     * 加载邮件配置
+     */
+    private void loadEmailConfig() {
+        GitStatEmailConfigState state = GitStatEmailConfigState.getInstance(project);
+        GitStatEmailConfig config = new GitStatEmailConfig();
+        
+        config.setSmtpHost(state.smtpHost);
+        config.setSmtpPort(state.smtpPort);
+        config.setEnableTLS(state.enableTLS);
+        config.setEnableSSL(state.enableSSL);
+        config.setSenderEmail(state.senderEmail);
+        config.setSenderPassword(state.senderPassword);
+        config.setSenderName(state.senderName);
+        config.setRecipientEmail(state.recipientEmail);
+        config.setEnableScheduled(state.enableScheduled);
+        config.setScheduledTime(state.scheduledTime);
+        config.setFilterAuthor(state.filterAuthor.isEmpty() ? null : state.filterAuthor);
+        config.setIncludeTrends(state.includeTrends);
+        config.setSendHtml(state.sendHtml);
+        config.setEmailSubject(state.emailSubject);
+        
+        emailService.setConfig(config);
+    }
+    
+    /**
+     * 保存邮件配置状态
+     */
+    private void saveEmailConfigState(GitStatEmailConfig config) {
+        GitStatEmailConfigState state = GitStatEmailConfigState.getInstance(project);
+        
+        state.smtpHost = config.getSmtpHost();
+        state.smtpPort = config.getSmtpPort();
+        state.enableTLS = config.isEnableTLS();
+        state.enableSSL = config.isEnableSSL();
+        state.senderEmail = config.getSenderEmail();
+        state.senderPassword = config.getSenderPassword();
+        state.senderName = config.getSenderName();
+        state.recipientEmail = config.getRecipientEmail();
+        state.enableScheduled = config.isEnableScheduled();
+        state.scheduledTime = config.getScheduledTime();
+        state.filterAuthor = config.getFilterAuthor() == null ? "" : config.getFilterAuthor();
+        state.includeTrends = config.isIncludeTrends();
+        state.sendHtml = config.isSendHtml();
+        state.emailSubject = config.getEmailSubject();
+    }
+    
     private static class NumberTableCellRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,

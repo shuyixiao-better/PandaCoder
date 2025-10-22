@@ -41,6 +41,10 @@ dependencies {
     
     // 并发处理相关依赖
     implementation 'com.google.guava:guava:32.1.2-jre'
+    
+    // JavaMail API - Git 统计邮件发送功能
+    implementation 'com.sun.mail:javax.mail:1.6.2'
+    implementation 'com.sun.activation:jakarta.activation:1.2.2'
 }
 
 intellij {
@@ -60,7 +64,7 @@ sourceSets {
     main {
         resources {
             srcDirs = ['src/main/resources']
-            includes = ['**/*.svg', '**/*.png', '**/*.xml', '**/*.properties', '**/*.gdsl']
+            includes = ['**/*.svg', '**/*.png', '**/*.xml', '**/*.properties', '**/*.gdsl', '**/*.html', '**/*.txt']
         }
     }
 }

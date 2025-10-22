@@ -126,6 +126,8 @@
 
         <!-- Git 统计相关服务 -->
         <projectService serviceImplementation="com.shuyixiao.gitstat.service.GitStatService"/>
+        <projectService serviceImplementation="com.shuyixiao.gitstat.email.service.GitStatEmailService"/>
+        <projectService serviceImplementation="com.shuyixiao.gitstat.email.config.GitStatEmailConfigState"/>
 
         <!-- 现有的启动活动 -->
         <postStartupActivity implementation="com.shuyixiao.spring.boot.startup.YamlConfigStartupActivity"/>
