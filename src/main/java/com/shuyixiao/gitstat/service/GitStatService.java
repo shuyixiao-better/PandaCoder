@@ -297,12 +297,48 @@ public final class GitStatService {
     }
     
     /**
-     * 获取指定作者的每日统计数据
+     * 获取指定作者的每日统计数据（通过邮箱）
      */
     @NotNull
     public List<GitAuthorDailyStat> getAuthorDailyStatsByAuthor(String authorEmail) {
         return authorDailyStatsCache.stream()
                 .filter(stat -> stat.getAuthorEmail().equals(authorEmail))
+                .sorted(Comparator.comparing(GitAuthorDailyStat::getDate))
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 获取指定作者的每日统计数据（通过姓名）
+     */
+    @NotNull
+    public List<GitAuthorDailyStat> getAuthorDailyStatsByAuthorName(String authorName) {
+        return authorDailyStatsCache.stream()
+                .filter(stat -> stat.getAuthorName().equals(authorName))
+                .sorted(Comparator.comparing(GitAuthorDailyStat::getDate))
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 获取所有作者的名称列表（用于下拉选择）
+     */
+    @NotNull
+    public List<String> getAllAuthorNames() {
+        return authorStatsCache.values().stream()
+                .map(GitAuthorStat::getAuthorName)
+                .sorted()
+                .distinct()
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 获取指定时间范围内指定作者的每日统计
+     */
+    @NotNull
+    public List<GitAuthorDailyStat> getAuthorDailyStatsByAuthorAndDays(String authorName, int days) {
+        LocalDate startDate = LocalDate.now().minusDays(days);
+        return authorDailyStatsCache.stream()
+                .filter(stat -> stat.getAuthorName().equals(authorName))
+                .filter(stat -> !stat.getDate().isBefore(startDate))
                 .sorted(Comparator.comparing(GitAuthorDailyStat::getDate))
                 .collect(Collectors.toList());
     }

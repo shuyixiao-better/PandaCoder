@@ -19,6 +19,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -47,6 +48,7 @@ public class GitStatToolWindow extends JPanel {
     private JBTable authorDailyTable;
     private AuthorDailyTableModel authorDailyTableModel;
     private JComboBox<String> authorDailyRangeComboBox;
+    private JComboBox<String> authorSelectionComboBox;
     
     // 项目代码统计标签页
     private JTextArea projectStatsArea;
@@ -210,7 +212,15 @@ public class GitStatToolWindow extends JPanel {
         
         // 过滤工具栏
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        filterPanel.add(new JBLabel("时间范围: "));
+        
+        // 作者选择下拉框
+        filterPanel.add(new JBLabel("选择作者: "));
+        authorSelectionComboBox = new JComboBox<>();
+        authorSelectionComboBox.addItem("全部作者");
+        authorSelectionComboBox.addActionListener(e -> updateAuthorDailyTable());
+        filterPanel.add(authorSelectionComboBox);
+        
+        filterPanel.add(new JBLabel("  时间范围: "));
         authorDailyRangeComboBox = new JComboBox<>(new String[]{
                 "最近7天", "最近30天", "最近90天", "全部"
         });
@@ -327,6 +337,7 @@ public class GitStatToolWindow extends JPanel {
                 
                 // 更新 UI
                 ApplicationManager.getApplication().invokeLater(() -> {
+                    updateAuthorSelectionComboBox();
                     updateAuthorTable();
                     updateDailyTable();
                     updateAuthorDailyTable();
@@ -345,6 +356,34 @@ public class GitStatToolWindow extends JPanel {
                 });
             }
         });
+    }
+    
+    /**
+     * 更新作者选择下拉框
+     */
+    private void updateAuthorSelectionComboBox() {
+        // 保存当前选择
+        String currentSelection = (String) authorSelectionComboBox.getSelectedItem();
+        
+        // 清空并重新填充
+        authorSelectionComboBox.removeAllItems();
+        authorSelectionComboBox.addItem("全部作者");
+        
+        // 添加所有作者
+        List<String> authorNames = gitStatService.getAllAuthorNames();
+        for (String authorName : authorNames) {
+            authorSelectionComboBox.addItem(authorName);
+        }
+        
+        // 尝试恢复之前的选择
+        if (currentSelection != null && !currentSelection.isEmpty()) {
+            for (int i = 0; i < authorSelectionComboBox.getItemCount(); i++) {
+                if (currentSelection.equals(authorSelectionComboBox.getItemAt(i))) {
+                    authorSelectionComboBox.setSelectedIndex(i);
+                    break;
+                }
+            }
+        }
     }
     
     /**
@@ -393,21 +432,44 @@ public class GitStatToolWindow extends JPanel {
      */
     private void updateAuthorDailyTable() {
         String range = (String) authorDailyRangeComboBox.getSelectedItem();
+        String selectedAuthor = (String) authorSelectionComboBox.getSelectedItem();
         List<GitAuthorDailyStat> stats;
         
-        switch (range) {
-            case "最近7天":
-                stats = gitStatService.getRecentAuthorDailyStats(7);
-                break;
-            case "最近30天":
-                stats = gitStatService.getRecentAuthorDailyStats(30);
-                break;
-            case "最近90天":
-                stats = gitStatService.getRecentAuthorDailyStats(90);
-                break;
-            default:
-                stats = gitStatService.getAllAuthorDailyStats();
-                break;
+        // 判断是否选择了特定作者
+        boolean isAllAuthors = selectedAuthor == null || "全部作者".equals(selectedAuthor);
+        
+        if (isAllAuthors) {
+            // 显示所有作者的统计
+            switch (range) {
+                case "最近7天":
+                    stats = gitStatService.getRecentAuthorDailyStats(7);
+                    break;
+                case "最近30天":
+                    stats = gitStatService.getRecentAuthorDailyStats(30);
+                    break;
+                case "最近90天":
+                    stats = gitStatService.getRecentAuthorDailyStats(90);
+                    break;
+                default:
+                    stats = gitStatService.getAllAuthorDailyStats();
+                    break;
+            }
+        } else {
+            // 显示特定作者的统计
+            if ("全部".equals(range)) {
+                stats = gitStatService.getAuthorDailyStatsByAuthorName(selectedAuthor)
+                        .stream()
+                        .sorted(Comparator.comparing(GitAuthorDailyStat::getDate))
+                        .collect(java.util.stream.Collectors.toList());
+            } else {
+                int days = switch (range) {
+                    case "最近7天" -> 7;
+                    case "最近30天" -> 30;
+                    case "最近90天" -> 90;
+                    default -> 365;
+                };
+                stats = gitStatService.getAuthorDailyStatsByAuthorAndDays(selectedAuthor, days);
+            }
         }
         
         authorDailyTableModel.updateData(stats);
