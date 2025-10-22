@@ -46,7 +46,7 @@ dependencies {
 intellij {
     version = '2024.1.6'
     type = 'IU'
-    plugins = ['java', 'org.intellij.groovy', 'properties']
+    plugins = ['java', 'org.intellij.groovy', 'properties', 'vcs-git']
     updateSinceUntilBuild = false
 }
 

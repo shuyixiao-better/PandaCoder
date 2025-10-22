@@ -51,6 +51,7 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
+    <depends>com.intellij.modules.vcs</depends>
     <depends>org.intellij.groovy</depends>
     <depends>org.jetbrains.plugins.yaml</depends>
     <depends>com.intellij.properties</depends>
@@ -123,6 +124,9 @@
         <projectService serviceImplementation="com.shuyixiao.sql.service.SqlRecordService"/>
         <projectService serviceImplementation="com.shuyixiao.sql.service.SqlMonitoringService"/>
 
+        <!-- Git 统计相关服务 -->
+        <projectService serviceImplementation="com.shuyixiao.gitstat.service.GitStatService"/>
+
         <!-- 现有的启动活动 -->
         <postStartupActivity implementation="com.shuyixiao.spring.boot.startup.YamlConfigStartupActivity"/>
 
@@ -152,6 +156,12 @@
                     factoryClass="com.shuyixiao.sql.toolwindow.SqlToolWindowFactory"
                     anchor="bottom"
                     icon="/icons/mysql.svg"/>
+
+        <!-- Git 统计工具窗口 -->
+        <toolWindow id="Git Statistics"
+                    factoryClass="com.shuyixiao.gitstat.toolwindow.GitStatToolWindowFactory"
+                    anchor="right"
+                    icon="/icons/git-stats.svg"/>
 
         <!-- 更新设置状态服务 -->
         <applicationService serviceImplementation="com.shuyixiao.update.UpdateSettingsState"/>
