@@ -135,6 +135,7 @@ public class WelcomeDialog extends DialogWrapper {
         featuresPanel.add(featuresTitle, BorderLayout.NORTH);
         
         String[] features = {
+            "📊 Git 统计工具窗口",
             "🔍 Elasticsearch DSL Monitor（ES查询监控）",
             "💾 SQL Monitor（SQL查询监控）",
             "🔤 智能中文转大小驼峰 - 一键转换，支持多种命名规范",

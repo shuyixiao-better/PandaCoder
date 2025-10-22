@@ -62,6 +62,10 @@ public class GitStatToolWindow extends JPanel {
     // 总览标签页
     private JTextArea overviewArea;
     
+    // 邮件报告标签页
+    private JComboBox<String> scheduleFilterAuthorComboBox;
+    private JComboBox<String> manualFilterAuthorComboBox;
+    
     // 状态标签
     private JLabel statusLabel;
     
@@ -347,6 +351,7 @@ public class GitStatToolWindow extends JPanel {
                 // 更新 UI
                 ApplicationManager.getApplication().invokeLater(() -> {
                     updateAuthorSelectionComboBox();
+                    updateEmailAuthorComboBoxes();
                     updateAuthorTable();
                     updateDailyTable();
                     updateAuthorDailyTable();
@@ -389,6 +394,53 @@ public class GitStatToolWindow extends JPanel {
             for (int i = 0; i < authorSelectionComboBox.getItemCount(); i++) {
                 if (currentSelection.equals(authorSelectionComboBox.getItemAt(i))) {
                     authorSelectionComboBox.setSelectedIndex(i);
+                    break;
+                }
+            }
+        }
+    }
+    
+    /**
+     * 更新邮件面板的作者选择下拉框
+     */
+    private void updateEmailAuthorComboBoxes() {
+        if (scheduleFilterAuthorComboBox == null || manualFilterAuthorComboBox == null) {
+            return;
+        }
+        
+        // 保存当前选择
+        String scheduleSelection = (String) scheduleFilterAuthorComboBox.getSelectedItem();
+        String manualSelection = (String) manualFilterAuthorComboBox.getSelectedItem();
+        
+        // 清空并重新填充定时发送下拉框
+        scheduleFilterAuthorComboBox.removeAllItems();
+        scheduleFilterAuthorComboBox.addItem("(所有作者)");
+        
+        // 清空并重新填充手动发送下拉框
+        manualFilterAuthorComboBox.removeAllItems();
+        manualFilterAuthorComboBox.addItem("(所有作者)");
+        
+        // 添加所有作者
+        List<String> authorNames = gitStatService.getAllAuthorNames();
+        for (String authorName : authorNames) {
+            scheduleFilterAuthorComboBox.addItem(authorName);
+            manualFilterAuthorComboBox.addItem(authorName);
+        }
+        
+        // 尝试恢复之前的选择
+        if (scheduleSelection != null && !scheduleSelection.isEmpty()) {
+            for (int i = 0; i < scheduleFilterAuthorComboBox.getItemCount(); i++) {
+                if (scheduleSelection.equals(scheduleFilterAuthorComboBox.getItemAt(i))) {
+                    scheduleFilterAuthorComboBox.setSelectedIndex(i);
+                    break;
+                }
+            }
+        }
+        
+        if (manualSelection != null && !manualSelection.isEmpty()) {
+            for (int i = 0; i < manualFilterAuthorComboBox.getItemCount(); i++) {
+                if (manualSelection.equals(manualFilterAuthorComboBox.getItemAt(i))) {
+                    manualFilterAuthorComboBox.setSelectedIndex(i);
                     break;
                 }
             }
@@ -906,13 +958,13 @@ public class GitStatToolWindow extends JPanel {
         
         JCheckBox enableScheduledCheckBox = new JCheckBox("启用每日定时发送", false);
         JTextField scheduledTimeField = new JTextField("18:00", 5);
-        JComboBox<String> filterAuthorComboBox = new JComboBox<>();
+        scheduleFilterAuthorComboBox = new JComboBox<>();
         JCheckBox includeTrendsCheckBox = new JCheckBox("包含趋势分析", true);
         
         // 填充作者列表
-        filterAuthorComboBox.addItem("(所有作者)");
+        scheduleFilterAuthorComboBox.addItem("(所有作者)");
         gitStatService.getAllAuthorStats().forEach(author -> 
-            filterAuthorComboBox.addItem(author.getAuthorName())
+            scheduleFilterAuthorComboBox.addItem(author.getAuthorName())
         );
         
         JPanel panel1 = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -920,7 +972,7 @@ public class GitStatToolWindow extends JPanel {
         panel.add(panel1);
         
         panel.add(createLabeledField("发送时间:", scheduledTimeField));
-        panel.add(createLabeledField("筛选作者:", filterAuthorComboBox));
+        panel.add(createLabeledField("筛选作者:", scheduleFilterAuthorComboBox));
         
         JPanel panel2 = new JPanel(new FlowLayout(FlowLayout.LEFT));
         panel2.add(includeTrendsCheckBox);
@@ -932,7 +984,7 @@ public class GitStatToolWindow extends JPanel {
             config.setEnableScheduled(enableScheduledCheckBox.isSelected());
             config.setScheduledTime(scheduledTimeField.getText());
             
-            String selectedAuthor = (String) filterAuthorComboBox.getSelectedItem();
+            String selectedAuthor = (String) scheduleFilterAuthorComboBox.getSelectedItem();
             config.setFilterAuthor("(所有作者)".equals(selectedAuthor) ? null : selectedAuthor);
             config.setIncludeTrends(includeTrendsCheckBox.isSelected());
             
@@ -956,7 +1008,7 @@ public class GitStatToolWindow extends JPanel {
         scheduledTimeField.setText(config.getScheduledTime());
         includeTrendsCheckBox.setSelected(config.isIncludeTrends());
         if (config.getFilterAuthor() != null) {
-            filterAuthorComboBox.setSelectedItem(config.getFilterAuthor());
+            scheduleFilterAuthorComboBox.setSelectedItem(config.getFilterAuthor());
         }
         
         return panel;
@@ -971,13 +1023,13 @@ public class GitStatToolWindow extends JPanel {
         panel.setBorder(BorderFactory.createTitledBorder("手动发送"));
         
         // 作者选择下拉框
-        JComboBox<String> manualAuthorComboBox = new JComboBox<>();
-        manualAuthorComboBox.addItem("(所有作者)");
+        manualFilterAuthorComboBox = new JComboBox<>();
+        manualFilterAuthorComboBox.addItem("(所有作者)");
         gitStatService.getAllAuthorStats().forEach(author -> 
-            manualAuthorComboBox.addItem(author.getAuthorName())
+            manualFilterAuthorComboBox.addItem(author.getAuthorName())
         );
         
-        panel.add(createLabeledField("选择作者:", manualAuthorComboBox));
+        panel.add(createLabeledField("选择作者:", manualFilterAuthorComboBox));
         panel.add(Box.createVerticalStrut(10));
         
         JButton sendTodayButton = new JButton("📧 发送今日统计");
@@ -985,7 +1037,7 @@ public class GitStatToolWindow extends JPanel {
         
         sendTodayButton.addActionListener(e -> {
             // 临时设置筛选作者
-            String selectedAuthor = (String) manualAuthorComboBox.getSelectedItem();
+            String selectedAuthor = (String) manualFilterAuthorComboBox.getSelectedItem();
             String originalFilter = emailService.getConfig().getFilterAuthor();
             
             try {
@@ -1010,7 +1062,7 @@ public class GitStatToolWindow extends JPanel {
         
         sendYesterdayButton.addActionListener(e -> {
             // 临时设置筛选作者
-            String selectedAuthor = (String) manualAuthorComboBox.getSelectedItem();
+            String selectedAuthor = (String) manualFilterAuthorComboBox.getSelectedItem();
             String originalFilter = emailService.getConfig().getFilterAuthor();
             
             try {
