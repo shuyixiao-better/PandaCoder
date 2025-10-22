@@ -10,8 +10,13 @@ import java.util.Arrays;
 import java.util.Base64;
 
 /**
- * 密码加密工具类
- * 用于加密和解密 SMTP 密码
+ * Copyright © 2025 PandaCoder. All rights reserved.
+ * ClassName PasswordEncryptor.java
+ * author 舒一笑不秃头
+ * version 2.0.0
+ * Description SMTP密码加密工具类，使用AES加密算法对邮箱SMTP密码进行加密存储和解密使用，基于项目路径生成唯一密钥确保安全性
+ * createTime 2025-10-22
+ * 技术分享 · 公众号：舒一笑的架构笔记
  */
 public class PasswordEncryptor {
     

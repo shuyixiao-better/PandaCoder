@@ -11,8 +11,13 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * 邮件模板服务
- * 负责生成 HTML 和纯文本格式的邮件内容
+ * Copyright © 2025 PandaCoder. All rights reserved.
+ * ClassName EmailTemplateService.java
+ * author 舒一笑不秃头
+ * version 2.0.0
+ * Description 邮件模板服务类，负责生成精美的HTML邮件和纯文本邮件内容，支持渲染统计数据、趋势图表、排名信息等，提供模板变量替换功能
+ * createTime 2025-10-22
+ * 技术分享 · 公众号：舒一笑的架构笔记
  */
 public class EmailTemplateService {
     

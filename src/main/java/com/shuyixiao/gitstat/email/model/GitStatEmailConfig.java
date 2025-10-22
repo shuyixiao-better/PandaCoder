@@ -1,8 +1,13 @@
 package com.shuyixiao.gitstat.email.model;
 
 /**
- * Git 统计邮件配置
- * 用于存储 SMTP 服务器配置、发送者信息、接收者信息等
+ * Copyright © 2025 PandaCoder. All rights reserved.
+ * ClassName GitStatEmailConfig.java
+ * author 舒一笑不秃头
+ * version 2.0.0
+ * Description Git统计邮件配置模型类，用于存储SMTP服务器配置、发送者信息、接收者信息、定时发送配置等邮件发送相关的所有配置参数
+ * createTime 2025-10-22
+ * 技术分享 · 公众号：舒一笑的架构笔记
  */
 public class GitStatEmailConfig {
     

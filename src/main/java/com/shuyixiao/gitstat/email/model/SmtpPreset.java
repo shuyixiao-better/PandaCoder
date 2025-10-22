@@ -1,7 +1,13 @@
 package com.shuyixiao.gitstat.email.model;
 
 /**
- * SMTP 邮箱服务预设配置
+ * Copyright © 2025 PandaCoder. All rights reserved.
+ * ClassName SmtpPreset.java
+ * author 舒一笑不秃头
+ * version 2.0.0
+ * Description SMTP邮箱服务预设配置类，提供Gmail、QQ邮箱、163邮箱等12种常见邮箱服务的预设配置，支持一键快速配置SMTP参数
+ * createTime 2025-10-22
+ * 技术分享 · 公众号：舒一笑的架构笔记
  */
 public class SmtpPreset {
     

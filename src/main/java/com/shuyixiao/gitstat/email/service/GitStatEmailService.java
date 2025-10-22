@@ -25,8 +25,13 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Git 统计邮件服务
- * 负责邮件发送、定时任务调度等核心功能
+ * Copyright © 2025 PandaCoder. All rights reserved.
+ * ClassName GitStatEmailService.java
+ * author 舒一笑不秃头
+ * version 2.0.0
+ * Description Git统计邮件服务核心类，提供手动发送、定时发送、SMTP连接测试等功能，负责统计数据收集、邮件内容生成、定时任务调度、发送历史记录等
+ * createTime 2025-10-22
+ * 技术分享 · 公众号：舒一笑的架构笔记
  */
 @Service(Service.Level.PROJECT)
 public final class GitStatEmailService {

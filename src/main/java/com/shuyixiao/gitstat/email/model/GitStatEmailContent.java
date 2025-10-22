@@ -5,8 +5,13 @@ import java.time.LocalDate;
 import java.util.Map;
 
 /**
- * Git 统计邮件内容
- * 包含统计数据、趋势分析、排名信息等
+ * Copyright © 2025 PandaCoder. All rights reserved.
+ * ClassName GitStatEmailContent.java
+ * author 舒一笑不秃头
+ * version 2.0.0
+ * Description Git统计邮件内容模型类，封装邮件中需要展示的统计数据，包括当日提交统计、近7天/30天趋势数据、个人排名信息等
+ * createTime 2025-10-22
+ * 技术分享 · 公众号：舒一笑的架构笔记
  */
 public class GitStatEmailContent {
     

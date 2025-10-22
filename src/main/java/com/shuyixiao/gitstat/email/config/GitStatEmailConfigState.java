@@ -9,8 +9,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Git 统计邮件配置状态持久化
- * 使用 IntelliJ Platform 的 PersistentStateComponent 机制
+ * Copyright © 2025 PandaCoder. All rights reserved.
+ * ClassName GitStatEmailConfigState.java
+ * author 舒一笑不秃头
+ * version 2.0.0
+ * Description Git统计邮件配置持久化状态类，使用IntelliJ Platform的PersistentStateComponent机制将邮件配置保存到gitStatEmailConfig.xml文件中，支持项目级配置存储
+ * createTime 2025-10-22
+ * 技术分享 · 公众号：舒一笑的架构笔记
  */
 @State(
     name = "GitStatEmailConfig",

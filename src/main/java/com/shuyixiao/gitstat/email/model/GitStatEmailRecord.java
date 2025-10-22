@@ -3,8 +3,13 @@ package com.shuyixiao.gitstat.email.model;
 import java.time.LocalDateTime;
 
 /**
- * Git 统计邮件发送记录
- * 用于记录邮件发送历史
+ * Copyright © 2025 PandaCoder. All rights reserved.
+ * ClassName GitStatEmailRecord.java
+ * author 舒一笑不秃头
+ * version 2.0.0
+ * Description Git统计邮件发送历史记录模型类，记录每次邮件发送的时间、接收者、发送状态、统计数据快照等信息，用于历史查询和问题排查
+ * createTime 2025-10-22
+ * 技术分享 · 公众号：舒一笑的架构笔记
  */
 public class GitStatEmailRecord {
     
