@@ -303,7 +303,7 @@ public final class GitStatService {
     public List<GitAuthorDailyStat> getAuthorDailyStatsByAuthor(String authorEmail) {
         return authorDailyStatsCache.stream()
                 .filter(stat -> stat.getAuthorEmail().equals(authorEmail))
-                .sorted(Comparator.comparing(GitAuthorDailyStat::getDate))
+                .sorted(Comparator.comparing(GitAuthorDailyStat::getDate).reversed())
                 .collect(Collectors.toList());
     }
     
@@ -314,7 +314,7 @@ public final class GitStatService {
     public List<GitAuthorDailyStat> getAuthorDailyStatsByAuthorName(String authorName) {
         return authorDailyStatsCache.stream()
                 .filter(stat -> stat.getAuthorName().equals(authorName))
-                .sorted(Comparator.comparing(GitAuthorDailyStat::getDate))
+                .sorted(Comparator.comparing(GitAuthorDailyStat::getDate).reversed())
                 .collect(Collectors.toList());
     }
     
@@ -339,7 +339,7 @@ public final class GitStatService {
         return authorDailyStatsCache.stream()
                 .filter(stat -> stat.getAuthorName().equals(authorName))
                 .filter(stat -> !stat.getDate().isBefore(startDate))
-                .sorted(Comparator.comparing(GitAuthorDailyStat::getDate))
+                .sorted(Comparator.comparing(GitAuthorDailyStat::getDate).reversed())
                 .collect(Collectors.toList());
     }
     
@@ -351,7 +351,7 @@ public final class GitStatService {
         LocalDate startDate = LocalDate.now().minusDays(days);
         return authorDailyStatsCache.stream()
                 .filter(stat -> !stat.getDate().isBefore(startDate))
-                .sorted(Comparator.comparing(GitAuthorDailyStat::getDate).thenComparing(GitAuthorDailyStat::getAuthorName))
+                .sorted(Comparator.comparing(GitAuthorDailyStat::getDate).reversed().thenComparing(GitAuthorDailyStat::getAuthorName))
                 .collect(Collectors.toList());
     }
     

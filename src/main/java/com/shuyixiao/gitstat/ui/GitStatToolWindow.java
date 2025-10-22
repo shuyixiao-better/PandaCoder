@@ -19,7 +19,6 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -457,10 +456,7 @@ public class GitStatToolWindow extends JPanel {
         } else {
             // 显示特定作者的统计
             if ("全部".equals(range)) {
-                stats = gitStatService.getAuthorDailyStatsByAuthorName(selectedAuthor)
-                        .stream()
-                        .sorted(Comparator.comparing(GitAuthorDailyStat::getDate))
-                        .collect(java.util.stream.Collectors.toList());
+                stats = gitStatService.getAuthorDailyStatsByAuthorName(selectedAuthor);
             } else {
                 int days = switch (range) {
                     case "最近7天" -> 7;
