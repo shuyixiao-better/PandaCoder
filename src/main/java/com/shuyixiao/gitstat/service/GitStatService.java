@@ -216,7 +216,7 @@ public final class GitStatService {
     @NotNull
     public List<GitDailyStat> getAllDailyStats() {
         return dailyStatsCache.values().stream()
-                .sorted(Comparator.comparing(GitDailyStat::getDate))
+                .sorted(Comparator.comparing(GitDailyStat::getDate).reversed())
                 .collect(Collectors.toList());
     }
     
@@ -228,7 +228,7 @@ public final class GitStatService {
         LocalDate startDate = LocalDate.now().minusDays(days);
         return dailyStatsCache.values().stream()
                 .filter(stat -> !stat.getDate().isBefore(startDate))
-                .sorted(Comparator.comparing(GitDailyStat::getDate))
+                .sorted(Comparator.comparing(GitDailyStat::getDate).reversed())
                 .collect(Collectors.toList());
     }
     
