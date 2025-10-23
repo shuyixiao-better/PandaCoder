@@ -25,6 +25,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -66,6 +67,11 @@ public class GitStatToolWindow extends JPanel {
     private JComboBox<String> scheduleFilterAuthorComboBox;
     private JComboBox<String> manualFilterAuthorComboBox;
     
+    // AI 代码统计标签页
+    private JBTable aiStatsTable;
+    private AiStatsTableModel aiStatsTableModel;
+    private JTextArea aiOverviewArea;
+    
     // 状态标签
     private JLabel statusLabel;
     
@@ -96,6 +102,7 @@ public class GitStatToolWindow extends JPanel {
         tabbedPane.addTab("作者每日统计", createAuthorDailyStatsPanel());
         tabbedPane.addTab("项目代码统计", createProjectStatsPanel());
         tabbedPane.addTab("总览", createOverviewPanel());
+        tabbedPane.addTab("🤖 AI 代码统计", createAiStatsPanel());
         tabbedPane.addTab("📧 邮件报告", createEmailReportPanel());
         
         add(tabbedPane, BorderLayout.CENTER);
@@ -357,6 +364,7 @@ public class GitStatToolWindow extends JPanel {
                     updateAuthorDailyTable();
                     updateProjectStatsArea();
                     updateOverviewArea();
+                    updateAiStats();  // 更新 AI 统计
                     updateStatusLabel();
                     
                     Messages.showInfoMessage(project, "Git 统计数据已刷新", "刷新成功");
@@ -595,6 +603,37 @@ public class GitStatToolWindow extends JPanel {
         sb.append("  • 历史删除行数: ").append(formatNumber((Integer) stats.get("totalDeletions"))).append("\n");
         sb.append("  • 净变化: ").append(formatNumber((Integer) stats.get("netChanges"))).append("\n");
         sb.append("  • 最后刷新: ").append(stats.get("lastRefreshDate")).append("\n\n");
+        
+        // 添加 AI 统计概览
+        try {
+            Map<String, Object> aiStats = gitStatService.getAiStatService().getOverallAiStatistics();
+            if (aiStats != null && (Integer) aiStats.get("totalCommits") > 0) {
+                sb.append("🤖 AI 辅助开发统计\n");
+                sb.append("  • AI 辅助提交: ").append(formatNumber((Integer) aiStats.get("totalAiCommits")))
+                  .append(" / ").append(formatNumber((Integer) aiStats.get("totalCommits")))
+                  .append(" (").append(String.format("%.1f%%", aiStats.get("aiCommitPercentage"))).append(")\n");
+                sb.append("  • AI 生成代码: ").append(formatNumber((Integer) aiStats.get("totalAiAdditions")))
+                  .append(" 行 (").append(String.format("%.1f%%", aiStats.get("aiCodePercentage"))).append(")\n");
+                sb.append("  • 使用 AI 的开发者: ").append(aiStats.get("aiUserCount")).append(" 人\n");
+                
+                // 显示 AI 工具使用情况
+                @SuppressWarnings("unchecked")
+                Map<String, Integer> toolUsage = (Map<String, Integer>) aiStats.get("aiToolUsage");
+                if (toolUsage != null && !toolUsage.isEmpty()) {
+                    sb.append("  • 常用 AI 工具: ");
+                    toolUsage.entrySet().stream()
+                        .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+                        .limit(3)
+                        .forEach(entry -> sb.append(entry.getKey()).append(" (")
+                            .append(entry.getValue()).append("次), "));
+                    sb.setLength(sb.length() - 2); // 移除最后的逗号和空格
+                    sb.append("\n");
+                }
+                sb.append("\n");
+            }
+        } catch (Exception e) {
+            // AI 统计可能未启用，忽略错误
+        }
         
         sb.append("🏆 Top 5 贡献者（按提交次数）\n");
         List<GitAuthorStat> topAuthors = gitStatService.getAuthorStatsSortedByCommits();
@@ -1242,6 +1281,225 @@ public class GitStatToolWindow extends JPanel {
             }
             
             return component;
+        }
+    }
+    
+    /**
+     * 创建 AI 代码统计面板
+     */
+    private JComponent createAiStatsPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(JBUI.Borders.empty(10));
+        
+        // 创建分割面板
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        splitPane.setDividerLocation(200);
+        splitPane.setResizeWeight(0.3);
+        
+        // 上半部分：整体统计和AI工具排行
+        JPanel topPanel = new JPanel(new BorderLayout(10, 10));
+        
+        // 整体AI统计
+        aiOverviewArea = new JTextArea();
+        aiOverviewArea.setEditable(false);
+        aiOverviewArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        JBScrollPane overviewScrollPane = new JBScrollPane(aiOverviewArea);
+        overviewScrollPane.setBorder(BorderFactory.createTitledBorder("AI 代码统计概览"));
+        
+        topPanel.add(overviewScrollPane, BorderLayout.CENTER);
+        
+        // 下半部分：作者AI使用统计表格
+        JPanel bottomPanel = new JPanel(new BorderLayout(5, 5));
+        bottomPanel.setBorder(BorderFactory.createTitledBorder("作者 AI 使用统计"));
+        
+        // 创建表格
+        aiStatsTableModel = new AiStatsTableModel();
+        aiStatsTable = new JBTable(aiStatsTableModel);
+        aiStatsTable.setAutoCreateRowSorter(true);
+        
+        // 设置列宽
+        aiStatsTable.getColumnModel().getColumn(0).setPreferredWidth(120); // 作者姓名
+        aiStatsTable.getColumnModel().getColumn(1).setPreferredWidth(80);  // 总提交
+        aiStatsTable.getColumnModel().getColumn(2).setPreferredWidth(80);  // AI提交
+        aiStatsTable.getColumnModel().getColumn(3).setPreferredWidth(100); // AI提交占比
+        aiStatsTable.getColumnModel().getColumn(4).setPreferredWidth(100); // AI代码行数
+        aiStatsTable.getColumnModel().getColumn(5).setPreferredWidth(100); // AI代码占比
+        aiStatsTable.getColumnModel().getColumn(6).setPreferredWidth(120); // 主要AI工具
+        
+        // 自定义渲染器：高亮高AI使用率
+        aiStatsTable.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, 
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                
+                if (value instanceof String) {
+                    String percentStr = (String) value;
+                    try {
+                        double percent = Double.parseDouble(percentStr.replace("%", ""));
+                        if (!isSelected) {
+                            if (percent >= 70) {
+                                c.setBackground(new JBColor(new Color(200, 230, 255), new Color(40, 60, 90)));
+                            } else if (percent >= 50) {
+                                c.setBackground(new JBColor(new Color(230, 240, 255), new Color(50, 60, 80)));
+                            } else {
+                                c.setBackground(table.getBackground());
+                            }
+                        }
+                    } catch (Exception e) {
+                        c.setBackground(table.getBackground());
+                    }
+                }
+                
+                return c;
+            }
+        });
+        
+        JBScrollPane scrollPane = new JBScrollPane(aiStatsTable);
+        bottomPanel.add(scrollPane, BorderLayout.CENTER);
+        
+        // 添加到分割面板
+        splitPane.setTopComponent(topPanel);
+        splitPane.setBottomComponent(bottomPanel);
+        
+        panel.add(splitPane, BorderLayout.CENTER);
+        
+        return panel;
+    }
+    
+    /**
+     * 更新 AI 统计数据
+     */
+    private void updateAiStats() {
+        try {
+            // 更新整体AI统计
+            Map<String, Object> aiStats = gitStatService.getAiStatService().getOverallAiStatistics();
+            StringBuilder sb = new StringBuilder();
+            
+            sb.append("=== AI 代码统计概览 ===\n\n");
+            
+            int totalCommits = (Integer) aiStats.get("totalCommits");
+            if (totalCommits == 0) {
+                sb.append("暂无 AI 统计数据。\n\n");
+                sb.append("提示：\n");
+                sb.append("1. 使用 AI 工具（Copilot、Cursor 等）编写代码\n");
+                sb.append("2. 在 commit message 中添加 [AI] 或 [Copilot] 等标记\n");
+                sb.append("3. 刷新统计数据\n");
+            } else {
+                sb.append("📊 提交统计\n");
+                sb.append("  • 总提交次数: ").append(formatNumber(totalCommits)).append("\n");
+                sb.append("  • AI 辅助提交: ").append(formatNumber((Integer) aiStats.get("totalAiCommits")))
+                  .append(" (").append(String.format("%.1f%%", aiStats.get("aiCommitPercentage"))).append(")\n");
+                sb.append("  • 纯人工提交: ").append(formatNumber((Integer) aiStats.get("totalManualCommits")))
+                  .append(" (").append(String.format("%.1f%%", 
+                      100 - (Double) aiStats.get("aiCommitPercentage"))).append(")\n\n");
+                
+                sb.append("📝 代码统计\n");
+                sb.append("  • 总代码行数: ").append(formatNumber((Integer) aiStats.get("totalAdditions"))).append("\n");
+                sb.append("  • AI 生成代码: ").append(formatNumber((Integer) aiStats.get("totalAiAdditions")))
+                  .append(" (").append(String.format("%.1f%%", aiStats.get("aiCodePercentage"))).append(")\n");
+                sb.append("  • 人工编写代码: ").append(formatNumber((Integer) aiStats.get("totalManualAdditions")))
+                  .append(" (").append(String.format("%.1f%%", 
+                      100 - (Double) aiStats.get("aiCodePercentage"))).append(")\n\n");
+                
+                sb.append("👥 团队统计\n");
+                sb.append("  • 使用 AI 的开发者: ").append(aiStats.get("aiUserCount")).append(" 人\n\n");
+                
+                // AI 工具使用排行
+                @SuppressWarnings("unchecked")
+                Map<String, Integer> toolUsage = (Map<String, Integer>) aiStats.get("aiToolUsage");
+                if (toolUsage != null && !toolUsage.isEmpty()) {
+                    sb.append("🔧 AI 工具使用排行\n");
+                    toolUsage.entrySet().stream()
+                        .sorted((a, b) -> b.getValue().compareTo(a.getValue()))
+                        .forEach(entry -> {
+                            int usageCount = entry.getValue();
+                            double percentage = totalCommits > 0 ? (double) usageCount / totalCommits * 100 : 0;
+                            sb.append(String.format("  • %s: %d 次 (%.1f%%)  %s\n", 
+                                entry.getKey(), 
+                                usageCount,
+                                percentage,
+                                createProgressBar(percentage, 30)));
+                        });
+                }
+            }
+            
+            aiOverviewArea.setText(sb.toString());
+            aiOverviewArea.setCaretPosition(0);
+            
+            // 更新作者AI统计表格
+            aiStatsTableModel.setData(gitStatService.getAiStatService().getAllAuthorAiStats());
+            
+        } catch (Exception e) {
+            aiOverviewArea.setText("AI 统计功能未启用或数据加载失败。\n\n" + 
+                "错误信息: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 创建进度条字符串
+     */
+    private String createProgressBar(double percentage, int length) {
+        int filled = (int) (percentage / 100.0 * length);
+        StringBuilder bar = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            bar.append(i < filled ? "█" : "░");
+        }
+        return bar.toString();
+    }
+    
+    /**
+     * AI 统计表格模型
+     */
+    private class AiStatsTableModel extends AbstractTableModel {
+        private final String[] columnNames = {
+            "作者姓名", "总提交", "AI提交", "AI提交占比", 
+            "AI代码行数", "AI代码占比", "主要AI工具"
+        };
+        
+        private List<com.shuyixiao.gitstat.model.GitAuthorAiStat> data = new ArrayList<>();
+        
+        public void setData(List<com.shuyixiao.gitstat.model.GitAuthorAiStat> data) {
+            this.data = data;
+            // 按 AI 代码占比降序排序
+            this.data.sort((a, b) -> Double.compare(b.getAiCodePercentage(), a.getAiCodePercentage()));
+            fireTableDataChanged();
+        }
+        
+        @Override
+        public int getRowCount() {
+            return data.size();
+        }
+        
+        @Override
+        public int getColumnCount() {
+            return columnNames.length;
+        }
+        
+        @Override
+        public String getColumnName(int column) {
+            return columnNames[column];
+        }
+        
+        @Override
+        public Object getValueAt(int row, int column) {
+            com.shuyixiao.gitstat.model.GitAuthorAiStat stat = data.get(row);
+            
+            switch (column) {
+                case 0: return stat.getAuthorName();
+                case 1: return stat.getTotalCommits();
+                case 2: return stat.getAiCommits();
+                case 3: return String.format("%.1f%%", stat.getAiCommitPercentage());
+                case 4: return formatNumber(stat.getTotalAiAdditions());
+                case 5: return String.format("%.1f%%", stat.getAiCodePercentage());
+                case 6: return getMostUsedAiTool(stat);
+                default: return "";
+            }
+        }
+        
+        private String getMostUsedAiTool(com.shuyixiao.gitstat.model.GitAuthorAiStat stat) {
+            String tool = stat.getMostUsedAiTool();
+            return tool != null ? tool : "-";
         }
     }
 }

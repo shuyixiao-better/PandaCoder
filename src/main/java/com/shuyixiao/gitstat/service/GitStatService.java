@@ -38,8 +38,12 @@ public final class GitStatService {
     private GitProjectStat projectStat = new GitProjectStat();
     private LocalDate lastRefreshDate;
     
+    // AI 统计服务
+    private GitAiStatService aiStatService;
+    
     public GitStatService(Project project) {
         this.project = project;
+        this.aiStatService = project.getService(GitAiStatService.class);
     }
     
     /**
@@ -64,6 +68,11 @@ public final class GitStatService {
                 VirtualFile root = repository.getRoot();
                 processRepository(root);
                 calculateProjectStats(root);
+                
+                // 分析 AI 统计
+                if (aiStatService != null) {
+                    aiStatService.analyzeAiStatistics(root);
+                }
             }
             
             lastRefreshDate = LocalDate.now();
@@ -485,6 +494,14 @@ public final class GitStatService {
     @NotNull
     public GitProjectStat getProjectStat() {
         return projectStat;
+    }
+    
+    /**
+     * 获取 AI 统计服务
+     */
+    @NotNull
+    public GitAiStatService getAiStatService() {
+        return aiStatService;
     }
 }
 

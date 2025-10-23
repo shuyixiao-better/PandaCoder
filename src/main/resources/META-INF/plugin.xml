@@ -165,6 +165,18 @@
                     anchor="right"
                     icon="/icons/git-stats.svg"/>
 
+        <!-- AI 代码检测启动活动 -->
+        <postStartupActivity implementation="com.shuyixiao.gitstat.ai.startup.AiCodeDetectionStartupActivity"/>
+
+        <!-- AI 代码记录存储服务 -->
+        <projectService serviceImplementation="com.shuyixiao.gitstat.ai.storage.AiCodeRecordStorage"/>
+
+        <!-- AI 统计服务 -->
+        <projectService serviceImplementation="com.shuyixiao.gitstat.service.GitAiStatService"/>
+
+        <!-- AI 识别配置状态服务 -->
+        <applicationService serviceImplementation="com.shuyixiao.gitstat.ai.config.GitStatAiConfigState"/>
+
         <!-- 更新设置状态服务 -->
         <applicationService serviceImplementation="com.shuyixiao.update.UpdateSettingsState"/>
 
