@@ -20,8 +20,10 @@ public class SqlParser {
     
     // 匹配 MyBatis 的 Parameters 日志
     // 格式: ==> Parameters: value1(Type1), value2(Type2)
+    // 支持多行参数（包含大JSON）
+    // 匹配从 "==> Parameters:" 开始，到下一个日志行（以时间戳开头）或 "<==" 或文件末尾
     private static final Pattern PARAMETERS_PATTERN = Pattern.compile(
-        "==>\\s+Parameters:\\s*([^\\n\\r]*)",
+        "==>\\s+Parameters:\\s*([\\s\\S]*?)(?=\\n\\d{4}-\\d{2}-\\d{2}.*?<==|$)",
         Pattern.CASE_INSENSITIVE
     );
     
@@ -230,6 +232,161 @@ public class SqlParser {
         }
         
         return lastMatch;
+    }
+    
+    /**
+     * 替换SQL中的参数，生成可执行的SQL
+     * 将 MyBatis 的占位符(?)替换为实际参数值
+     * 
+     * @param sqlStatement 原始SQL语句（带?占位符）
+     * @param parametersStr 参数字符串，格式: value1(Type1), value2(Type2), ...
+     * @return 可执行的SQL语句
+     */
+    public static String replaceParameters(String sqlStatement, String parametersStr) {
+        if (sqlStatement == null || parametersStr == null || parametersStr.trim().isEmpty()) {
+            return sqlStatement;
+        }
+        
+        try {
+            // 解析参数字符串
+            // 格式: value1(Type1), value2(Type2), ...
+            // 例如: 2025-10-21T10:36:34(LocalDateTime), DEFAULT(String), {...}(String), ...
+            // 需要处理包含逗号和括号的复杂值（如JSON）
+            
+            java.util.List<String> paramValues = new java.util.ArrayList<>();
+            StringBuilder currentValue = new StringBuilder();
+            StringBuilder currentType = new StringBuilder();
+            int bracketDepth = 0;
+            int curlyBraceDepth = 0;
+            boolean inQuotes = false;
+            boolean inType = false;  // 是否在类型括号内
+            
+            // 逐字符解析，正确处理嵌套的括号、大括号和逗号
+            for (int i = 0; i < parametersStr.length(); i++) {
+                char c = parametersStr.charAt(i);
+                
+                if (c == '"' || c == '\'') {
+                    // 处理引号
+                    inQuotes = !inQuotes;
+                    if (!inType) {
+                        currentValue.append(c);
+                    }
+                } else if (!inQuotes) {
+                    if (c == '{') {
+                        curlyBraceDepth++;
+                        if (!inType) {
+                            currentValue.append(c);
+                        }
+                    } else if (c == '}') {
+                        curlyBraceDepth--;
+                        if (!inType) {
+                            currentValue.append(c);
+                        }
+                    } else if (c == '(' && curlyBraceDepth == 0) {
+                        // 类型括号开始
+                        bracketDepth++;
+                        inType = true;
+                    } else if (c == ')' && curlyBraceDepth == 0 && inType) {
+                        // 类型括号结束
+                        bracketDepth--;
+                        if (bracketDepth == 0) {
+                            inType = false;
+                            // 提取参数值（忽略类型）
+                            String paramValue = currentValue.toString().trim();
+                            if (!paramValue.isEmpty()) {
+                                paramValues.add(paramValue);
+                            }
+                            currentValue.setLength(0);
+                            currentType.setLength(0);
+                        }
+                    } else if (c == ',' && bracketDepth == 0 && curlyBraceDepth == 0) {
+                        // 参数之间的分隔符，跳过空白
+                        // 下一个参数即将开始
+                        continue;
+                    } else if (inType) {
+                        // 在类型括号内，记录类型（但我们不使用它）
+                        currentType.append(c);
+                    } else {
+                        // 记录参数值
+                        currentValue.append(c);
+                    }
+                } else {
+                    // 在引号内
+                    if (!inType) {
+                        currentValue.append(c);
+                    }
+                }
+            }
+            
+            // 如果解析失败或没有参数，返回原始SQL
+            if (paramValues.isEmpty()) {
+                return sqlStatement;
+            }
+            
+            // 替换SQL中的占位符
+            StringBuilder result = new StringBuilder();
+            int paramIndex = 0;
+            boolean inSqlQuotes = false;
+            
+            for (int i = 0; i < sqlStatement.length(); i++) {
+                char c = sqlStatement.charAt(i);
+                
+                // 跟踪SQL中的引号，避免替换字符串内的?
+                if (c == '\'') {
+                    inSqlQuotes = !inSqlQuotes;
+                    result.append(c);
+                } else if (c == '?' && !inSqlQuotes && paramIndex < paramValues.size()) {
+                    // 找到占位符，替换为参数值
+                    String paramValue = paramValues.get(paramIndex++);
+                    
+                    // 根据参数值的类型决定是否添加引号
+                    if (needsQuotes(paramValue)) {
+                        result.append('\'');
+                        // 转义单引号
+                        result.append(paramValue.replace("'", "''"));
+                        result.append('\'');
+                    } else {
+                        result.append(paramValue);
+                    }
+                } else {
+                    result.append(c);
+                }
+            }
+            
+            return result.toString();
+            
+        } catch (Exception e) {
+            // 解析失败，返回原始SQL
+            return sqlStatement;
+        }
+    }
+    
+    /**
+     * 判断参数值是否需要添加引号
+     * 数字和布尔值不需要，字符串需要
+     */
+    private static boolean needsQuotes(String value) {
+        if (value == null || value.isEmpty()) {
+            return true;
+        }
+        
+        // 检查是否是数字（整数或小数）
+        if (value.matches("-?\\d+(\\.\\d+)?")) {
+            return false;
+        }
+        
+        // 检查是否是布尔值
+        if ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value)) {
+            return false;
+        }
+        
+        // 检查是否是null
+        if ("null".equalsIgnoreCase(value)) {
+            return false;
+        }
+        
+        // 其他情况都需要引号
+        return true;
     }
 }
 

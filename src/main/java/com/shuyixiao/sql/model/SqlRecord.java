@@ -1,5 +1,6 @@
 package com.shuyixiao.sql.model;
 
+import com.shuyixiao.sql.parser.SqlParser;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
@@ -147,6 +148,7 @@ public class SqlRecord {
     
     /**
      * 获取可执行的SQL（参数已替换）
+     * 使用SqlParser的replaceParameters方法处理复杂的参数（包括大JSON）
      */
     public String getExecutableSql() {
         if (sqlStatement == null) {
@@ -159,101 +161,12 @@ public class SqlRecord {
         }
         
         try {
-            // 解析参数值
-            String[] paramValues = parseParameterValues(parameters);
-            if (paramValues.length == 0) {
-                return sqlStatement;
-            }
-            
-            // 替换参数
-            String executableSql = sqlStatement;
-            for (String paramValue : paramValues) {
-                // 找到第一个 ?
-                int index = executableSql.indexOf('?');
-                if (index == -1) {
-                    break;
-                }
-                
-                // 替换 ? 为参数值
-                executableSql = executableSql.substring(0, index) + 
-                               paramValue + 
-                               executableSql.substring(index + 1);
-            }
-            
-            return executableSql;
-            
+            // 使用SqlParser的replaceParameters方法
+            return SqlParser.replaceParameters(sqlStatement, parameters);
         } catch (Exception e) {
             // 解析失败，返回原始SQL + 错误信息
-            e.printStackTrace();
-            return sqlStatement + "\n-- 参数解析失败: " + parameters + "\n-- 错误: " + e.getMessage();
+            return sqlStatement + "\n-- 参数解析失败\n-- 参数: " + parameters + "\n-- 错误: " + e.getMessage();
         }
-    }
-    
-    /**
-     * 解析参数值
-     * 格式: "value1(Type1), value2(Type2), value3(Type3)"
-     */
-    private String[] parseParameterValues(String params) {
-        if (params == null || params.isEmpty()) {
-            return new String[0];
-        }
-        
-        java.util.List<String> values = new java.util.ArrayList<>();
-        
-        // 按逗号分割参数
-        String[] parts = params.split(",\\s*");
-        
-        for (String part : parts) {
-            part = part.trim();
-            if (part.isEmpty()) {
-                continue;
-            }
-            
-            // 提取参数值和类型
-            // 格式: value(Type) 或 value
-            int typeStart = part.lastIndexOf('(');
-            if (typeStart > 0) {
-                String value = part.substring(0, typeStart).trim();
-                String type = part.substring(typeStart + 1, part.length() - 1).trim();
-                
-                // 根据类型格式化值
-                String formattedValue = formatParameterValue(value, type);
-                values.add(formattedValue);
-            } else {
-                // 没有类型，直接使用值
-                values.add("'" + part + "'");
-            }
-        }
-        
-        return values.toArray(new String[0]);
-    }
-    
-    /**
-     * 格式化参数值
-     */
-    private String formatParameterValue(String value, String type) {
-        type = type.toLowerCase();
-        
-        // 数字类型：不需要引号
-        if (type.contains("int") || type.contains("long") || 
-            type.contains("double") || type.contains("float") ||
-            type.contains("decimal") || type.contains("number")) {
-            return value;
-        }
-        
-        // 布尔类型
-        if (type.contains("boolean")) {
-            return value.toLowerCase();
-        }
-        
-        // NULL值
-        if ("null".equalsIgnoreCase(value)) {
-            return "NULL";
-        }
-        
-        // 字符串类型：需要单引号，并转义
-        String escaped = value.replace("'", "''");
-        return "'" + escaped + "'";
     }
     
     public static class Builder {

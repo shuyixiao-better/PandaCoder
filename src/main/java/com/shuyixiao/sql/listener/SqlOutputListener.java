@@ -21,11 +21,11 @@ public class SqlOutputListener implements ProcessListener {
     
     private static final Logger LOG = Logger.getInstance(SqlOutputListener.class);
     
-    // 缓冲区大小：300K 足够容纳SQL日志和上下文
-    private static final int MAX_BUFFER_SIZE = 300000;
+    // 缓冲区大小：1MB 足够容纳超大JSON的SQL日志和上下文
+    private static final int MAX_BUFFER_SIZE = 1024000;
     
-    // 保留上下文大小：100K 用于保留API路径等上下文信息（API日志可能在SQL之前很多行）
-    private static final int CROSS_LINE_RETAIN_SIZE = 100000;
+    // 保留上下文大小：200K 用于保留API路径等上下文信息（API日志可能在SQL之前很多行）
+    private static final int CROSS_LINE_RETAIN_SIZE = 200000;
     
     // 调试模式
     private static final boolean DEBUG_MODE = true;
