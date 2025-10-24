@@ -5,6 +5,7 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPanel;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
+import com.shuyixiao.advice.PluginAdviceDialog;
 import com.shuyixiao.ui.QRCodeDialog;
 import org.jetbrains.annotations.NotNull;
 
@@ -126,6 +127,7 @@ public class PromotionPanel extends JBPanel<PromotionPanel> {
         wechatButton.addActionListener(e -> {
             QRCodeDialog.showWechatQRCode(project);
         });
+        panel.add(wechatButton);
         JButton coffeeButton = new JButton("☕️ 请作者喝杯");
         coffeeButton.putClientProperty("JButton.buttonType", "borderless");
         coffeeButton.setFont(coffeeButton.getFont().deriveFont(12f));
@@ -134,8 +136,17 @@ public class PromotionPanel extends JBPanel<PromotionPanel> {
         coffeeButton.addActionListener(e -> {
             QRCodeDialog.showCoffeeQRCode(project);
         });
-        panel.add(wechatButton);
         panel.add(coffeeButton);
+        JButton adviceButton = new JButton("✍️ 插件建议");
+        adviceButton.putClientProperty("JButton.buttonType", "borderless");
+        adviceButton.setFont(coffeeButton.getFont().deriveFont(12f));
+        adviceButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        adviceButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        adviceButton.addActionListener(e -> {
+            // 显示插件建议反馈对话框
+            PluginAdviceDialog.show(project);
+        });
+        panel.add(adviceButton);
         
         panel.add(Box.createVerticalStrut(10));
         

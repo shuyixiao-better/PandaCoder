@@ -1,0 +1,17 @@
+# Plugin Advice Email Configuration Example
+# 复制此文件为 advice-email.properties 并填入真实配置
+
+# 163邮箱SMTP密码（授权码）
+advice.email.smtp.password=YOUR_SMTP_PASSWORD_HERE
+
+# 发送者邮箱
+advice.email.sender=your-email@163.com
+
+# 接收者邮箱
+advice.email.receiver=your-email@163.com
+
+# 说明：
+# 1. 请勿将真实的 advice-email.properties 文件提交到版本控制
+# 2. SMTP密码是邮箱的授权码，不是邮箱登录密码
+# 3. 163邮箱授权码获取方式：登录163邮箱 -> 设置 -> POP3/SMTP/IMAP -> 开启SMTP服务
+
