@@ -153,10 +153,32 @@ public final class GitStatEmailService {
             }
         }
         
-        // 如果需要趋势分析
+        // 始终包含趋势分析（7天数据）
+        Map<LocalDate, GitDailyStat> last7Days;
+        if (filterAuthor != null && !filterAuthor.isEmpty()) {
+            // 如果筛选了作者，获取该作者的7天数据
+            last7Days = getLast7DaysStatsForAuthor(date, filterAuthor);
+        } else {
+            // 否则获取所有开发者的7天数据
+            last7Days = getLast7DaysStats(date);
+        }
+        content.setLast7Days(last7Days);
+        
+        LOG.info("收集7天趋势数据，日期范围: " + date + "，筛选作者: " + (filterAuthor != null ? filterAuthor : "所有") + "，数据条数: " + (last7Days != null ? last7Days.size() : 0));
+        if (last7Days != null && !last7Days.isEmpty()) {
+            last7Days.forEach((d, stat) -> {
+                LOG.info("  " + d + ": 提交=" + stat.getCommits() + ", 新增=" + stat.getAdditions() + 
+                         ", 删除=" + stat.getDeletions() + ", 净变化=" + stat.getNetChanges());
+            });
+        }
+        
+        // 如果需要30天趋势
         if (config.isIncludeTrends()) {
-            content.setLast7Days(getLast7DaysStats(date));
-            content.setLast30Days(getLast30DaysStats(date));
+            if (filterAuthor != null && !filterAuthor.isEmpty()) {
+                content.setLast30Days(getLast30DaysStatsForAuthor(date, filterAuthor));
+            } else {
+                content.setLast30Days(getLast30DaysStats(date));
+            }
         }
         
         // 计算排名（如果筛选了特定作者）
@@ -194,6 +216,63 @@ public final class GitStatEmailService {
     }
     
     /**
+     * 获取指定作者的最近7天统计（按日历周统计，周一到周日）
+     */
+    private Map<LocalDate, GitDailyStat> getLast7DaysStatsForAuthor(LocalDate endDate, String authorName) {
+        Map<LocalDate, GitDailyStat> stats = new LinkedHashMap<>();
+        List<GitAuthorDailyStat> allAuthorStats = gitStatService.getAllAuthorDailyStats();
+        
+        LOG.info("获取作者[" + authorName + "]的7天数据，总作者日统计数据条数: " + allAuthorStats.size());
+        
+        // 打印所有该作者的数据用于调试
+        long authorDataCount = allAuthorStats.stream()
+            .filter(s -> s.getAuthorName().equals(authorName))
+            .count();
+        LOG.info("该作者在所有日期的数据条数: " + authorDataCount);
+        
+        // 获取本周一（MONDAY = 1）
+        int dayOfWeek = endDate.getDayOfWeek().getValue(); // 1=周一, 7=周日
+        LocalDate monday = endDate.minusDays(dayOfWeek - 1); // 回退到本周一
+        
+        LOG.info("日期范围: 从 " + monday + " 到 " + monday.plusDays(6) + " (本周)");
+        
+        // 从本周一开始，统计完整的7天（周一到周日）
+        for (int i = 0; i < 7; i++) {
+            LocalDate date = monday.plusDays(i);
+            
+            // 查找该作者在该日期的统计数据
+            GitAuthorDailyStat authorStat = allAuthorStats.stream()
+                .filter(s -> {
+                    boolean nameMatch = s.getAuthorName().equals(authorName);
+                    boolean dateMatch = s.getDate().equals(date);
+                    if (dateMatch) {
+                        LOG.info("  日期" + date + "的作者: " + s.getAuthorName() + ", 匹配=" + nameMatch);
+                    }
+                    return nameMatch && dateMatch;
+                })
+                .findFirst()
+                .orElse(null);
+            
+            // 转换为GitDailyStat格式
+            GitDailyStat dailyStat = new GitDailyStat(date);
+            if (authorStat != null) {
+                dailyStat.setCommits(authorStat.getCommits());
+                dailyStat.setAdditions(authorStat.getAdditions());
+                dailyStat.setDeletions(authorStat.getDeletions());
+                dailyStat.setNetChanges(authorStat.getNetChanges());
+                LOG.info("  找到数据 " + date + ": 提交=" + authorStat.getCommits() + 
+                         ", 新增=" + authorStat.getAdditions() + ", 删除=" + authorStat.getDeletions());
+            } else {
+                LOG.info("  未找到数据 " + date + ": 使用默认值0");
+            }
+            
+            stats.put(date, dailyStat);
+        }
+        
+        return stats;
+    }
+    
+    /**
      * 获取最近30天统计
      */
     private Map<LocalDate, GitDailyStat> getLast30DaysStats(LocalDate endDate) {
@@ -207,6 +286,39 @@ public final class GitStatEmailService {
                 .findFirst()
                 .orElse(new GitDailyStat(date));
             stats.put(date, stat);
+        }
+        
+        return stats;
+    }
+    
+    /**
+     * 获取指定作者的最近30天统计
+     */
+    private Map<LocalDate, GitDailyStat> getLast30DaysStatsForAuthor(LocalDate endDate, String authorName) {
+        Map<LocalDate, GitDailyStat> stats = new LinkedHashMap<>();
+        List<GitAuthorDailyStat> allAuthorStats = gitStatService.getAllAuthorDailyStats();
+        
+        LOG.info("获取作者[" + authorName + "]的30天数据");
+        
+        for (int i = 29; i >= 0; i--) {
+            LocalDate date = endDate.minusDays(i);
+            
+            // 查找该作者在该日期的统计数据
+            GitAuthorDailyStat authorStat = allAuthorStats.stream()
+                .filter(s -> s.getAuthorName().equals(authorName) && s.getDate().equals(date))
+                .findFirst()
+                .orElse(null);
+            
+            // 转换为GitDailyStat格式
+            GitDailyStat dailyStat = new GitDailyStat(date);
+            if (authorStat != null) {
+                dailyStat.setCommits(authorStat.getCommits());
+                dailyStat.setAdditions(authorStat.getAdditions());
+                dailyStat.setDeletions(authorStat.getDeletions());
+                dailyStat.setNetChanges(authorStat.getNetChanges());
+            }
+            
+            stats.put(date, dailyStat);
         }
         
         return stats;
