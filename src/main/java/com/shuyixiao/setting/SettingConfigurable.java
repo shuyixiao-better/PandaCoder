@@ -91,7 +91,7 @@ public class SettingConfigurable implements SearchableConfigurable {
         tabbedPane.addTab("提示词配置", createPromptPanel());
         tabbedPane.addTab("模板配置", createTemplatePanel());
         tabbedPane.addTab("百度翻译", createBaiduPanel());
-        tabbedPane.addTab("Bug记录", createBugStoragePanel());
+//        tabbedPane.addTab("Bug记录", createBugStoragePanel());
         
         panel.add(tabbedPane, BorderLayout.CENTER);
         

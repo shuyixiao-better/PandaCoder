@@ -142,10 +142,10 @@
         <postStartupActivity implementation="com.shuyixiao.sql.startup.SqlStartupActivity"/>
 
         <!-- Bug记录器工具窗口 -->
-        <toolWindow id="Bug Recorder"
-                    factoryClass="com.shuyixiao.bugrecorder.toolwindow.BugRecorderToolWindowFactory"
-                    anchor="bottom"
-                    icon="/icons/bug-recorder.svg"/>
+<!--        <toolWindow id="Bug Recorder"-->
+<!--                    factoryClass="com.shuyixiao.bugrecorder.toolwindow.BugRecorderToolWindowFactory"-->
+<!--                    anchor="bottom"-->
+<!--                    icon="/icons/bug-recorder.svg"/>-->
 
         <!-- ES DSL 监控工具窗口 -->
         <toolWindow id="ES DSL Monitor"
