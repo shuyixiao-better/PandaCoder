@@ -3,9 +3,11 @@ package com.shuyixiao.livingdoc.action;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -26,6 +28,11 @@ import org.jetbrains.annotations.NotNull;
 public class IndexProjectAction extends AnAction {
     
     @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.BGT;
+    }
+    
+    @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         Project project = e.getProject();
         if (project == null) {
@@ -44,9 +51,12 @@ public class IndexProjectAction extends AnAction {
                     indicator.setIndeterminate(false);
                     indicator.setFraction(0.0);
                     
-                    // 1. 分析代码
-                    JavaDocAnalyzer analyzer = new JavaDocAnalyzer(project);
-                    ProjectDocumentation doc = analyzer.analyze();
+                    // 1. 分析代码（在 Read Action 中执行 PSI 操作）
+                    ProjectDocumentation doc = ReadAction.compute(() -> {
+                        JavaDocAnalyzer analyzer = new JavaDocAnalyzer(project);
+                        return analyzer.analyze();
+                    });
+                    
                     endpointCount = doc.getEndpoints().size();
                     indicator.setFraction(0.4);
                     

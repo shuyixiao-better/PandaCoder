@@ -1,5 +1,6 @@
 package com.shuyixiao.livingdoc.action;
 
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
@@ -22,6 +23,11 @@ import java.util.List;
  * @since 2.3.0
  */
 public class SearchDocAction extends AnAction {
+    
+    @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.BGT;
+    }
     
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {

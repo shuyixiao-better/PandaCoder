@@ -3,6 +3,7 @@ package com.shuyixiao.livingdoc.action;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
+import com.intellij.openapi.actionSystem.ActionUpdateThread;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
@@ -25,6 +26,11 @@ import java.io.FileWriter;
  * @since 2.3.0
  */
 public class ExportDocAction extends AnAction {
+    
+    @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.BGT;
+    }
     
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
