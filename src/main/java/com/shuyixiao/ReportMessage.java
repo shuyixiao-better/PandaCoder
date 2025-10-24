@@ -1,20 +1,33 @@
 package com.shuyixiao;
+
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.shuyixiao.ui.WelcomeDialog;
+import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.editor.Editor;
+import com.shuyixiao.ui.PandaCoderBalloon;
+
 /**
- * Copyright © 2024年 integration-projects-maven. All rights reserved.
- * ClassName ReportMessage.java
- * author 舒一笑不秃头 yixiaoshu88@163.com
- * version 1.0.0
- * Description PandaCoder欢迎信息
- * createTime 2024年08月21日 21:53:00
+ * PandaCoder 助手面板入口
+ * 优化后使用轻量级气泡提示，替代模态对话框
+ * 提供更好的用户体验，不打断工作流
+ * 
+ * @author 舒一笑不秃头 yixiaoshu88@163.com
+ * @version 2.2.0
+ * @since 2024年08月21日
  */
 public class ReportMessage extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent e) {
-        // 显示现代化的欢迎对话框
-        WelcomeDialog.show(e.getProject());
+        Editor editor = e.getData(CommonDataKeys.EDITOR);
+        
+        // 优先使用轻量级气泡提示
+        if (editor != null) {
+            // 在编辑器中显示气泡，7秒自动消失
+            PandaCoderBalloon.showWelcome(e.getProject(), editor);
+        } else {
+            // 降级方案：如果没有编辑器（如在项目视图右键），显示气泡或对话框
+            PandaCoderBalloon.showWelcome(e.getProject(), null);
+        }
     }
 }

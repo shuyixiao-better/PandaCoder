@@ -186,6 +186,12 @@
         <!-- 版本更新检查启动活动 -->
         <postStartupActivity implementation="com.shuyixiao.update.UpdateCheckService"/>
 
+        <!-- PandaCoder 设置服务 - 跟踪首次安装和使用统计 -->
+        <projectService serviceImplementation="com.shuyixiao.service.PandaCoderSettings"/>
+
+        <!-- PandaCoder 启动活动 - 处理首次安装欢迎 -->
+        <postStartupActivity implementation="com.shuyixiao.listener.PandaCoderStartupActivity"/>
+
         <!-- 更新设置配置页面 -->
         <applicationConfigurable groupId="tools" 
                                displayName="更新设置" 
@@ -220,29 +226,56 @@
                     anchor="right"
                     icon="/icons/livingdoc.svg"/>
         
+        <!-- PandaCoder 助手工具窗口 -->
+        <toolWindow id="PandaCoder" 
+                    factoryClass="com.shuyixiao.toolwindow.PandaCoderToolWindowFactory"
+                    anchor="right"
+                    icon="/icons/toolwindow_panda.svg"
+                    secondary="false"/>
+        
         <!-- 活文档通知组 -->
         <notificationGroup id="LivingDoc" displayType="BALLOON"/>
     </extensions>
     <actions>
-        <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="关于PandaCoder"
-                description="Show PandaCoder plugin information">
-            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
-        </action>
-
-        <action id="ConvertToCamelCase" class="com.shuyixiao.ConvertToCamelCaseAction" text="中文转小驼峰" description="Convert selected Chinese text to camelCase naming format">
-            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="ReportMessage"/>
-            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt C"/>
-        </action>
-
-        <action id="ConvertToPascalCase" class="com.shuyixiao.ConvertToPascalCaseAction" text="中文转大驼峰" description="Convert selected Chinese text to PascalCase naming format">
-            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="ConvertToCamelCase"/>
-            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt P"/>
-        </action>
-
-        <action id="ConvertToUpperCase" class="com.shuyixiao.ConvertToUpperCaseAction" text="中文转大写带下划线" description="Convert selected Chinese text to UPPER_CASE naming format">
-            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="ConvertToPascalCase"/>
-            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt U"/>
-        </action>
+        <!-- PandaCoder 功能组 - 优雅的子菜单 -->
+        <group id="PandaCoderGroup" 
+               text="PandaCoder 🐼" 
+               description="PandaCoder 智能编码助手"
+               popup="true">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            
+            <!-- 中文转换功能 -->
+            <action id="ConvertToCamelCase" 
+                    class="com.shuyixiao.ConvertToCamelCaseAction" 
+                    text="中文转小驼峰" 
+                    description="Convert selected Chinese text to camelCase naming format">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt C"/>
+            </action>
+            
+            <action id="ConvertToPascalCase" 
+                    class="com.shuyixiao.ConvertToPascalCaseAction" 
+                    text="中文转大驼峰" 
+                    description="Convert selected Chinese text to PascalCase naming format">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt P"/>
+            </action>
+            
+            <action id="ConvertToUpperCase" 
+                    class="com.shuyixiao.ConvertToUpperCaseAction" 
+                    text="中文转大写带下划线" 
+                    description="Convert selected Chinese text to UPPER_CASE naming format">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt U"/>
+            </action>
+            
+            <separator/>
+            
+            <!-- 关于/帮助 -->
+            <action id="ReportMessage" 
+                    class="com.shuyixiao.ReportMessage" 
+                    text="关于插件" 
+                    description="Open PandaCoder assistant panel">
+                <keyboard-shortcut keymap="$default" first-keystroke="alt P"/>
+            </action>
+        </group>
 
         <!-- Feature to support Chinese input in native dialog -->
         <action id="ChineseFileCreation" class="com.shuyixiao.ChineseClassCreationAction" text="Smart Chinese Class" description="Create class with Chinese input automatically converted to English class name">

@@ -1,0 +1,25 @@
+<svg width="13" height="13" viewBox="0 0 13 13" xmlns="http://www.w3.org/2000/svg">
+  <!-- 简化的熊猫头像图标 - 适合 Tool Window -->
+  
+  <!-- 主体：白色圆形头部 -->
+  <circle cx="6.5" cy="6.5" r="5.5" fill="#FFFFFF" stroke="#404040" stroke-width="0.6"/>
+  
+  <!-- 左耳：黑色圆形 -->
+  <circle cx="3.5" cy="3.5" r="1.8" fill="#2C2C2C"/>
+  
+  <!-- 右耳：黑色圆形 -->
+  <circle cx="9.5" cy="3.5" r="1.8" fill="#2C2C2C"/>
+  
+  <!-- 左眼：黑色椭圆 -->
+  <ellipse cx="4.5" cy="5.8" rx="1.1" ry="1.3" fill="#1A1A1A"/>
+  
+  <!-- 右眼：黑色椭圆 -->
+  <ellipse cx="8.5" cy="5.8" rx="1.1" ry="1.3" fill="#1A1A1A"/>
+  
+  <!-- 鼻子：黑色小圆 -->
+  <ellipse cx="6.5" cy="8.2" rx="0.7" ry="0.5" fill="#1A1A1A"/>
+  
+  <!-- 嘴巴：简单的曲线 -->
+  <path d="M 5.5 8.8 Q 6.5 9.5 7.5 8.8" stroke="#1A1A1A" stroke-width="0.5" fill="none"/>
+</svg>
+

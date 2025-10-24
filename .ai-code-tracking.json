@@ -682,12 +682,23 @@
       "aiTool": "AI Assistant",
       "detectionMethod": "REALTIME_SPEED_ANALYSIS",
       "lineCount": 3
+    },
+    {
+      "filePath": "/Users/shuyixiao/IdeaProjects/PandaCoder/src/main/java/com/shuyixiao/ReportMessage.java",
+      "timestamp": 1761313016469,
+      "startOffset": 23,
+      "endOffset": 938,
+      "codeContent": "\nimport com.intellij.openapi.actionSystem.AnAction;\nimport com.intellij.openapi.actionSystem.AnActionEvent;\nimport com.intellij.openapi.actionSystem.CommonDataKeys;\nimport com.intellij.openapi.editor.Editor;\nimport com.shuyixiao.ui.PandaCoderBalloon;\nimport com.shuyixiao.ui.WelcomeDialog;\n\n/**\n * PandaCoder 助手面板入口\n * 优化后使用轻量级气泡提示，替代模态对话框\n * 提供更好的用户体验，不打断工作流\n * \n * @author 舒一笑不秃头 yixiaoshu88@163.com\n * @version 2.2.0\n * @since 2024年08月21日\n */\npublic class ReportMessage extends AnAction {\n\n    @Override\n    public void actionPerformed(AnActionEvent e) {\n        Editor editor \u003d e.getData(CommonDataKeys.EDITOR);\n        \n        // 优先使用轻量级气泡提示\n        if (editor !\u003d null) {\n            // 在编辑器中显示气泡，7秒自动消失\n            PandaCoderBalloon.showWelcome(e.getProject(), editor);\n        } else {\n            // 降级方案：如果没有编辑器（如在项目视图右键），显示气泡或对话框\n            PandaCoderBalloon.showWelcome(e.getProject(), null);\n        }",
+      "aiProbability": 95,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 31
     }
   ],
   "toolStats": {
     "AI Assistant": {
-      "usageCount": 62,
-      "totalLines": 11676
+      "usageCount": 63,
+      "totalLines": 11707
     }
   }
 }
