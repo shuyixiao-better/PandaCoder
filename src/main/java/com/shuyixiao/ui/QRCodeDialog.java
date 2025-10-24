@@ -44,19 +44,12 @@ public class QRCodeDialog extends DialogWrapper {
     @Override
     protected @Nullable JComponent createCenterPanel() {
         JBPanel<?> mainPanel = new JBPanel<>(new BorderLayout());
-        mainPanel.setPreferredSize(JBUI.size(400, 500));
-        mainPanel.setBorder(JBUI.Borders.empty(20));
-
-        // 标题
-        JBLabel titleLabel = new JBLabel(title);
-        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 16f));
-        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        titleLabel.setBorder(JBUI.Borders.emptyBottom(15));
-        mainPanel.add(titleLabel, BorderLayout.NORTH);
+        mainPanel.setPreferredSize(JBUI.size(450, 600));
+        mainPanel.setBorder(JBUI.Borders.empty(15));
 
         // 二维码图片
         JBPanel<?> imagePanel = new JBPanel<>(new BorderLayout());
-        imagePanel.setBorder(JBUI.Borders.empty(10));
+        imagePanel.setBorder(JBUI.Borders.empty(5));
 
         try {
             ImageIcon qrCodeIcon = null;
@@ -133,9 +126,9 @@ public class QRCodeDialog extends DialogWrapper {
                         int originalWidth = qrCodeIcon.getIconWidth();
                         int originalHeight = qrCodeIcon.getIconHeight();
                         
-                        // 如果图片太大，等比例缩放（最大边长300）
-                        int maxWidth = 300;
-                        int maxHeight = 300;
+                        // 如果图片太大，等比例缩放（最大边长400）
+                        int maxWidth = 400;
+                        int maxHeight = 400;
                         if (originalWidth > maxWidth || originalHeight > maxHeight) {
                             double scale = Math.min(maxWidth / (double) originalWidth, maxHeight / (double) originalHeight);
                             int newWidth = (int) Math.round(originalWidth * scale);
@@ -149,11 +142,11 @@ public class QRCodeDialog extends DialogWrapper {
                             System.out.println("缩放后尺寸: " + newWidth + "x" + newHeight);
                         }
                     } else {
-                        // 非gif文件，等比缩放，保持清晰不变形（最大边长300，不放大小图）
+                        // 非gif文件，等比缩放，保持清晰不变形（最大边长400，不放大小图）
                         int originalWidth = qrCodeIcon.getIconWidth();
                         int originalHeight = qrCodeIcon.getIconHeight();
-                        int maxWidth = 300;
-                        int maxHeight = 300;
+                        int maxWidth = 400;
+                        int maxHeight = 400;
                         if (originalWidth > maxWidth || originalHeight > maxHeight) {
                             double scale = Math.min(maxWidth / (double) originalWidth, maxHeight / (double) originalHeight);
                             int newWidth = (int) Math.round(originalWidth * scale);
@@ -166,7 +159,7 @@ public class QRCodeDialog extends DialogWrapper {
  
                      JBLabel qrCodeLabel = new JBLabel(qrCodeIcon);
                      qrCodeLabel.setHorizontalAlignment(SwingConstants.CENTER);
-                     qrCodeLabel.setBorder(JBUI.Borders.empty(10));
+                     qrCodeLabel.setBorder(JBUI.Borders.empty(5));
                      imagePanel.add(qrCodeLabel, BorderLayout.CENTER);
                     
                     System.out.println("图片显示成功!");
@@ -508,7 +501,7 @@ public class QRCodeDialog extends DialogWrapper {
     public static void showWechatQRCode(@Nullable Project project) {
         QRCodeDialog dialog = new QRCodeDialog(
                 project,
-                "📱 关注微信公众号",
+                "公众号",
                 "扫描二维码关注「舒一笑的架构笔记」<br>" +
                         "获取最新技术分享、插件更新和问题解答",
                 "/images/WechatOfficialAccount.gif",  // 使用本地图片资源

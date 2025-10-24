@@ -158,6 +158,9 @@ public class PromotionPanel extends JBPanel<PromotionPanel> {
         linksPanel.add(createLinkLabel("🐙 GitHub", 
             "https://github.com/shuyixiao-better/PandaCoder"));
         linksPanel.add(new JBLabel("|"));
+        linksPanel.add(createLinkLabel("🐱 Gitee",
+                "https://gitee.com/shuyixiao-only/PandaCoder"));
+        linksPanel.add(new JBLabel("|"));
         linksPanel.add(createLinkLabel("📝 博客", 
             "https://www.shuyixiao.cn"));
         
