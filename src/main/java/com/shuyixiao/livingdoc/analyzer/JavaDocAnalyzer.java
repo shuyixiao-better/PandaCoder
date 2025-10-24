@@ -61,27 +61,41 @@ public class JavaDocAnalyzer {
         
         // 获取 Java Facade
         JavaPsiFacade javaPsiFacade = JavaPsiFacade.getInstance(project);
-        GlobalSearchScope scope = GlobalSearchScope.projectScope(project);
+        
+        // 使用 allScope 而不是 projectScope，以确保搜索所有依赖
+        GlobalSearchScope scope = GlobalSearchScope.allScope(project);
+        
+        System.out.println("[LivingDoc] 开始搜索 Controller...");
+        System.out.println("[LivingDoc] 项目路径: " + project.getBasePath());
+        System.out.println("[LivingDoc] 搜索范围: " + scope);
         
         // 查找 @RestController
         PsiClass restControllerClass = javaPsiFacade.findClass(
             "org.springframework.web.bind.annotation.RestController", scope);
+        System.out.println("[LivingDoc] RestController 注解类: " + (restControllerClass != null ? "找到" : "未找到"));
+        
         if (restControllerClass != null) {
             Collection<PsiClass> restControllers = AnnotatedElementsSearch
-                .searchPsiClasses(restControllerClass, scope)
+                .searchPsiClasses(restControllerClass, GlobalSearchScope.projectScope(project))
                 .findAll();
+            System.out.println("[LivingDoc] 找到 @RestController 类数量: " + restControllers.size());
             controllers.addAll(restControllers);
         }
         
         // 查找 @Controller
         PsiClass controllerClass = javaPsiFacade.findClass(
             "org.springframework.stereotype.Controller", scope);
+        System.out.println("[LivingDoc] Controller 注解类: " + (controllerClass != null ? "找到" : "未找到"));
+        
         if (controllerClass != null) {
             Collection<PsiClass> stdControllers = AnnotatedElementsSearch
-                .searchPsiClasses(controllerClass, scope)
+                .searchPsiClasses(controllerClass, GlobalSearchScope.projectScope(project))
                 .findAll();
+            System.out.println("[LivingDoc] 找到 @Controller 类数量: " + stdControllers.size());
             controllers.addAll(stdControllers);
         }
+        
+        System.out.println("[LivingDoc] 总共找到 Controller 类数量: " + controllers.size());
         
         return controllers;
     }
