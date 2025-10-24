@@ -24,11 +24,30 @@ public class GitDailyStat {
         this.activeAuthors = 0;
     }
     
-    public void addStats(int additions, int deletions) {
+    /**
+     * 增加一次提交（只计数，不统计代码行数）
+     */
+    public void incrementCommit() {
         this.commits++;
+    }
+    
+    /**
+     * 添加代码变更统计（只统计行数，不计数提交次数）
+     */
+    public void addCodeStats(int additions, int deletions) {
         this.additions += additions;
         this.deletions += deletions;
         this.netChanges = this.additions - this.deletions;
+    }
+    
+    /**
+     * 添加统计（同时计数提交和统计代码行数）
+     * @deprecated 使用 incrementCommit() 和 addCodeStats() 代替
+     */
+    @Deprecated
+    public void addStats(int additions, int deletions) {
+        incrementCommit();
+        addCodeStats(additions, deletions);
     }
     
     // Getters and Setters

@@ -108,6 +108,7 @@ public final class GitStatService {
             final String[] currentAuthorName = {null};
             final String[] currentAuthorEmail = {null};
             final LocalDate[] currentDate = {null};
+            boolean isNewCommit = false; // 标记是否是新的commit
             
             while ((line = reader.readLine()) != null) {
                 if (line.startsWith("COMMIT|")) {
@@ -117,6 +118,7 @@ public final class GitStatService {
                         currentAuthorName[0] = parts[0];
                         currentAuthorEmail[0] = parts[1];
                         currentDate[0] = LocalDate.parse(parts[2], DateTimeFormatter.ISO_DATE);
+                        isNewCommit = true; // 这是一个新的commit
                     }
                 } else if (!line.trim().isEmpty() && currentAuthorName[0] != null) {
                     // 解析文件变更统计
@@ -126,23 +128,30 @@ public final class GitStatService {
                             int additions = "-".equals(parts[0]) ? 0 : Integer.parseInt(parts[0]);
                             int deletions = "-".equals(parts[1]) ? 0 : Integer.parseInt(parts[1]);
                             
-                            // 更新作者统计
+                            // 获取或创建统计对象
                             String authorKey = currentAuthorEmail[0];
                             GitAuthorStat authorStat = authorStatsCache.computeIfAbsent(
                                     authorKey,
                                     k -> new GitAuthorStat(currentAuthorName[0], currentAuthorEmail[0])
                             );
-                            authorStat.addCommitStats(additions, deletions, currentDate[0]);
                             
-                            // 更新每日统计
                             GitDailyStat dailyStat = dailyStatsCache.computeIfAbsent(
                                     currentDate[0],
                                     GitDailyStat::new
                             );
-                            dailyStat.addStats(additions, deletions);
                             
-                            // 更新作者每日统计
-                            updateAuthorDailyStats(currentAuthorName[0], currentAuthorEmail[0], currentDate[0], additions, deletions);
+                            // 如果是新的commit，增加提交计数（只计数一次）
+                            if (isNewCommit) {
+                                authorStat.incrementCommit(currentDate[0]);
+                                dailyStat.incrementCommit();
+                                incrementAuthorDailyCommit(currentAuthorName[0], currentAuthorEmail[0], currentDate[0]);
+                                isNewCommit = false; // 标记为已处理
+                            }
+                            
+                            // 累加代码变更统计（每个文件都累加）
+                            authorStat.addCodeStats(additions, deletions);
+                            dailyStat.addCodeStats(additions, deletions);
+                            updateAuthorDailyCodeStats(currentAuthorName[0], currentAuthorEmail[0], currentDate[0], additions, deletions);
                             
                         } catch (NumberFormatException e) {
                             // 忽略无法解析的行
@@ -280,10 +289,26 @@ public final class GitStatService {
     }
     
     /**
-     * 更新作者每日统计
+     * 增加作者每日提交计数
      */
-    private void updateAuthorDailyStats(String authorName, String authorEmail, LocalDate date, int additions, int deletions) {
+    private void incrementAuthorDailyCommit(String authorName, String authorEmail, LocalDate date) {
         // 查找或创建作者每日统计
+        GitAuthorDailyStat authorDailyStat = findOrCreateAuthorDailyStat(authorName, authorEmail, date);
+        authorDailyStat.incrementCommit();
+    }
+    
+    /**
+     * 更新作者每日代码统计
+     */
+    private void updateAuthorDailyCodeStats(String authorName, String authorEmail, LocalDate date, int additions, int deletions) {
+        GitAuthorDailyStat authorDailyStat = findOrCreateAuthorDailyStat(authorName, authorEmail, date);
+        authorDailyStat.addCodeStats(additions, deletions);
+    }
+    
+    /**
+     * 查找或创建作者每日统计对象
+     */
+    private GitAuthorDailyStat findOrCreateAuthorDailyStat(String authorName, String authorEmail, LocalDate date) {
         GitAuthorDailyStat authorDailyStat = authorDailyStatsCache.stream()
                 .filter(stat -> stat.getAuthorEmail().equals(authorEmail) && stat.getDate().equals(date))
                 .findFirst()
@@ -294,6 +319,16 @@ public final class GitStatService {
             authorDailyStatsCache.add(authorDailyStat);
         }
         
+        return authorDailyStat;
+    }
+    
+    /**
+     * 更新作者每日统计
+     * @deprecated 使用 incrementAuthorDailyCommit() 和 updateAuthorDailyCodeStats() 代替
+     */
+    @Deprecated
+    private void updateAuthorDailyStats(String authorName, String authorEmail, LocalDate date, int additions, int deletions) {
+        GitAuthorDailyStat authorDailyStat = findOrCreateAuthorDailyStat(authorName, authorEmail, date);
         authorDailyStat.addStats(additions, deletions);
     }
     

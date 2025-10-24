@@ -26,11 +26,11 @@ public class GitAuthorStat {
         this.netChanges = 0;
     }
     
-    public void addCommitStats(int additions, int deletions, LocalDate commitDate) {
+    /**
+     * 增加一次提交（只计数，不统计代码行数）
+     */
+    public void incrementCommit(LocalDate commitDate) {
         this.totalCommits++;
-        this.totalAdditions += additions;
-        this.totalDeletions += deletions;
-        this.netChanges = this.totalAdditions - this.totalDeletions;
         
         if (this.firstCommit == null || commitDate.isBefore(this.firstCommit)) {
             this.firstCommit = commitDate;
@@ -39,6 +39,25 @@ public class GitAuthorStat {
         if (this.lastCommit == null || commitDate.isAfter(this.lastCommit)) {
             this.lastCommit = commitDate;
         }
+    }
+    
+    /**
+     * 添加代码变更统计（只统计行数，不计数提交次数）
+     */
+    public void addCodeStats(int additions, int deletions) {
+        this.totalAdditions += additions;
+        this.totalDeletions += deletions;
+        this.netChanges = this.totalAdditions - this.totalDeletions;
+    }
+    
+    /**
+     * 添加提交统计（同时计数提交和统计代码行数）
+     * @deprecated 使用 incrementCommit() 和 addCodeStats() 代替
+     */
+    @Deprecated
+    public void addCommitStats(int additions, int deletions, LocalDate commitDate) {
+        incrementCommit(commitDate);
+        addCodeStats(additions, deletions);
     }
     
     // Getters and Setters
