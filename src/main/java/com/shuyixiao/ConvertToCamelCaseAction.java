@@ -39,16 +39,24 @@ public class ConvertToCamelCaseAction extends AnAction {
         if (!com.shuyixiao.util.TranslationUtil.checkApiConfiguration()) {
             return; // 未配置API，无法继续
         }
+        
+        // 增加使用次数统计
+        Project project = e.getProject();
+        if (project != null) {
+            com.shuyixiao.service.PandaCoderSettings settings = 
+                com.shuyixiao.service.PandaCoderSettings.getInstance(project);
+            settings.incrementUsageCount();
+            
+            // 检查里程碑提示
+            if (settings.shouldShowMilestoneNow()) {
+                com.shuyixiao.ui.PandaCoderBalloon.showMilestone(project, settings.getUsageCount());
+                settings.updateLastMilestoneCount(settings.getUsageCount());
+            }
+        }
 
         // 获取当前编辑器
         Editor editor = e.getData(CommonDataKeys.EDITOR);
         if (editor == null) {
-            return;
-        }
-
-        // 获取当前项目
-        Project project = e.getProject();
-        if (project == null) {
             return;
         }
 

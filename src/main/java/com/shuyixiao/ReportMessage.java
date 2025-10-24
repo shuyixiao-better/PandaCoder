@@ -4,6 +4,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.project.Project;
 import com.shuyixiao.ui.PandaCoderBalloon;
 
 /**
@@ -19,15 +20,29 @@ public class ReportMessage extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent e) {
+        Project project = e.getProject();
         Editor editor = e.getData(CommonDataKeys.EDITOR);
+        
+        // 增加使用次数统计
+        if (project != null) {
+            com.shuyixiao.service.PandaCoderSettings settings = 
+                com.shuyixiao.service.PandaCoderSettings.getInstance(project);
+            settings.incrementUsageCount();
+            
+            // 检查里程碑提示
+            if (settings.shouldShowMilestoneNow()) {
+                com.shuyixiao.ui.PandaCoderBalloon.showMilestone(project, settings.getUsageCount());
+                settings.updateLastMilestoneCount(settings.getUsageCount());
+            }
+        }
         
         // 优先使用轻量级气泡提示
         if (editor != null) {
             // 在编辑器中显示气泡，7秒自动消失
-            PandaCoderBalloon.showWelcome(e.getProject(), editor);
+            PandaCoderBalloon.showWelcome(project, editor);
         } else {
             // 降级方案：如果没有编辑器（如在项目视图右键），显示气泡或对话框
-            PandaCoderBalloon.showWelcome(e.getProject(), null);
+            PandaCoderBalloon.showWelcome(project, null);
         }
     }
 }

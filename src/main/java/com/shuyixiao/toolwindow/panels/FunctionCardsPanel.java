@@ -160,6 +160,17 @@ public class FunctionCardsPanel extends JBPanel<FunctionCardsPanel> {
      * 打开指定的 Tool Window
      */
     private void openToolWindow(String toolWindowId) {
+        // 增加使用次数统计
+        com.shuyixiao.service.PandaCoderSettings settings = 
+            com.shuyixiao.service.PandaCoderSettings.getInstance(project);
+        settings.incrementUsageCount();
+        
+        // 检查里程碑提示
+        if (settings.shouldShowMilestoneNow()) {
+            com.shuyixiao.ui.PandaCoderBalloon.showMilestone(project, settings.getUsageCount());
+            settings.updateLastMilestoneCount(settings.getUsageCount());
+        }
+        
         try {
             ToolWindowManager manager = ToolWindowManager.getInstance(project);
             ToolWindow toolWindow = manager.getToolWindow(toolWindowId);

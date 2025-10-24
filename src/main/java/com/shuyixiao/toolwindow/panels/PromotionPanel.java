@@ -136,8 +136,8 @@ public class PromotionPanel extends JBPanel<PromotionPanel> {
         linksPanel.add(createLinkLabel("📝 博客", 
             "https://www.shuyixiao.cn"));
         linksPanel.add(new JBLabel("|"));
-        linksPanel.add(createLinkLabel("📺 CSDN", 
-            "https://blog.csdn.net/yixiaoshu88"));
+        linksPanel.add(createLinkLabel("🏢 TorchV", 
+            "https://torchv.com/"));
         
         panel.add(linksPanel);
         
