@@ -73,7 +73,7 @@ sourceSets {
     main {
         resources {
             srcDirs = ['src/main/resources']
-            includes = ['**/*.svg', '**/*.png', '**/*.xml', '**/*.properties', '**/*.gdsl', '**/*.html', '**/*.txt']
+            includes = ['**/*.svg', '**/*.png', '**/*.gif', '**/*.jpg', '**/*.jpeg', '**/*.xml', '**/*.properties', '**/*.gdsl', '**/*.html', '**/*.txt', '**/*.md']
         }
     }
 }

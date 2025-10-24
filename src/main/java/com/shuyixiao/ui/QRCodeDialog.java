@@ -81,29 +81,41 @@ public class QRCodeDialog extends DialogWrapper {
                 }
             } else {
                 // 本地资源文件加载
+                System.out.println("开始加载本地资源，路径: " + qrCodePath);
                 java.net.URL imageUrl = null;
                 
-                // 方式1：使用当前类加载器
-                imageUrl = getClass().getResource(qrCodePath);
+                // 方式1：使用 QRCodeDialog 类加载器加载（带 / 开头）
+                imageUrl = QRCodeDialog.class.getResource(qrCodePath);
+                System.out.println("方式1 (QRCodeDialog.class.getResource 带/): " + imageUrl);
                 
-                // 方式2：如果方式1失败，尝试使用ClassLoader
-                if (imageUrl == null) {
-                    imageUrl = getClass().getClassLoader().getResource(qrCodePath.substring(1)); // 去掉开头的 /
+                // 方式2：如果方式1失败，去掉开头的 / 再用 ClassLoader 试
+                if (imageUrl == null && qrCodePath.startsWith("/")) {
+                    String pathWithoutSlash = qrCodePath.substring(1);
+                    imageUrl = QRCodeDialog.class.getClassLoader().getResource(pathWithoutSlash);
+                    System.out.println("方式2 (ClassLoader 去掉/) " + pathWithoutSlash + ": " + imageUrl);
                 }
                 
-                // 方式3：如果还是失败，尝试完整路径
+                // 方式3：如果还是失败，尝试使用线程上下文类加载器
                 if (imageUrl == null) {
-                    imageUrl = getClass().getClassLoader().getResource("images/WechatOfficialAccount.gif");
+                    String pathWithoutSlash = qrCodePath.startsWith("/") ? qrCodePath.substring(1) : qrCodePath;
+                    imageUrl = Thread.currentThread().getContextClassLoader().getResource(pathWithoutSlash);
+                    System.out.println("方式3 (Thread.currentThread().getContextClassLoader) " + pathWithoutSlash + ": " + imageUrl);
                 }
                 
-                System.out.println("本地资源URL: " + imageUrl);
+                // 方式4：直接尝试完整路径
+                if (imageUrl == null) {
+                    String fileName = qrCodePath.substring(qrCodePath.lastIndexOf("/") + 1);
+                    imageUrl = QRCodeDialog.class.getClassLoader().getResource("images/" + fileName);
+                    System.out.println("方式4 (完整路径) images/" + fileName + ": " + imageUrl);
+                }
                 
                 if (imageUrl != null) {
+                    System.out.println("✅ 成功找到资源，URL: " + imageUrl);
                     qrCodeIcon = new ImageIcon(imageUrl);
                 } else {
-                    System.out.println("无法找到本地图片资源: " + qrCodePath);
+                    System.err.println("❌ 所有方式都无法找到本地图片资源: " + qrCodePath);
                     showErrorPlaceholder(imagePanel, "图片文件未找到", qrCodePath);
-                    qrCodeIcon = null; // 设置为null，后面会处理
+                    qrCodeIcon = null;
                 }
             }
             
@@ -261,9 +273,237 @@ public class QRCodeDialog extends DialogWrapper {
             }
         }
     }
+    
+    /**
+     * 显示打赏二维码对话框
+     * 显示微信收款和支付宝收款二维码
+     */
+    public static void showCoffeeQRCode(@Nullable Project project) {
+        // 创建自定义对话框显示两个收款码
+        JDialog dialog = new JDialog((java.awt.Frame) null, "☕ 支持作者", true);
+        dialog.setLayout(new BorderLayout());
+        dialog.setResizable(false);
+        
+        // 主面板 - 使用更紧凑的布局
+        JBPanel<?> mainPanel = new JBPanel<>(new BorderLayout());
+        mainPanel.setBorder(JBUI.Borders.empty(15));
+        mainPanel.setPreferredSize(JBUI.size(480, 420));
+        
+        // 标题
+        JBLabel titleLabel = new JBLabel("☕ 支持作者开发");
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 16f));
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        titleLabel.setBorder(JBUI.Borders.emptyBottom(10));
+        mainPanel.add(titleLabel, BorderLayout.NORTH);
+        
+        // 内容面板 - 使用 GridLayout 确保对齐
+        JBPanel<?> contentPanel = new JBPanel<>(new GridLayout(1, 2, 15, 0));
+        contentPanel.setOpaque(false);
+        contentPanel.setBorder(JBUI.Borders.empty(5));
+        
+        // 微信收款码
+        JBPanel<?> wechatPanel = createCompactPaymentPanel(
+            "💚 微信收款",
+            "/images/微信收款.jpg",
+            "微信扫码支持"
+        );
+        contentPanel.add(wechatPanel);
+        
+        // 支付宝收款码
+        JBPanel<?> alipayPanel = createCompactPaymentPanel(
+            "💙 支付宝收款",
+            "/images/支付宝收款.jpg",
+            "支付宝扫码支持"
+        );
+        contentPanel.add(alipayPanel);
+        
+        mainPanel.add(contentPanel, BorderLayout.CENTER);
+        
+        // 说明文字 - 完美居中对齐
+        JBPanel<?> descPanel = new JBPanel<>(new BorderLayout());
+        descPanel.setOpaque(false);
+        descPanel.setBorder(JBUI.Borders.emptyTop(8));
+        
+        JBLabel descLabel = new JBLabel(
+            "<html>" +
+            "<div style='text-align: center;'>" +
+            "感谢您对 PandaCoder 插件的支持！<br/>" +
+            "<span style='color: #888; font-size: 10px;'>" +
+            "您的支持是我持续改进的动力 💪 支持金额不限，心意最重要 ❤️" +
+            "</span>" +
+            "</div>" +
+            "</html>"
+        );
+        descLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        descLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        // 使用 BorderLayout 确保完美居中
+        descPanel.add(descLabel, BorderLayout.CENTER);
+        mainPanel.add(descPanel, BorderLayout.SOUTH);
+        
+        // 按钮面板 - 更紧凑
+        JBPanel<?> buttonPanel = new JBPanel<>(new FlowLayout(FlowLayout.CENTER, 0, 5));
+        buttonPanel.setBorder(JBUI.Borders.emptyTop(5));
+        
+        JButton closeButton = new JButton("关闭");
+        closeButton.setPreferredSize(JBUI.size(80, 30));
+        closeButton.addActionListener(e -> dialog.dispose());
+        buttonPanel.add(closeButton);
+        
+        // 组装对话框
+        JBPanel<?> dialogContent = new JBPanel<>(new BorderLayout());
+        dialogContent.add(mainPanel, BorderLayout.CENTER);
+        dialogContent.add(buttonPanel, BorderLayout.SOUTH);
+        
+        dialog.add(dialogContent);
+        dialog.pack();
+        dialog.setLocationRelativeTo(null);
+        dialog.setVisible(true);
+    }
+    
+    /**
+     * 创建紧凑型收款码面板
+     */
+    private static JBPanel<?> createCompactPaymentPanel(String title, String imagePath, String description) {
+        JBPanel<?> panel = new JBPanel<>(new BorderLayout());
+        panel.setBorder(JBUI.Borders.empty(8));
+        panel.setOpaque(false);
+        
+        // 标题
+        JBLabel titleLabel = new JBLabel(title);
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 12f));
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        titleLabel.setBorder(JBUI.Borders.emptyBottom(8));
+        panel.add(titleLabel, BorderLayout.NORTH);
+        
+        // 图片区域
+        JBPanel<?> imagePanel = new JBPanel<>(new BorderLayout());
+        imagePanel.setOpaque(false);
+        
+        try {
+            java.net.URL imageUrl = QRCodeDialog.class.getResource(imagePath);
+            if (imageUrl != null) {
+                ImageIcon icon = new ImageIcon(imageUrl);
+                
+                // 缩放图片到合适大小（最大160x160，更紧凑）
+                int maxSize = 160;
+                int originalWidth = icon.getIconWidth();
+                int originalHeight = icon.getIconHeight();
+                
+                if (originalWidth > maxSize || originalHeight > maxSize) {
+                    double scale = Math.min(maxSize / (double) originalWidth, maxSize / (double) originalHeight);
+                    int newWidth = (int) Math.round(originalWidth * scale);
+                    int newHeight = (int) Math.round(originalHeight * scale);
+                    
+                    Image img = icon.getImage();
+                    Image scaledImg = img.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
+                    icon = new ImageIcon(scaledImg);
+                }
+                
+                JBLabel imageLabel = new JBLabel(icon);
+                imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                imagePanel.add(imageLabel, BorderLayout.CENTER);
+            } else {
+                JBLabel errorLabel = new JBLabel("❌ 图片加载失败");
+                errorLabel.setForeground(UIUtil.getContextHelpForeground());
+                errorLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                imagePanel.add(errorLabel, BorderLayout.CENTER);
+            }
+        } catch (Exception e) {
+            JBLabel errorLabel = new JBLabel("❌ 图片加载异常");
+            errorLabel.setForeground(UIUtil.getContextHelpForeground());
+            errorLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            imagePanel.add(errorLabel, BorderLayout.CENTER);
+        }
+        
+        panel.add(imagePanel, BorderLayout.CENTER);
+        
+        // 描述 - 更紧凑
+        JBLabel descLabel = new JBLabel(description);
+        descLabel.setFont(descLabel.getFont().deriveFont(9f));
+        descLabel.setForeground(UIUtil.getContextHelpForeground());
+        descLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        descLabel.setBorder(JBUI.Borders.emptyTop(5));
+        panel.add(descLabel, BorderLayout.SOUTH);
+        
+        return panel;
+    }
+    
+    /**
+     * 创建单个收款码面板（保留原方法作为备用）
+     */
+    private static JBPanel<?> createPaymentPanel(String title, String imagePath, String description) {
+        JBPanel<?> panel = new JBPanel<>();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(JBUI.Borders.empty(10));
+        panel.setOpaque(false);
+        panel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        // 标题
+        JBLabel titleLabel = new JBLabel(title);
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 12f));
+        titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(titleLabel);
+        
+        panel.add(Box.createVerticalStrut(10));
+        
+        // 图片
+        try {
+            java.net.URL imageUrl = QRCodeDialog.class.getResource(imagePath);
+            if (imageUrl != null) {
+                ImageIcon icon = new ImageIcon(imageUrl);
+                
+                // 缩放图片到合适大小（最大200x200）
+                int maxSize = 200;
+                int originalWidth = icon.getIconWidth();
+                int originalHeight = icon.getIconHeight();
+                
+                if (originalWidth > maxSize || originalHeight > maxSize) {
+                    double scale = Math.min(maxSize / (double) originalWidth, maxSize / (double) originalHeight);
+                    int newWidth = (int) Math.round(originalWidth * scale);
+                    int newHeight = (int) Math.round(originalHeight * scale);
+                    
+                    Image img = icon.getImage();
+                    Image scaledImg = img.getScaledInstance(newWidth, newHeight, Image.SCALE_SMOOTH);
+                    icon = new ImageIcon(scaledImg);
+                }
+                
+                JBLabel imageLabel = new JBLabel(icon);
+                imageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                imageLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                panel.add(imageLabel);
+            } else {
+                JBLabel errorLabel = new JBLabel("❌ 图片加载失败");
+                errorLabel.setForeground(UIUtil.getContextHelpForeground());
+                errorLabel.setHorizontalAlignment(SwingConstants.CENTER);
+                errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+                panel.add(errorLabel);
+            }
+        } catch (Exception e) {
+            JBLabel errorLabel = new JBLabel("❌ 图片加载异常");
+            errorLabel.setForeground(UIUtil.getContextHelpForeground());
+            errorLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+            panel.add(errorLabel);
+        }
+        
+        panel.add(Box.createVerticalStrut(8));
+        
+        // 描述
+        JBLabel descLabel = new JBLabel(description);
+        descLabel.setFont(descLabel.getFont().deriveFont(10f));
+        descLabel.setForeground(UIUtil.getContextHelpForeground());
+        descLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        descLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        panel.add(descLabel);
+        
+        return panel;
+    }
 
     /**
      * 显示微信公众号二维码对话框
+     * 使用本地资源图片，保留网络链接用于复制
      */
     public static void showWechatQRCode(@Nullable Project project) {
         QRCodeDialog dialog = new QRCodeDialog(
@@ -271,9 +511,9 @@ public class QRCodeDialog extends DialogWrapper {
                 "📱 关注微信公众号",
                 "扫描二维码关注「舒一笑的架构笔记」<br>" +
                         "获取最新技术分享、插件更新和问题解答",
-                "https://shuyixiao.oss-cn-hangzhou.aliyuncs.com/CSDN%E6%8E%A8%E5%B9%BF.gif",
+                "/images/WechatOfficialAccount.gif",  // 使用本地图片资源
                 "复制链接",
-                "https://i-blog.csdnimg.cn/direct/68693f613c2a4e2cb0ff042fbadc2a9c.gif#pic_center" // 替换为实际的公众号链接
+                "https://i-blog.csdnimg.cn/direct/68693f613c2a4e2cb0ff042fbadc2a9c.gif#pic_center"  // 保留网络链接用于复制
         );
         dialog.show();
     }

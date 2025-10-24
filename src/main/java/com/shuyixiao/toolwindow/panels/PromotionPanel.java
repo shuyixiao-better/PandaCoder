@@ -126,7 +126,16 @@ public class PromotionPanel extends JBPanel<PromotionPanel> {
         wechatButton.addActionListener(e -> {
             QRCodeDialog.showWechatQRCode(project);
         });
+        JButton coffeeButton = new JButton("☕️ 请作者喝杯");
+        coffeeButton.putClientProperty("JButton.buttonType", "borderless");
+        coffeeButton.setFont(coffeeButton.getFont().deriveFont(12f));
+        coffeeButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        coffeeButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        coffeeButton.addActionListener(e -> {
+            QRCodeDialog.showCoffeeQRCode(project);
+        });
         panel.add(wechatButton);
+        panel.add(coffeeButton);
         
         panel.add(Box.createVerticalStrut(10));
         
@@ -140,9 +149,6 @@ public class PromotionPanel extends JBPanel<PromotionPanel> {
         linksPanel.add(new JBLabel("|"));
         linksPanel.add(createLinkLabel("📝 博客", 
             "https://www.shuyixiao.cn"));
-        linksPanel.add(new JBLabel("|"));
-        linksPanel.add(createLinkLabel("🏢 TorchV", 
-            "https://torchv.com/"));
         
         panel.add(linksPanel);
         
