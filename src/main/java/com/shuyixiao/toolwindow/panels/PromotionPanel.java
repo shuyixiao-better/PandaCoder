@@ -28,6 +28,11 @@ public class PromotionPanel extends JBPanel<PromotionPanel> {
     private final JBLabel expandIcon;
     private final JButton expandButton;
     
+    // 企业服务区域
+    private boolean enterpriseExpanded = false;
+    private JBPanel<?> enterpriseContentPanel;
+    private JBLabel expandIconEnterprise;
+    
     public PromotionPanel(@NotNull Project project) {
         super(new BorderLayout());
         this.project = project;
@@ -103,7 +108,7 @@ public class PromotionPanel extends JBPanel<PromotionPanel> {
         JBLabel authorLabel = new JBLabel(
             "<html>" +
             "作者：<b>@舒一笑不秃头</b><br/>" +
-            "<span style='color: #888; font-size: 10px;'>专注于架构与技术分享</span>" +
+            "<span style='color: #888; font-size: 10px;'>TorchV AI 工程师 | 专注于大模型应用与插件开发</span>" +
             "</html>"
         );
         authorLabel.setFont(authorLabel.getFont().deriveFont(11f));
@@ -141,28 +146,29 @@ public class PromotionPanel extends JBPanel<PromotionPanel> {
         
         panel.add(linksPanel);
         
+        panel.add(Box.createVerticalStrut(15));
+        
+        // 分隔线
+        JSeparator separator1 = new JSeparator(JSeparator.HORIZONTAL);
+        separator1.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        panel.add(separator1);
+        
+        panel.add(Box.createVerticalStrut(12));
+        
+        // 企业服务区域
+        panel.add(createEnterpriseSection());
+        
         panel.add(Box.createVerticalStrut(12));
         
         // 分隔线
-        JSeparator separator = new JSeparator(JSeparator.HORIZONTAL);
-        separator.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
-        panel.add(separator);
+        JSeparator separator2 = new JSeparator(JSeparator.HORIZONTAL);
+        separator2.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+        panel.add(separator2);
         
         panel.add(Box.createVerticalStrut(12));
         
-        // 未来商业化预留区域
-        JBPanel<?> futurePanel = new JBPanel<>(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        futurePanel.setOpaque(false);
-        futurePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
-        JBLabel futureLabel = new JBLabel(
-            "<html>" +
-            "<span style='color: #888; font-size: 10px;'>💡 更多高级功能开发中...</span>" +
-            "</html>"
-        );
-        futurePanel.add(futureLabel);
-        
-        panel.add(futurePanel);
+        // 未来规划区域
+        panel.add(createFuturePlanSection());
         
         return panel;
     }
@@ -194,6 +200,219 @@ public class PromotionPanel extends JBPanel<PromotionPanel> {
         });
         
         return label;
+    }
+    
+    /**
+     * 创建企业服务区域（可折叠）
+     */
+    private JComponent createEnterpriseSection() {
+        JBPanel<?> panel = new JBPanel<>();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setOpaque(false);
+        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        // 标题（可点击展开）
+        JBPanel<?> headerPanel = new JBPanel<>(new BorderLayout(5, 0));
+        headerPanel.setOpaque(false);
+        headerPanel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        headerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        headerPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+        
+        JBLabel titleLabel = new JBLabel("🏢 企业 AI 解决方案");
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 11f));
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        
+        expandIconEnterprise = new JBLabel("▼");
+        expandIconEnterprise.setForeground(UIUtil.getContextHelpForeground());
+        expandIconEnterprise.setFont(expandIconEnterprise.getFont().deriveFont(10f));
+        headerPanel.add(expandIconEnterprise, BorderLayout.EAST);
+        
+        // 点击展开/折叠
+        headerPanel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                toggleEnterpriseSection();
+            }
+        });
+        
+        panel.add(headerPanel);
+        
+        // 内容面板（默认折叠）
+        enterpriseContentPanel = createEnterpriseContent();
+        enterpriseContentPanel.setVisible(false);
+        panel.add(enterpriseContentPanel);
+        
+        return panel;
+    }
+    
+    /**
+     * 创建企业服务内容
+     */
+    private JBPanel<?> createEnterpriseContent() {
+        JBPanel<?> panel = new JBPanel<>();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBorder(JBUI.Borders.emptyTop(10));
+        panel.setOpaque(false);
+        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        // TorchV 介绍
+        JBLabel introLabel = new JBLabel(
+            "<html>" +
+            "<div style='width: 250px;'>" +
+            "<b>TorchV AIS</b> - 大模型知识协作系统<br/><br/>" +
+            "<span style='font-size: 10px;'>" +
+            "✨ <b>核心能力：</b><br/>" +
+            "• 快速搭建 RAG 应用<br/>" +
+            "• 智能客服机器人<br/>" +
+            "• 企业知识库管理<br/>" +
+            "• 支持私有化部署<br/><br/>" +
+            "🎯 <b>适用场景：</b><br/>" +
+            "客服问答、内部知识管理、<br/>研发文档助手、合同预审助手" +
+            "</span>" +
+            "</div>" +
+            "</html>"
+        );
+        introLabel.setFont(introLabel.getFont().deriveFont(10f));
+        introLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(introLabel);
+        
+        panel.add(Box.createVerticalStrut(10));
+        
+        // 按钮组
+        JBPanel<?> buttonPanel = new JBPanel<>(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        buttonPanel.setOpaque(false);
+        buttonPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        JButton learnMoreButton = new JButton("了解详情");
+        learnMoreButton.putClientProperty("JButton.buttonType", "borderless");
+        learnMoreButton.setFont(learnMoreButton.getFont().deriveFont(10f));
+        learnMoreButton.addActionListener(e -> {
+            openUrl("https://torchv.com/?utm_source=pandacoder&utm_medium=plugin&utm_campaign=enterprise");
+        });
+        
+        JButton demoButton = new JButton("商务联系");
+        demoButton.putClientProperty("JButton.buttonType", "borderless");
+        demoButton.setFont(demoButton.getFont().deriveFont(10f));
+        demoButton.addActionListener(e -> {
+            showTorchVContactDialog();
+        });
+        
+        buttonPanel.add(learnMoreButton);
+        buttonPanel.add(demoButton);
+        
+        panel.add(buttonPanel);
+        
+        return panel;
+    }
+    
+    /**
+     * 切换企业服务区域展开/折叠
+     */
+    private void toggleEnterpriseSection() {
+        enterpriseExpanded = !enterpriseExpanded;
+        enterpriseContentPanel.setVisible(enterpriseExpanded);
+        expandIconEnterprise.setText(enterpriseExpanded ? "▲" : "▼");
+        revalidate();
+        repaint();
+    }
+    
+    /**
+     * 创建未来规划区域
+     */
+    private JComponent createFuturePlanSection() {
+        JBPanel<?> panel = new JBPanel<>(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        panel.setOpaque(false);
+        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        JBLabel label = new JBLabel(
+                "<html>" +
+                        "<span style='color: #888; font-size: 10px;'>💡 更多高级功能开发中...</span>" +
+                        "</html>"
+        );
+        label.setFont(label.getFont().deriveFont(10f));
+        panel.add(label);
+        
+        return panel;
+    }
+    
+    /**
+     * 显示 TorchV 商务联系图片对话框
+     */
+    private void showTorchVContactDialog() {
+        try {
+            // 加载图片
+            java.net.URL imageUrl = getClass().getResource("/images/TorchV商务联系.png");
+            if (imageUrl == null) {
+                JOptionPane.showMessageDialog(
+                    this,
+                    "无法找到商务联系图片",
+                    "错误",
+                    JOptionPane.ERROR_MESSAGE
+                );
+                return;
+            }
+            
+            ImageIcon icon = new ImageIcon(imageUrl);
+            
+            // 创建自定义对话框
+            JDialog dialog = new JDialog((java.awt.Frame) SwingUtilities.getWindowAncestor(this), "TorchV 商务联系", true);
+            dialog.setLayout(new BorderLayout());
+            
+            // 图片标签
+            JBLabel imageLabel = new JBLabel(icon);
+            imageLabel.setBorder(JBUI.Borders.empty(10));
+            
+            // 添加到滚动面板（以防图片太大）
+            com.intellij.ui.components.JBScrollPane scrollPane = new com.intellij.ui.components.JBScrollPane(imageLabel);
+            scrollPane.setBorder(JBUI.Borders.empty());
+            
+            // 说明文字
+            JBPanel<?> infoPanel = new JBPanel<>(new FlowLayout(FlowLayout.CENTER));
+            infoPanel.setBorder(JBUI.Borders.empty(5, 10));
+            JBLabel infoLabel = new JBLabel(
+                "<html>" +
+                "<div style='text-align: center;'>" +
+                "扫描二维码或添加微信/手机号联系 TorchV 商务团队<br/>" +
+                "<span style='color: #888; font-size: 10px;'>了解企业级 AI 解决方案</span>" +
+                "</div>" +
+                "</html>"
+            );
+            infoPanel.add(infoLabel);
+            
+            // 按钮面板
+            JBPanel<?> buttonPanel = new JBPanel<>(new FlowLayout(FlowLayout.CENTER, 10, 10));
+            
+            JButton visitWebsiteButton = new JButton("访问官网");
+            visitWebsiteButton.addActionListener(e -> {
+                openUrl("https://torchv.com/?utm_source=pandacoder&utm_medium=plugin&utm_campaign=contact");
+                dialog.dispose();
+            });
+            
+            JButton closeButton = new JButton("关闭");
+            closeButton.addActionListener(e -> dialog.dispose());
+            
+            buttonPanel.add(visitWebsiteButton);
+            buttonPanel.add(closeButton);
+            
+            // 组装对话框
+            JBPanel<?> contentPanel = new JBPanel<>(new BorderLayout());
+            contentPanel.add(scrollPane, BorderLayout.CENTER);
+            contentPanel.add(infoPanel, BorderLayout.NORTH);
+            contentPanel.add(buttonPanel, BorderLayout.SOUTH);
+            
+            dialog.add(contentPanel);
+            dialog.pack();
+            dialog.setLocationRelativeTo(this);
+            dialog.setVisible(true);
+            
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(
+                this,
+                "显示商务联系信息失败: " + e.getMessage(),
+                "错误",
+                JOptionPane.ERROR_MESSAGE
+            );
+        }
     }
     
     /**

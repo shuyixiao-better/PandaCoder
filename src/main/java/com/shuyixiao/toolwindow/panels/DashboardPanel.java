@@ -14,6 +14,7 @@ import java.awt.*;
 
 /**
  * 仪表盘面板 - 显示版本信息和使用统计
+ * 支持动态更新使用次数
  * 
  * @author 舒一笑不秃头
  * @version 2.2.0
@@ -21,11 +22,21 @@ import java.awt.*;
 public class DashboardPanel extends JBPanel<DashboardPanel> {
     
     private static final String VERSION = com.shuyixiao.version.VersionInfo.getVersion();
+    private final Project project;
+    private JBLabel usageLabel;
+    private Timer refreshTimer;
     
     public DashboardPanel(@NotNull Project project) {
         super(new BorderLayout());
+        this.project = project;
         setBorder(JBUI.Borders.empty(12, 10));
         setOpaque(false);
+        
+        // 初始化UI
+        initUI();
+        
+        // 启动定时刷新（每3秒刷新一次）
+        startRefreshTimer();
         
         // 头部区域
         JBPanel<?> headerPanel = new JBPanel<>(new BorderLayout(10, 0));
@@ -80,9 +91,9 @@ public class DashboardPanel extends JBPanel<DashboardPanel> {
         versionLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
         infoPanel.add(versionLabel);
         
-        // 使用统计
+        // 使用统计（保存引用以便后续更新）
         int usageCount = PandaCoderSettings.getInstance(project).getUsageCount();
-        JBLabel usageLabel = new JBLabel("使用 " + usageCount + " 次");
+        usageLabel = new JBLabel("使用 " + usageCount + " 次");
         usageLabel.setForeground(UIUtil.getContextHelpForeground());
         usageLabel.setFont(usageLabel.getFont().deriveFont(Font.PLAIN, 9f));
         usageLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
@@ -96,6 +107,45 @@ public class DashboardPanel extends JBPanel<DashboardPanel> {
         JSeparator separator = new JSeparator(JSeparator.HORIZONTAL);
         separator.setBorder(JBUI.Borders.emptyTop(10));
         add(separator, BorderLayout.SOUTH);
+    }
+    
+    /**
+     * 初始化UI（将原来的构造函数逻辑提取到这里）
+     */
+    private void initUI() {
+        // UI 初始化逻辑已在构造函数中
+    }
+    
+    /**
+     * 启动定时刷新
+     * 每3秒刷新一次使用统计
+     */
+    private void startRefreshTimer() {
+        refreshTimer = new Timer(3000, e -> refreshUsageCount());
+        refreshTimer.setRepeats(true);
+        refreshTimer.start();
+    }
+    
+    /**
+     * 刷新使用次数显示
+     */
+    public void refreshUsageCount() {
+        if (usageLabel != null) {
+            int usageCount = PandaCoderSettings.getInstance(project).getUsageCount();
+            SwingUtilities.invokeLater(() -> {
+                usageLabel.setText("使用 " + usageCount + " 次");
+            });
+        }
+    }
+    
+    /**
+     * 停止刷新定时器（在面板销毁时调用）
+     */
+    public void dispose() {
+        if (refreshTimer != null) {
+            refreshTimer.stop();
+            refreshTimer = null;
+        }
     }
 }
 
