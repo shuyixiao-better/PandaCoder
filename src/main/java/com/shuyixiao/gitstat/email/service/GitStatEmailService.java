@@ -17,7 +17,6 @@ import javax.mail.internet.MimeMessage;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -169,14 +168,21 @@ public final class GitStatEmailService {
     }
     
     /**
-     * 获取最近7天统计
+     * 获取最近7天统计（按日历周统计，周一到周日）
+     * 注意：统计的是endDate所在周的完整7天数据（周一到周日）
+     * 例如：endDate是10月24日（周四），则统计本周一（10月21日）到本周日（10月27日）的7天
      */
     private Map<LocalDate, GitDailyStat> getLast7DaysStats(LocalDate endDate) {
         Map<LocalDate, GitDailyStat> stats = new LinkedHashMap<>();
         List<GitDailyStat> allStats = gitStatService.getAllDailyStats();
         
-        for (int i = 6; i >= 0; i--) {
-            LocalDate date = endDate.minusDays(i);
+        // 获取本周一（MONDAY = 1）
+        int dayOfWeek = endDate.getDayOfWeek().getValue(); // 1=周一, 7=周日
+        LocalDate monday = endDate.minusDays(dayOfWeek - 1); // 回退到本周一
+        
+        // 从本周一开始，统计完整的7天（周一到周日）
+        for (int i = 0; i < 7; i++) {
+            LocalDate date = monday.plusDays(i);
             GitDailyStat stat = allStats.stream()
                 .filter(s -> s.getDate().equals(date))
                 .findFirst()

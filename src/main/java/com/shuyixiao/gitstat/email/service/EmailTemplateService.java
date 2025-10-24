@@ -113,7 +113,15 @@ public class EmailTemplateService {
         // Footer
         html.append("        <div class=\"footer\">\n");
         html.append("            <p>此邮件由 PandaCoder Git 统计工具自动生成</p>\n");
-        html.append("            <p>").append(java.time.LocalDateTime.now().format(TIME_FORMATTER)).append("</p>\n");
+        html.append("            <p style=\"margin: 8px 0; color: #666; font-size: 12px;\">").append(java.time.LocalDateTime.now().format(TIME_FORMATTER)).append("</p>\n");
+        html.append("            <div style=\"margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;\">\n");
+        html.append("                <p style=\"margin: 5px 0; color: #888; font-size: 11px; line-height: 1.6;\">\n");
+        html.append("                    💡 技术分享 · 关注公众号：<strong style=\"color: #667eea;\">舒一笑的架构笔记</strong>\n");
+        html.append("                </p>\n");
+        html.append("                <p style=\"margin: 5px 0; color: #888; font-size: 11px;\">\n");
+        html.append("                    🌐 个人官网：<a href=\"https://www.shuyixiao.cn\" style=\"color: #667eea; text-decoration: none;\">www.shuyixiao.cn</a>\n");
+        html.append("                </p>\n");
+        html.append("            </div>\n");
         html.append("        </div>\n");
         
         html.append("    </div>\n");
@@ -212,6 +220,9 @@ public class EmailTemplateService {
         text.append("========================================\n");
         text.append("此邮件由 PandaCoder Git 统计工具自动生成\n");
         text.append(java.time.LocalDateTime.now().format(TIME_FORMATTER)).append("\n");
+        text.append("----------------------------------------\n");
+        text.append("💡 技术分享 · 关注公众号：舒一笑的架构笔记\n");
+        text.append("🌐 个人官网：www.shuyixiao.cn\n");
         text.append("========================================\n");
         
         return text.toString();
