@@ -18,6 +18,11 @@ public class ProjectDocumentation {
     private String projectName;
     
     /**
+     * 项目路径
+     */
+    private String projectPath;
+    
+    /**
      * 项目描述
      */
     private String projectDescription;
@@ -56,6 +61,14 @@ public class ProjectDocumentation {
         this.projectName = projectName;
     }
     
+    public String getProjectPath() {
+        return projectPath;
+    }
+    
+    public void setProjectPath(String projectPath) {
+        this.projectPath = projectPath;
+    }
+    
     public String getProjectDescription() {
         return projectDescription;
     }
@@ -86,6 +99,15 @@ public class ProjectDocumentation {
     
     public void addApis(List<ApiEndpoint> apis) {
         this.apis.addAll(apis);
+    }
+    
+    // Alias methods for compatibility
+    public List<ApiEndpoint> getEndpoints() {
+        return apis;
+    }
+    
+    public void setEndpoints(List<ApiEndpoint> endpoints) {
+        this.apis = endpoints;
     }
     
     public List<EntityModel> getEntities() {

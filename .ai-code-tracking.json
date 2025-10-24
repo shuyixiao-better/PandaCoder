@@ -627,12 +627,67 @@
       "aiTool": "AI Assistant",
       "detectionMethod": "REALTIME_SPEED_ANALYSIS",
       "lineCount": 63
+    },
+    {
+      "filePath": "E:/Project/GitHub/PandaCoder/src/main/java/com/shuyixiao/livingdoc/settings/LivingDocConfigurable.java",
+      "timestamp": 1761297131701,
+      "startOffset": 10094,
+      "endOffset": 10312,
+      "codeContent": "Panel wrapper \u003d new JPanel(new BorderLayout());\n        JScrollPane scrollPane \u003d new JBScrollPane(panel);\n        scrollPane.setBorder(null);\n        wrapper.add(scrollPane, BorderLayout.CENTER);\n        return wrapper",
+      "aiProbability": 95,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 5
+    },
+    {
+      "filePath": "E:/Project/GitHub/PandaCoder/src/main/java/com/shuyixiao/livingdoc/analyzer/model/ProjectDocumentation.java",
+      "timestamp": 1761299590424,
+      "startOffset": 321,
+      "endOffset": 2166,
+      "codeContent": "路径\n     */\n    private String projectPath;\n    \n    /**\n     * 项目描述\n     */\n    private String projectDescription;\n    \n    /**\n     * 项目版本\n     */\n    private String version;\n    \n    /**\n     * API端点列表\n     */\n    private List\u003cApiEndpoint\u003e apis \u003d new ArrayList\u003c\u003e();\n    \n    /**\n     * 实体模型列表\n     */\n    private List\u003cEntityModel\u003e entities \u003d new ArrayList\u003c\u003e();\n    \n    /**\n     * 生成时间\n     */\n    private LocalDateTime generatedAt;\n    \n    public ProjectDocumentation() {\n        this.generatedAt \u003d LocalDateTime.now();\n    }\n    \n    // Getters and Setters\n    \n    public String getProjectName() {\n        return projectName;\n    }\n    \n    public void setProjectName(String projectName) {\n        this.projectName \u003d projectName;\n    }\n    \n    public String getProjectPath() {\n        return projectPath;\n    }\n    \n    public void setProjectPath(String projectPath) {\n        this.projectPath \u003d projectPath;\n    }\n    \n    public String getProjectDescription() {\n        return projectDescription;\n    }\n    \n    public void setProjectDescription(String projectDescription) {\n        this.projectDescription \u003d projectDescription;\n    }\n    \n    public String getVersion() {\n        return version;\n    }\n    \n    public void setVersion(String version) {\n        this.version \u003d version;\n    }\n    \n    public List\u003cApiEndpoint\u003e getApis() {\n        return apis;\n    }\n    \n    public void setApis(List\u003cApiEndpoint\u003e apis) {\n        this.apis \u003d apis;\n    }\n    \n    public void addApi(ApiEndpoint api) {\n        this.apis.add(api);\n    }\n    \n    public void addApis(List\u003cApiEndpoint\u003e apis) {\n        this.apis.addAll(apis);\n    }\n    \n    // Alias methods for compatibility\n    public List\u003cApiEndpoint\u003e getEndpoints() {\n        return apis;\n    }\n    \n    public void setEndpoints(List\u003cApiEndpoint\u003e endpoints) {\n        this.apis \u003d endpoints",
+      "aiProbability": 95,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 90
+    },
+    {
+      "filePath": "E:/Project/GitHub/PandaCoder/src/main/java/com/shuyixiao/livingdoc/analyzer/model/Parameter.java",
+      "timestamp": 1761299615746,
+      "startOffset": 1742,
+      "endOffset": 1915,
+      "codeContent": "    \n    // Alias methods for compatibility\n    public String getIn() {\n        return source;\n    }\n    \n    public void setIn(String in) {\n        this.source \u003d in;\n    }\n",
+      "aiProbability": 95,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 10
+    },
+    {
+      "filePath": "E:/Project/GitHub/PandaCoder/src/main/java/com/shuyixiao/livingdoc/analyzer/model/ApiEndpoint.java",
+      "timestamp": 1761299615749,
+      "startOffset": 4101,
+      "endOffset": 4602,
+      "codeContent": "/ Alias methods for compatibility\n    public String getUrl() {\n        return path;\n    }\n    \n    public void setUrl(String url) {\n        this.path \u003d url;\n    }\n    \n    public String getMethod() {\n        return httpMethod;\n    }\n    \n    public void setMethod(String method) {\n        this.httpMethod \u003d method;\n    }\n    \n    public String getClassName() {\n        return controller;\n    }\n    \n    public void setClassName(String className) {\n        this.controller \u003d className;\n    }\n    \n    /",
+      "aiProbability": 95,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 26
+    },
+    {
+      "filePath": "E:/Project/GitHub/PandaCoder/src/main/java/com/shuyixiao/livingdoc/analyzer/JavaDocAnalyzer.java",
+      "timestamp": 1761299630956,
+      "startOffset": 139,
+      "endOffset": 229,
+      "codeContent": "javadoc.PsiDocComment;\nimport com.intellij.psi.javadoc.PsiDocTag;\nimport com.intellij.psi.",
+      "aiProbability": 90,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 3
     }
   ],
   "toolStats": {
     "AI Assistant": {
-      "usageCount": 57,
-      "totalLines": 11542
+      "usageCount": 62,
+      "totalLines": 11676
     }
   }
 }

@@ -213,9 +213,11 @@ public class LivingDocConfigurable implements Configurable {
         gbc.weighty = 1.0;
         panel.add(Box.createVerticalGlue(), gbc);
         
+        JPanel wrapper = new JPanel(new BorderLayout());
         JScrollPane scrollPane = new JBScrollPane(panel);
         scrollPane.setBorder(null);
-        return scrollPane;
+        wrapper.add(scrollPane, BorderLayout.CENTER);
+        return wrapper;
     }
     
     /**
@@ -306,9 +308,11 @@ public class LivingDocConfigurable implements Configurable {
         gbc.weighty = 1.0;
         panel.add(Box.createVerticalGlue(), gbc);
         
+        JPanel wrapper = new JPanel(new BorderLayout());
         JScrollPane scrollPane = new JBScrollPane(panel);
         scrollPane.setBorder(null);
-        return scrollPane;
+        wrapper.add(scrollPane, BorderLayout.CENTER);
+        return wrapper;
     }
     
     /**

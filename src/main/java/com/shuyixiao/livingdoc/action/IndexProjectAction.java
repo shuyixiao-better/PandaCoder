@@ -5,11 +5,16 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-import com.shuyixiao.livingdoc.settings.LivingDocSettings;
+import com.intellij.openapi.ui.Messages;
+import com.shuyixiao.livingdoc.analyzer.JavaDocAnalyzer;
+import com.shuyixiao.livingdoc.analyzer.model.ProjectDocumentation;
+import com.shuyixiao.livingdoc.generator.MarkdownGenerator;
+import com.shuyixiao.livingdoc.storage.DocumentStorage;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -27,23 +32,11 @@ public class IndexProjectAction extends AnAction {
             return;
         }
         
-        // 检查配置
-        LivingDocSettings settings = LivingDocSettings.getInstance(project);
-        if (!settings.isValid()) {
-            Notifications.Bus.notify(
-                new Notification(
-                    "LivingDoc",
-                    "配置不完整",
-                    "请先在 Settings -> Tools -> 活文档 中配置 API Key 和数据库连接",
-                    NotificationType.WARNING
-                ),
-                project
-            );
-            return;
-        }
-        
         // 后台任务索引
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "索引项目文档", true) {
+            private String markdownPath;
+            private int endpointCount;
+            
             @Override
             public void run(@NotNull ProgressIndicator indicator) {
                 try {
@@ -51,60 +44,91 @@ public class IndexProjectAction extends AnAction {
                     indicator.setIndeterminate(false);
                     indicator.setFraction(0.0);
                     
-                    // TODO: 实际的索引逻辑
-                    // 1. 分析项目代码
-                    indicator.setFraction(0.2);
-                    Thread.sleep(500); // 模拟耗时操作
-                    
-                    // 2. 提取 API 信息
-                    indicator.setText("正在提取 API 信息...");
+                    // 1. 分析代码
+                    JavaDocAnalyzer analyzer = new JavaDocAnalyzer(project);
+                    ProjectDocumentation doc = analyzer.analyze();
+                    endpointCount = doc.getEndpoints().size();
                     indicator.setFraction(0.4);
-                    Thread.sleep(500);
                     
-                    // 3. 向量化文档
-                    indicator.setText("正在向量化文档...");
-                    indicator.setFraction(0.6);
-                    Thread.sleep(500);
+                    // 2. 生成 Markdown
+                    indicator.setText("正在生成文档...");
+                    MarkdownGenerator generator = new MarkdownGenerator();
+                    String markdown = generator.generate(doc);
+                    indicator.setFraction(0.7);
                     
-                    // 4. 存储到向量数据库
-                    indicator.setText("正在存储到向量数据库...");
-                    indicator.setFraction(0.8);
-                    Thread.sleep(500);
-                    
+                    // 3. 保存文档
+                    indicator.setText("正在保存文档...");
+                    DocumentStorage storage = new DocumentStorage(project);
+                    storage.saveDocumentation(doc);
+                    storage.saveMarkdown(markdown);
+                    markdownPath = storage.getMarkdownPath();
                     indicator.setFraction(1.0);
                     
-                    // 成功通知
-                    if (settings.showNotifications) {
+                } catch (Exception ex) {
+                    ApplicationManager.getApplication().invokeLater(() -> {
                         Notifications.Bus.notify(
                             new Notification(
                                 "LivingDoc",
-                                "索引完成",
-                                "已成功索引项目文档到向量数据库",
-                                NotificationType.INFORMATION
+                                "索引失败",
+                                "错误: " + ex.getMessage(),
+                                NotificationType.ERROR
                             ),
                             project
                         );
-                    }
-                    
-                } catch (Exception ex) {
-                    Notifications.Bus.notify(
-                        new Notification(
-                            "LivingDoc",
-                            "索引失败",
-                            "错误: " + ex.getMessage(),
-                            NotificationType.ERROR
-                        ),
-                        project
-                    );
+                    });
+                    ex.printStackTrace();
                 }
+            }
+            
+            @Override
+            public void onSuccess() {
+                String message = String.format("✅ 索引完成！发现 %d 个接口", endpointCount);
+                
+                Notifications.Bus.notify(
+                    new Notification(
+                        "LivingDoc",
+                        "索引完成",
+                        message + "\n文档已保存到: " + markdownPath,
+                        NotificationType.INFORMATION
+                    ),
+                    project
+                );
+                
+                int result = Messages.showYesNoDialog(
+                    project,
+                    message + "\n\n是否立即打开文档？",
+                    "活文档",
+                    "打开文档",
+                    "关闭",
+                    Messages.getInformationIcon()
+                );
+                
+                if (result == Messages.YES) {
+                    openMarkdownFile(project, markdownPath);
+                }
+            }
+        });
+    }
+    
+    /**
+     * 打开 Markdown 文件
+     */
+    private void openMarkdownFile(Project project, String path) {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            try {
+                com.intellij.openapi.vfs.VirtualFile file = 
+                    com.intellij.openapi.vfs.LocalFileSystem.getInstance().refreshAndFindFileByPath(path);
+                if (file != null) {
+                    com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project).openFile(file, true);
+                }
+            } catch (Exception ex) {
+                Messages.showErrorDialog(project, "无法打开文件: " + ex.getMessage(), "活文档");
             }
         });
     }
     
     @Override
     public void update(@NotNull AnActionEvent e) {
-        // 只在有项目时启用
         e.getPresentation().setEnabledAndVisible(e.getProject() != null);
     }
 }
-

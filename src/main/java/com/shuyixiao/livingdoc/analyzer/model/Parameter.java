@@ -100,5 +100,14 @@ public class Parameter {
     public void setExample(String example) {
         this.example = example;
     }
+    
+    // Alias methods for compatibility
+    public String getIn() {
+        return source;
+    }
+    
+    public void setIn(String in) {
+        this.source = in;
+    }
 }
 

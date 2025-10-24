@@ -1,0 +1,165 @@
+2025-10-23 17:34:58,086 INFO (PlatformAuthServiceImpl.java:65)- PlatformAuthServiceImpl.check,uri:/kl/api/saas/prompt/save
+2025-10-23 17:34:58,089 INFO (ChatPromptController.java:91)- 保存Prompt,api:/api/saas/prompt/save,req:com.torchv.application.knowledge.model.request.PromptUpdateReq@62628feb
+2025-10-23 17:34:58,095 DEBUG (BaseJdbcLogger.java:135)- ==>  Preparing: SELECT id,creator,create_time,modifier,modifier_time,sort,tenant_id,title,prompt,system_prompt,use_flag,config FROM saas_prompt_template WHERE (tenant_id = ?)
+2025-10-23 17:34:58,096 DEBUG (BaseJdbcLogger.java:135)- ==> Parameters: 1943230203698479104(String)
+2025-10-23 17:34:58,097 DEBUG (BaseJdbcLogger.java:135)- <==      Total: 1
+2025-10-23 17:34:58,098 DEBUG (BaseJdbcLogger.java:135)- ==>  Preparing: UPDATE saas_prompt_template SET create_time=?, modifier_time=?, sort=?, tenant_id=?, title=?, prompt=?, system_prompt=?, use_flag=?, config=? WHERE (tenant_id = ? AND id = ?)
+2025-10-23 17:34:58,099 DEBUG (BaseJdbcLogger.java:135)- ==> Parameters: 2025-10-21T10:36:34(LocalDateTime), 2025-10-23T17:34:58.098032100(LocalDateTime), 0(Integer), 1943230203698479104(String), DEFAULT(String), 根据提供的已知内容（其中一些可能不相关）为给定问题写出准确、引人入胜且简洁的答案，并正确引用它们。始终引用任何事实主张。引用多个搜索结果时，请使用 [1][2][3]。在每个句子中引用至少一个文档，最多三个文档。如果有多份文档支持该句子，则仅引用文档的最小足够子集。
+
+已知内容：${context}
+
+回答要求：
+- 如果你不清楚答案，你需要澄清。
+- 避免提及你是从已知内容获取的知识。
+- 保持答案与已知内容中描述的一致。
+- 使用 Markdown 语法优化回答格式。
+- 使用与问题相同的语言回答。
+- 如果有图片，必须输出引用的相关图片，格式必须是![IMG](图片)
+
+问题：${question}
+
+(String), # 角色与目标 (ROLE AND GOAL)
+
+你是一个专业的RAG（检索增强生成）系统回答引擎。你的核心职能是基于提供的检索上下文，为用户提供准确、有据可查的回答。你必须严格依据上下文内容，并规范地标注所有信息来源。
+
+# 核心指令 (CORE DIRECTIVE)
+
+分析用户问题和提供的上下文信息，基于可用知识提供准确回答。所有事实陈述都必须有明确的来源引用，不得编造或推测超出上下文范围的信息。
+
+# 上下文信息格式 (CONTEXT FORMAT)
+
+上下文信息采用XML格式提供，每个知识片段都包含在独立的reference标签中：
+
+```xml
+<references>
+   <reference id="1" title="知识源标题" page="1" created="2023-10-01 10:12:10">
+   [知识内容1]
+   </reference>
+   <reference id="2" title="知识源标题" page="2" created="2023-10-01 10:12:10">
+   系统架构设计如下图所示：
+   ![系统架构图](https://example.com/architecture.png)
+   该架构采用微服务设计模式...
+   </reference>
+   <reference id="3" title="知识源标题" page="3" created="2023-10-01 10:12:10">
+   数据库设计包含以下表结构：
+   ![数据库ER图](https://example.com/database-er.png)
+   用户表与订单表之间存在一对多关系...
+   </reference>
+</references>
+```
+
+其中id="X"是该知识片段的唯一数字标识符，用于引用追踪。title="XX"是该片段所属知识文章的标题，page="Y"是页码，created="YYYY-MM-DD HH:MM:SS"是创建时间。知识内容中可能包含Markdown格式的图片链接，这些图片是从原始文档解析时保留的。
+
+# 回答规则 (ANSWER RULES)
+
+1. **严格上下文约束**：
+   - 只能使用提供的上下文信息进行回答
+   - 绝对禁止引用上下文外的任何知识或信息
+   - 不得基于常识、经验或训练数据进行推测
+
+2. **强制引用标注**：
+   - 回答中的所有事实、数据、结论都必须标注来源
+   - 引用格式：`[n]`，其中n对应reference标签的id值
+   - 多个来源支持同一事实时，使用`[n,m]`格式
+   - 引用标注应紧跟相关事实内容之后
+
+3. **图片引用处理**：
+   - 当上下文内容中包含Markdown格式的图片时（如：`![描述](URL)`），必须在回答中保持原始的Markdown格式
+   - 完整格式：`![图片描述](图片URL)`
+
+4. **信息完整性评估**：
+   - 在回答前评估上下文信息是否足以完整回答问题
+   - 如信息不足，不要强行回答，而应指出缺失的信息并反问用户
+
+5. **智能反问机制**：
+   - 当上下文无法直接回答问题时，根据已有信息分析问题的具体需求
+   - 明确指出需要哪些补充信息才能完整回答
+   - 基于现有上下文提出针对性的澄清问题
+
+6. **回答结构要求**：
+   - 开头简要直接回答核心问题（如果信息充足）
+   - 提供详细的支撑信息和解释
+   - 所有关键信息都要有引用标注
+   - 结尾总结或指出信息局限性
+
+# 特殊情况处理 (SPECIAL CASES)
+
+1. **信息不足情况**：
+   ```
+   根据提供的上下文信息，我无法完全回答您的问题，因为缺少以下关键信息：
+   - [具体缺失的信息点1]
+   - [具体缺失的信息点2]
+
+   基于现有信息，我可以告诉您：[部分回答内容][引用标注]
+
+   为了提供更准确的回答，请您补充说明：[具体问题]
+   ```
+
+2. **多维度比较问题**：
+   - 按维度分别回答，每个维度都要有清晰的引用
+   - 明确标出哪些比较维度有足够信息，哪些缺乏信息
+
+3. **复杂技术问题**：
+   - 分层次回答：概述→详细说明→技术细节
+   - 每个层次都要有相应的引用支撑
+
+# 质量检查清单 (QUALITY CHECKLIST)
+
+回答前请确认：
+- ✅ 所有事实陈述都有引用标注
+- ✅ 引用的id与上下文中的reference标签一致
+- ✅ 没有使用上下文外的任何信息
+- ✅ 回答逻辑清晰，结构完整
+- ✅ 如信息不足，已明确指出并反问用户
+- ✅ 引用格式规范：[n]或[n,m]
+- ✅ 图片引用使用正确的Markdown格式：![描述](URL)
+- ✅ 所有上下文中的图片都在回答中正确展示并添加了引用标注
+
+
+# 注意事项 (IMPORTANT NOTES)
+
+- 始终保持客观中性的语调
+- 对于争议性话题，如上下文提供多种观点，应平衡呈现
+- 引用标注必须准确，错误的引用会严重影响回答质量
+- 当用户要求整理成表单形式时，确保表格中的每个数据都有相应的引用标注
+- 上下文中包含的Markdown格式图片必须在回答中保持格式并添加引用标注
+- 图片引用格式：完整格式：`![图片描述](图片URL)`
+
+(String), 0(Integer), {"llmDispatcherName":"OneDispatcher","modelName":"ep-20240925163214-bkpwk","chatType":1,"similarScore":0.95,"queryAlpha":0.95,"reviseMinScore":0.6,"qms":1.0,"ragAlpha":1.0,"rms":1.0,"ragNoContextFinallyAnswer":true,"ragNoContextFinallyAnswerText":"抱歉,您的问题暂时没有答案！","temperature":100,"topP":100,"contextWindow":200,"roundSessionCount":10,"topK":200,"rrf":false,"useReranker":false,"rankerModelName":"bge-reranker-v2-m3","nearPageNumber":5}(String), 1943230203698479104(String), 4(Integer)
+2025-10-23 17:34:58,101 DEBUG (BaseJdbcLogger.java:135)- <==    Updates: 1
+2025-10-23 17:34:58,167 INFO (LogSender.java:46)- 发送日志MQ消息，exchange:direct_exchange_rag_server_log,detail:编辑保存Prompt配置信息
+2025-10-23 17:34:58,169 INFO (UserEventLogListener.java:46)- 处理操作日志消息入库事件,log:LogInfo{userId=4, userName='舒一笑', userIp='10.10.0.153', sysType='cli', methodName='com.torchv.application.knowledge.web.ChatPromptController$$SpringCGLIB$$0.save', methodRemark='编辑保存Prompt配置信息', reqUrl='http://10.10.0.153:10003/kl/api/saas/prompt/save', optReqParam='{}', optResInfo='{"code":8200,"data":"保存成功","message":"SUCCESS"}', tenantId='1943230203698479104', moduleName='Prompt管理', browser='Chrome', browserVersion='141.0.0.0', platform='Windows', operateTime=1761212098167, osName='Windows 10 or Windows Server 2016', content='编辑保存Prompt配置信息', userAgent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36', referer='http://localhost:8888/setting/prompt', type='SYS', eventName='DEFAULT', num=0}
+2025-10-23 17:34:58,170 DEBUG (BaseJdbcLogger.java:135)- ==>  Preparing: INSERT INTO saas_sys_log ( user_id, user_name, user_ip, sys_type, method_name, method_remark, req_url, opt_req_param, opt_res_info, create_time, creator, tenant_id, module_name, browser, browser_version, platform, operate_time, os_name, content, user_agent, referer, type, event_name, num ) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )
+2025-10-23 17:34:58,171 DEBUG (BaseJdbcLogger.java:135)- ==> Parameters: 4(Long), 舒一笑(String), 10.10.0.153(String), cli(String), com.torchv.application.knowledge.web.ChatPromptController$$SpringCGLIB$$0.save(String), 编辑保存Prompt配置信息(String), http://10.10.0.153:10003/kl/api/saas/prompt/save(String), {}(String), {"code":8200,"data":"保存成功","message":"SUCCESS"}(String), 2025-10-23 17:34:58.169(Timestamp), 4(Long), 1943230203698479104(String), Prompt管理(String), Chrome(String), 141.0.0.0(String), Windows(String), 2025-10-23 17:34:58.167(Timestamp), Windows 10 or Windows Server 2016(String), 编辑保存Prompt配置信息(String), Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36(String), http://localhost:8888/setting/prompt(String), SYS(String), DEFAULT(String), 0(Integer)
+2025-10-23 17:34:58,173 DEBUG (BaseJdbcLogger.java:135)- <==    Updates: 1
+2025-10-23 17:35:00,006 INFO (UnstructuredFileEmbeddingJob.java:92)- 提交文件embedding向量化任务Job.
+2025-10-23 17:35:00,015 DEBUG (BaseJdbcLogger.java:135)- ==>  Preparing: SELECT count(0) FROM saas_knowledge_element WHERE (process_status IN (?, ?) AND category <> ?)
+2025-10-23 17:35:00,015 DEBUG (BaseJdbcLogger.java:135)- ==> Parameters: 0(Integer), 16(Integer), DIRECTORY(String)
+2025-10-23 17:35:00,017 DEBUG (BaseJdbcLogger.java:135)- <==      Total: 1
+2025-10-23 17:35:00,017 DEBUG (BaseJdbcLogger.java:135)- ==>  Preparing: SELECT id,creator,create_time,modifier,modifier_time,sort,tenant_id,container_id,category,code,parent_code,ele_name,ele_suffix,ele_url,ele_preview_url,ele_size,ele_token_size,ele_md5,never_expire,enable,start_time,end_time,process_status,error_message,process_count,page_count,year,topic,chunk_count,config,read_count,collect_count,followers,likes_count,hot_number,permission_status FROM saas_knowledge_element WHERE (process_status IN (?,?) AND category <> ?) LIMIT ?
+2025-10-23 17:35:00,017 DEBUG (BaseJdbcLogger.java:135)- ==> Parameters: 0(Integer), 16(Integer), DIRECTORY(String), 500(Integer)
+2025-10-23 17:35:00,021 DEBUG (BaseJdbcLogger.java:135)- <==      Total: 19
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,022 INFO (EmbeddingTaskServiceImpl.java:57)- 开始处理文件任务
+2025-10-23 17:35:00,032 DEBUG (BaseJdbcLogger.java:135)- ==>  Preparing: SELECT count(0) FROM saas_knowledge_element WHERE (process_status IN (?, ?) AND category <> ?)
+2025-10-23 17:35:00,032 DEBUG (BaseJdbcLogger.java:135)- ==> Parameters: 0(Integer), 16(Integer), DIRECTORY(String)
+2025-10-23 17:35:00,034 DEBUG (BaseJdbcLogger.java:135)- <==      Total: 1
+2025-10-23 17:35:00,040 INFO (KnowledgeCapacityJob.java:28)- 刷新知识库容量数据到数据库，从Redis缓存中进行刷新
+2025-10-23 17:35:00,041 INFO (KnowledgeContainerCapacityDataServiceImpl.java:128)- 没有需要刷新的知识库容量缓存

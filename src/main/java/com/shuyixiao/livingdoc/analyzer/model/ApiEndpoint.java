@@ -217,6 +217,31 @@ public class ApiEndpoint {
         this.tags.add(tag);
     }
     
+    // Alias methods for compatibility
+    public String getUrl() {
+        return path;
+    }
+    
+    public void setUrl(String url) {
+        this.path = url;
+    }
+    
+    public String getMethod() {
+        return httpMethod;
+    }
+    
+    public void setMethod(String method) {
+        this.httpMethod = method;
+    }
+    
+    public String getClassName() {
+        return controller;
+    }
+    
+    public void setClassName(String className) {
+        this.controller = className;
+    }
+    
     /**
      * 获取唯一ID
      */

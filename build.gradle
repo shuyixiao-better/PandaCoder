@@ -45,6 +45,15 @@ dependencies {
     // JavaMail API - Git 统计邮件发送功能
     implementation 'com.sun.mail:javax.mail:1.6.2'
     implementation 'com.sun.activation:jakarta.activation:1.2.2'
+    
+    // ==================== Elasticsearch 8.15 - 活文档功能 ====================
+    implementation 'co.elastic.clients:elasticsearch-java:8.15.0'
+    implementation 'org.elasticsearch.client:elasticsearch-rest-client:8.15.0'
+    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
+    implementation 'org.apache.httpcomponents:httpcore:4.4.16'
+    
+    // ==================== HTTP 客户端 - AI 模型调用 ====================
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 }
 
 intellij {
