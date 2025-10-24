@@ -137,7 +137,7 @@ public class PromotionPanel extends JBPanel<PromotionPanel> {
             QRCodeDialog.showCoffeeQRCode(project);
         });
         panel.add(coffeeButton);
-        JButton adviceButton = new JButton("✍️ 插件建议");
+        JButton adviceButton = new JButton("✍️ 插件的建议");
         adviceButton.putClientProperty("JButton.buttonType", "borderless");
         adviceButton.setFont(coffeeButton.getFont().deriveFont(12f));
         adviceButton.setAlignmentX(Component.LEFT_ALIGNMENT);
