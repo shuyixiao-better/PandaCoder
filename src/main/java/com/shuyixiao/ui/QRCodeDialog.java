@@ -504,7 +504,7 @@ public class QRCodeDialog extends DialogWrapper {
                 "公众号",
                 "扫描二维码关注「舒一笑的架构笔记」<br>" +
                         "获取最新技术分享、插件更新和问题解答",
-                "/images/WechatOfficialAccount.gif",  // 使用本地图片资源
+                "/images/WechatOfficialAccount.png",  // 使用本地图片资源
                 "复制链接",
                 "https://i-blog.csdnimg.cn/direct/68693f613c2a4e2cb0ff042fbadc2a9c.gif#pic_center"  // 保留网络链接用于复制
         );
