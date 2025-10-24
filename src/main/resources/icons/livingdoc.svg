@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+  <!-- 文档图标 -->
+  <rect x="3" y="1" width="10" height="14" rx="1" fill="#6C9EF8" stroke="#4A7FC1" stroke-width="0.5"/>
+  
+  <!-- AI 闪电符号 -->
+  <path d="M 8 4 L 6 8 L 8 8 L 7 12 L 10 7 L 8 7 Z" fill="#FFD700" stroke="#FFA500" stroke-width="0.5"/>
+  
+  <!-- 文档线条 -->
+  <line x1="5" y1="3" x2="11" y2="3" stroke="white" stroke-width="0.5" opacity="0.6"/>
+  <line x1="5" y1="5" x2="11" y2="5" stroke="white" stroke-width="0.5" opacity="0.6"/>
+  <line x1="5" y1="11" x2="11" y2="11" stroke="white" stroke-width="0.5" opacity="0.6"/>
+  <line x1="5" y1="13" x2="11" y2="13" stroke="white" stroke-width="0.5" opacity="0.6"/>
+</svg>
+

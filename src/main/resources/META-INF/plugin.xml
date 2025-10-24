@@ -167,6 +167,9 @@
 
         <!-- AI 代码检测启动活动 -->
         <postStartupActivity implementation="com.shuyixiao.gitstat.ai.startup.AiCodeDetectionStartupActivity"/>
+        
+        <!-- Git 统计邮件启动活动：检查配置迁移 -->
+        <postStartupActivity implementation="com.shuyixiao.gitstat.email.startup.GitStatEmailStartupActivity"/>
 
         <!-- AI 代码记录存储服务 -->
         <projectService serviceImplementation="com.shuyixiao.gitstat.ai.storage.AiCodeRecordStorage"/>
@@ -193,6 +196,25 @@
         
         <!-- 通知组定义 -->
         <notificationGroup id="PandaCoder.Notifications" displayType="BALLOON" key="notification.group.pandacoder"/>
+        
+        <!-- ==================== 活文档功能 (Living Doc) ==================== -->
+        <!-- 活文档配置服务 -->
+        <projectService serviceImplementation="com.shuyixiao.livingdoc.settings.LivingDocSettings"/>
+        
+        <!-- 活文档设置面板 -->
+        <projectConfigurable groupId="tools" 
+                           displayName="活文档 (Living Doc)" 
+                           id="com.shuyixiao.livingdoc.settings.LivingDocConfigurable"
+                           instance="com.shuyixiao.livingdoc.settings.LivingDocConfigurable"/>
+        
+        <!-- 活文档工具窗口 -->
+        <toolWindow id="活文档"
+                    factoryClass="com.shuyixiao.livingdoc.ui.LivingDocToolWindowFactory"
+                    anchor="right"
+                    icon="/icons/livingdoc.svg"/>
+        
+        <!-- 活文档通知组 -->
+        <notificationGroup id="LivingDoc" displayType="BALLOON"/>
     </extensions>
     <actions>
         <action id="ReportMessage" class="com.shuyixiao.ReportMessage" text="关于PandaCoder"
@@ -219,5 +241,36 @@
         <action id="ChineseFileCreation" class="com.shuyixiao.ChineseClassCreationAction" text="Smart Chinese Class" description="Create class with Chinese input automatically converted to English class name">
             <add-to-group group-id="NewGroup" anchor="first"/>
         </action>
+        
+        <!-- ==================== 活文档 Actions ==================== -->
+        <group id="LivingDocGroup" text="活文档" description="Living Doc Actions" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            
+            <!-- 索引项目文档 -->
+            <action id="LivingDoc.IndexProject" 
+                    class="com.shuyixiao.livingdoc.action.IndexProjectAction"
+                    text="索引项目文档"
+                    description="分析项目代码并索引到向量数据库"
+                    icon="/icons/livingdoc.svg">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift I"/>
+            </action>
+            
+            <!-- 搜索文档 -->
+            <action id="LivingDoc.Search" 
+                    class="com.shuyixiao.livingdoc.action.SearchDocAction"
+                    text="搜索文档"
+                    description="打开活文档搜索窗口"
+                    icon="/icons/search.svg">
+                <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift S"/>
+            </action>
+            
+            <!-- 导出文档 -->
+            <action id="LivingDoc.Export" 
+                    class="com.shuyixiao.livingdoc.action.ExportDocAction"
+                    text="导出文档"
+                    description="导出项目文档到文件"
+                    icon="/icons/export.svg">
+            </action>
+        </group>
     </actions>
 </idea-plugin>
