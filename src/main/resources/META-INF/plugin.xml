@@ -186,6 +186,13 @@
         <!-- 版本更新检查启动活动 -->
         <postStartupActivity implementation="com.shuyixiao.update.UpdateCheckService"/>
 
+        <!-- 更新设置配置页面 -->
+        <applicationConfigurable groupId="tools" 
+                               displayName="更新设置" 
+                               id="com.shuyixiao.update.UpdateSettingsConfigurable"
+                               instance="com.shuyixiao.update.UpdateSettingsConfigurable"
+                               parentId="FileAnnotationInformationConfiguration"/>
+
         <!-- 项目级服务 -->
         <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.EnhancedConsoleMonitoringService"/>
         <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.EnhancedExecutionListener"/>
