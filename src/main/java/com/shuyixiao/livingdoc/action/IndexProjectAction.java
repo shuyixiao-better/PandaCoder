@@ -39,6 +39,16 @@ public class IndexProjectAction extends AnAction {
             return;
         }
         
+        // 调用公共方法执行索引
+        performIndexing(project);
+    }
+    
+    /**
+     * 执行索引操作（公共方法，可被其他Action调用）
+     * 
+     * @param project 当前项目
+     */
+    public static void performIndexing(@NotNull Project project) {
         // 后台任务索引
         ProgressManager.getInstance().run(new Task.Backgroundable(project, "索引项目文档", true) {
             private String markdownPath;
@@ -123,7 +133,7 @@ public class IndexProjectAction extends AnAction {
     /**
      * 打开 Markdown 文件
      */
-    private void openMarkdownFile(Project project, String path) {
+    private static void openMarkdownFile(Project project, String path) {
         ApplicationManager.getApplication().invokeLater(() -> {
             try {
                 com.intellij.openapi.vfs.VirtualFile file = 

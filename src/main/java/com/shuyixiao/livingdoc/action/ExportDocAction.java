@@ -52,7 +52,7 @@ public class ExportDocAction extends AnAction {
             );
             
             if (result == Messages.YES) {
-                new IndexProjectAction().actionPerformed(e);
+                IndexProjectAction.performIndexing(project);
             }
             return;
         }
