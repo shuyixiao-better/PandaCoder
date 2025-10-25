@@ -2,18 +2,11 @@ package com.shuyixiao.jenkins.highlight;
 
 import com.intellij.lexer.Lexer;
 import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
-import com.intellij.openapi.editor.HighlighterColors;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
-import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.openapi.fileTypes.SyntaxHighlighterBase;
 import com.intellij.psi.tree.IElementType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.plugins.groovy.highlighter.GroovySyntaxHighlighter;
-import org.jetbrains.plugins.groovy.lang.lexer.GroovyTokenTypes;
-
-import java.awt.*;
-
-import static com.intellij.openapi.editor.colors.TextAttributesKey.createTextAttributesKey;
 
 /**
  * Jenkins Pipeline 语法高亮器
@@ -21,41 +14,21 @@ import static com.intellij.openapi.editor.colors.TextAttributesKey.createTextAtt
  */
 public class JenkinsSyntaxHighlighter extends SyntaxHighlighterBase {
     
-    // Jenkins Pipeline 专用颜色定义 - 使用鲜艳的自定义颜色
-    public static final TextAttributesKey JENKINS_KEYWORD = 
-            createTextAttributesKey("JENKINS_KEYWORD", createBrightTextAttributes(new Color(0x569CD6), Font.BOLD));
-    public static final TextAttributesKey JENKINS_PIPELINE_BLOCK = 
-            createTextAttributesKey("JENKINS_PIPELINE_BLOCK", createBrightTextAttributes(new Color(0xC586C0), Font.BOLD));
-    public static final TextAttributesKey JENKINS_STAGE_BLOCK = 
-            createTextAttributesKey("JENKINS_STAGE_BLOCK", createBrightTextAttributes(new Color(0xDCDCAA), Font.BOLD));
-    public static final TextAttributesKey JENKINS_STEP_METHOD = 
-            createTextAttributesKey("JENKINS_STEP_METHOD", createBrightTextAttributes(new Color(0x4EC9B0), Font.PLAIN));
-    public static final TextAttributesKey JENKINS_VARIABLE = 
-            createTextAttributesKey("JENKINS_VARIABLE", createBrightTextAttributes(new Color(0x4FC1FF), Font.PLAIN));
-    public static final TextAttributesKey JENKINS_STRING = 
-            createTextAttributesKey("JENKINS_STRING", createBrightTextAttributes(new Color(0xCE9178), Font.PLAIN));
-    public static final TextAttributesKey JENKINS_COMMENT = 
-            createTextAttributesKey("JENKINS_COMMENT", createBrightTextAttributes(new Color(0x6A9955), Font.ITALIC));
-    public static final TextAttributesKey JENKINS_NUMBER = 
-            createTextAttributesKey("JENKINS_NUMBER", createBrightTextAttributes(new Color(0xB5CEA8), Font.PLAIN));
-    public static final TextAttributesKey JENKINS_BRACKET = 
-            createTextAttributesKey("JENKINS_BRACKET", createBrightTextAttributes(new Color(0xFFD700), Font.PLAIN));
-    public static final TextAttributesKey JENKINS_BRACE = 
-            createTextAttributesKey("JENKINS_BRACE", createBrightTextAttributes(new Color(0xFFD700), Font.PLAIN));
-    public static final TextAttributesKey JENKINS_OPERATOR = 
-            createTextAttributesKey("JENKINS_OPERATOR", createBrightTextAttributes(new Color(0xD4D4D4), Font.PLAIN));
+    // Jenkins Pipeline 专用颜色定义 - 直接使用默认颜色，让IDE主题可以适配
+    // 使用默认颜色键避免弃用警告
+    public static final TextAttributesKey JENKINS_KEYWORD = DefaultLanguageHighlighterColors.KEYWORD;
+    public static final TextAttributesKey JENKINS_PIPELINE_BLOCK = DefaultLanguageHighlighterColors.KEYWORD;
+    public static final TextAttributesKey JENKINS_STAGE_BLOCK = DefaultLanguageHighlighterColors.KEYWORD;
+    public static final TextAttributesKey JENKINS_STEP_METHOD = DefaultLanguageHighlighterColors.FUNCTION_CALL;
+    public static final TextAttributesKey JENKINS_VARIABLE = DefaultLanguageHighlighterColors.IDENTIFIER;
+    public static final TextAttributesKey JENKINS_STRING = DefaultLanguageHighlighterColors.STRING;
+    public static final TextAttributesKey JENKINS_COMMENT = DefaultLanguageHighlighterColors.LINE_COMMENT;
+    public static final TextAttributesKey JENKINS_NUMBER = DefaultLanguageHighlighterColors.NUMBER;
+    public static final TextAttributesKey JENKINS_BRACKET = DefaultLanguageHighlighterColors.BRACKETS;
+    public static final TextAttributesKey JENKINS_BRACE = DefaultLanguageHighlighterColors.BRACES;
+    public static final TextAttributesKey JENKINS_OPERATOR = DefaultLanguageHighlighterColors.OPERATION_SIGN;
     
     private final GroovySyntaxHighlighter groovyHighlighter = new GroovySyntaxHighlighter();
-    
-    /**
-     * 创建鲜艳的文本属性
-     */
-    private static TextAttributes createBrightTextAttributes(Color foreground, int fontType) {
-        TextAttributes attributes = new TextAttributes();
-        attributes.setForegroundColor(foreground);
-        attributes.setFontType(fontType);
-        return attributes;
-    }
 
     @NotNull
     @Override

@@ -82,8 +82,13 @@
         <postStartupActivity implementation="com.shuyixiao.spring.boot.startup.YamlConfigStartupActivity"/>
         
         <!-- Jenkins Pipeline支持扩展 -->
-        <!-- 文件类型工厂：注册Jenkins文件类型和特殊文件名 -->
-        <fileType.fileTypeFactory implementation="com.shuyixiao.jenkins.JenkinsFileTypeFactory"/>
+        <!-- 文件类型：注册Jenkins文件类型和特殊文件名 -->
+        <fileType name="Jenkins" 
+                  implementationClass="com.shuyixiao.jenkins.file.JenkinsFileType" 
+                  fieldName="INSTANCE"
+                  language="Groovy"
+                  extensions="jenkinsfile;pipeline"
+                  patterns="Jenkinsfile;Jenkinsfile.*;*.jenkinsfile;jenkins;pipeline"/>
         
         <!-- 语法高亮器：为Jenkins文件提供增强的语法高亮 -->
         <lang.syntaxHighlighterFactory language="Groovy" 

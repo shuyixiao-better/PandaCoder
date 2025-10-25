@@ -32,20 +32,42 @@ public class BaiduAPI {
     // 3. 环境变量 (如果配置了)
     // 4. 空字符串 (如果都没有配置，则使用模拟翻译)
     private static String getApiKey() {
-        String settingsApiKey = com.shuyixiao.setting.PluginSettings.getInstance().getBaiduApiKey();
+        com.shuyixiao.setting.PluginSettings settings = com.shuyixiao.setting.PluginSettings.getInstance();
+        String settingsApiKey = settings != null ? settings.getBaiduApiKey() : null;
+        
+        // 调试日志
+        System.out.println("[BaiduAPI] PluginSettings实例: " + (settings != null ? "已获取" : "null"));
+        System.out.println("[BaiduAPI] 从设置读取的API密钥: " + (settingsApiKey != null ? "'" + settingsApiKey + "'" : "null"));
+        System.out.println("[BaiduAPI] API密钥长度: " + (settingsApiKey != null ? settingsApiKey.length() : 0));
+        System.out.println("[BaiduAPI] API密钥isEmpty: " + (settingsApiKey != null ? settingsApiKey.isEmpty() : "N/A"));
+        
         if (settingsApiKey != null && !settingsApiKey.isEmpty()) {
             return settingsApiKey;
         }
-        return System.getProperty("baidu.api.key", System.getenv().getOrDefault("BAIDU_API_KEY", ""));
+        
+        String sysKey = System.getProperty("baidu.api.key", System.getenv().getOrDefault("BAIDU_API_KEY", ""));
+        System.out.println("[BaiduAPI] 从系统属性/环境变量读取: " + sysKey);
+        return sysKey;
     }
 
     // 获取百度应用ID，优先级与API密钥相同
     private static String getAppId() {
-        String settingsAppId = com.shuyixiao.setting.PluginSettings.getInstance().getBaiduAppId();
+        com.shuyixiao.setting.PluginSettings settings = com.shuyixiao.setting.PluginSettings.getInstance();
+        String settingsAppId = settings != null ? settings.getBaiduAppId() : null;
+        
+        // 调试日志
+        System.out.println("[BaiduAPI] PluginSettings实例: " + (settings != null ? "已获取" : "null"));
+        System.out.println("[BaiduAPI] 从设置读取的应用ID: " + (settingsAppId != null ? "'" + settingsAppId + "'" : "null"));
+        System.out.println("[BaiduAPI] 应用ID长度: " + (settingsAppId != null ? settingsAppId.length() : 0));
+        System.out.println("[BaiduAPI] 应用ID isEmpty: " + (settingsAppId != null ? settingsAppId.isEmpty() : "N/A"));
+        
         if (settingsAppId != null && !settingsAppId.isEmpty()) {
             return settingsAppId;
         }
-        return System.getProperty("baidu.app.id", System.getenv().getOrDefault("BAIDU_APP_ID", ""));
+        
+        String sysId = System.getProperty("baidu.app.id", System.getenv().getOrDefault("BAIDU_APP_ID", ""));
+        System.out.println("[BaiduAPI] 从系统属性/环境变量读取: " + sysId);
+        return sysId;
     }
 
     public static String translate(String Chinese) throws UnsupportedEncodingException {
@@ -125,7 +147,7 @@ public class BaiduAPI {
     // 发送HTTP请求
     private static String sendRequest(Map<String, String> params) throws IOException {
         try {
-            URL url = new URL(API_URL);
+            URL url = java.net.URI.create(API_URL).toURL();
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setDoOutput(true);
@@ -292,110 +314,160 @@ public class BaiduAPI {
     }
 
     /**
-     * 验证API配置是否正确
+     * 验证API配置是否正确（从设置中读取）
      * @return 如果API配置正确返回true，否则返回false
      * @throws Exception 验证过程中出现错误时抛出
      */
     public static boolean validateApiConfiguration() throws Exception {
         String apiKey = getApiKey();
         String appId = getAppId();
+        return validateApiConfiguration(appId, apiKey);
+    }
+    
+    /**
+     * 验证API配置是否正确（使用指定的参数）
+     * @param appId 百度应用ID
+     * @param apiKey 百度API密钥
+     * @return 如果API配置正确返回true，否则返回false
+     * @throws Exception 验证过程中出现错误时抛出
+     */
+    public static boolean validateApiConfiguration(String appId, String apiKey) throws Exception {
 
-        if (apiKey.isEmpty() || appId.isEmpty()) {
-            throw new Exception("API密钥或应用ID为空");
+        System.out.println("[百度翻译验证] 开始验证API配置");
+        System.out.println("[百度翻译验证] 应用ID: " + (appId != null && !appId.isEmpty() ? appId : "未配置"));
+        System.out.println("[百度翻译验证] API密钥: " + (apiKey != null && !apiKey.isEmpty() ? "已配置(" + apiKey.length() + "个字符)" : "未配置"));
+
+        if (apiKey == null || apiKey.isEmpty() || appId == null || appId.isEmpty()) {
+            String error = "API密钥或应用ID为空，请检查配置";
+            System.err.println("[百度翻译验证] " + error);
+            throw new Exception(error);
         }
 
         try {
             // 实际调用百度翻译API进行测试
             // 使用一个简单的中文短语
-            String testPhrase = "测试翻译API";
-            String url = "https://fanyi-api.baidu.com/api/trans/vip/translate";
+            String testPhrase = "测试";
             String salt = String.valueOf(System.currentTimeMillis());
-            // 使用提供的apiKey而不是从配置中获取
+            
+            // 生成签名：MD5(appid+q+salt+密钥)
             String sign = generateSign(appId, testPhrase, salt, apiKey);
+            
+            System.out.println("[百度翻译验证] 测试短语: " + testPhrase);
+            System.out.println("[百度翻译验证] Salt: " + salt);
+            System.out.println("[百度翻译验证] Sign: " + sign);
 
-            // 准备API请求参数
-            Map<String, String> params = new HashMap<>();
-            params.put("q", testPhrase);
-            params.put("from", "zh");
-            params.put("to", "en");
-            params.put("appid", appId);
-            params.put("salt", salt);
-            params.put("sign", sign);
+            // 使用GET请求（更简单且稳定）
+            StringBuilder urlBuilder = new StringBuilder("https://fanyi-api.baidu.com/api/trans/vip/translate?");
+            urlBuilder.append("q=").append(URLEncoder.encode(testPhrase, "UTF-8"));
+            urlBuilder.append("&from=zh");
+            urlBuilder.append("&to=en");
+            urlBuilder.append("&appid=").append(URLEncoder.encode(appId, "UTF-8"));
+            urlBuilder.append("&salt=").append(salt);
+            urlBuilder.append("&sign=").append(sign);
+            
+            String fullUrl = urlBuilder.toString();
+            System.out.println("[百度翻译验证] 请求URL: " + fullUrl.substring(0, Math.min(fullUrl.length(), 100)) + "...");
 
             // 发送实际请求到百度API
-            URL obj = new URL(url);
+            URL obj = java.net.URI.create(fullUrl).toURL();
             HttpURLConnection conn = (HttpURLConnection) obj.openConnection();
-            conn.setRequestMethod("POST");
-            conn.setDoOutput(true);
-
-            // 构建请求参数
-            StringBuilder postData = new StringBuilder();
-            for (Map.Entry<String, String> param : params.entrySet()) {
-                if (postData.length() != 0) postData.append('&');
-                postData.append(URLEncoder.encode(param.getKey(), "UTF-8"));
-                postData.append('=');
-                postData.append(URLEncoder.encode(param.getValue(), "UTF-8"));
-            }
-
-            // 发送请求
-            try (DataOutputStream wr = new DataOutputStream(conn.getOutputStream())) {
-                wr.writeBytes(postData.toString());
-                wr.flush();
-            }
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(10000); // 10秒连接超时
+            conn.setReadTimeout(10000);    // 10秒读取超时
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
 
             // 获取响应
             int responseCode = conn.getResponseCode();
+            System.out.println("[百度翻译验证] 响应码: " + responseCode);
 
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                // 读取响应
-                StringBuilder response = new StringBuilder();
-                try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = in.readLine()) != null) {
-                        response.append(line);
+            // 读取响应
+            StringBuilder response = new StringBuilder();
+            InputStream inputStream = null;
+            
+            try {
+                if (responseCode == HttpURLConnection.HTTP_OK) {
+                    inputStream = conn.getInputStream();
+                } else {
+                    inputStream = conn.getErrorStream();
+                }
+                
+                if (inputStream != null) {
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            response.append(line);
+                        }
                     }
                 }
-
-                // 解析JSON响应
-                Gson gson = new Gson();
-                JsonObject jsonObject = gson.fromJson(response.toString(), JsonObject.class);
-
-                // 检查是否包含错误代码
-                if (jsonObject.has("error_code")) {
-                    String errorCode = jsonObject.get("error_code").getAsString();
-                    String errorMsg = jsonObject.has("error_msg") ? 
-                                    jsonObject.get("error_msg").getAsString() : 
-                                    "未知错误";
-                    throw new Exception("API错误: " + errorMsg + " (代码: " + errorCode + ")");
+            } finally {
+                if (inputStream != null) {
+                    try { inputStream.close(); } catch (Exception e) { /* 忽略 */ }
                 }
-
-                // 检查是否包含翻译结果
-                if (jsonObject.has("trans_result")) {
-                    JsonArray transResultArray = jsonObject.getAsJsonArray("trans_result");
-                    if (transResultArray != null && transResultArray.size() > 0) {
-                        // 测试成功
-                        return true;
-                    }
-                }
-
-                throw new Exception("API响应格式不正确");
-            } else {
-                // 读取错误响应
-                StringBuilder errorResponse = new StringBuilder();
-                try (BufferedReader err = new BufferedReader(new InputStreamReader(conn.getErrorStream(), StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = err.readLine()) != null) {
-                        errorResponse.append(line);
-                    }
-                } catch (Exception e) {
-                    // 忽略错误流读取错误
-                }
-
-                throw new Exception("API请求失败: 状态码=" + responseCode + 
-                                  (errorResponse.length() > 0 ? ", 错误信息=" + errorResponse.toString() : ""));
             }
+            
+            String responseText = response.toString();
+            System.out.println("[百度翻译验证] 响应内容: " + responseText);
+
+            // 解析JSON响应
+            Gson gson = new Gson();
+            JsonObject jsonObject = gson.fromJson(responseText, JsonObject.class);
+
+            // 检查是否包含错误代码
+            if (jsonObject.has("error_code")) {
+                String errorCode = jsonObject.get("error_code").getAsString();
+                String errorMsg = jsonObject.has("error_msg") ? 
+                                jsonObject.get("error_msg").getAsString() : 
+                                "未知错误";
+                
+                // 提供更友好的错误信息
+                String userFriendlyError = getFriendlyErrorMessage(errorCode, errorMsg);
+                System.err.println("[百度翻译验证] API错误: " + userFriendlyError);
+                throw new Exception(userFriendlyError);
+            }
+
+            // 检查是否包含翻译结果
+            if (jsonObject.has("trans_result")) {
+                JsonArray transResultArray = jsonObject.getAsJsonArray("trans_result");
+                if (transResultArray != null && transResultArray.size() > 0) {
+                    System.out.println("[百度翻译验证] ✓ 验证成功！");
+                    return true;
+                }
+            }
+
+            String error = "API响应格式不正确，响应内容: " + responseText;
+            System.err.println("[百度翻译验证] " + error);
+            throw new Exception(error);
+            
         } catch (Exception e) {
-            throw new Exception("百度翻译API验证失败：" + e.getMessage());
+            String errorMsg = e.getMessage();
+            System.err.println("[百度翻译验证] 验证失败: " + errorMsg);
+            
+            // 如果是网络异常，给出更友好的提示
+            if (errorMsg.contains("timeout") || errorMsg.contains("connect")) {
+                throw new Exception("网络连接超时，请检查网络连接后重试");
+            }
+            
+            throw new Exception(errorMsg);
+        }
+    }
+    
+    /**
+     * 将百度API错误代码转换为友好的错误信息
+     */
+    private static String getFriendlyErrorMessage(String errorCode, String originalMsg) {
+        switch (errorCode) {
+            case "52001": return "请求超时，请重试";
+            case "52002": return "系统错误，请稍后重试";
+            case "52003": return "未授权用户：应用ID或API密钥不正确，请检查配置";
+            case "54000": return "必填参数为空：请确保应用ID和API密钥都已填写";
+            case "54001": return "签名错误：API密钥不正确，请检查";
+            case "54003": return "访问频率受限，请降低调用频率";
+            case "54004": return "账户余额不足，请前往百度翻译开放平台充值";
+            case "54005": return "长query请求频繁，请降低长文本翻译频率";
+            case "58000": return "客户端IP非法：请检查您的IP访问权限";
+            case "58001": return "译文语言方向不支持";
+            case "58002": return "服务当前已关闭，请稍后再试";
+            default: return "错误: " + originalMsg + " (代码: " + errorCode + ")";
         }
     }
 

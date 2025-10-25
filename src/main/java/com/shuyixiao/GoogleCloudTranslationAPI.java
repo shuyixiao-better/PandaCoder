@@ -5,7 +5,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import java.io.*;
 import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 public class GoogleCloudTranslationAPI {
@@ -23,7 +22,7 @@ public class GoogleCloudTranslationAPI {
         // 构建POST请求体
         String requestBody = String.format("{\"q\":\"%s\",\"target\":\"en\",\"format\":\"text\",\"project\":\"%s\"}",
                 escapeJson(text), projectId);
-        HttpURLConnection conn = (HttpURLConnection) new URL(apiUrl).openConnection();
+        HttpURLConnection conn = (HttpURLConnection) java.net.URI.create(apiUrl).toURL().openConnection();
         conn.setRequestMethod("POST");
         conn.setDoOutput(true);
         conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
@@ -84,7 +83,7 @@ public class GoogleCloudTranslationAPI {
         String requestBody = String.format("{\"q\":\"%s\",\"source\":\"%s\",\"target\":\"%s\",\"format\":\"text\",\"project\":\"%s\"}",
                 escapeJson(text), sourceLanguage, targetLanguage, projectId);
         
-        HttpURLConnection conn = (HttpURLConnection) new URL(apiUrl).openConnection();
+        HttpURLConnection conn = (HttpURLConnection) java.net.URI.create(apiUrl).toURL().openConnection();
         conn.setRequestMethod("POST");
         conn.setDoOutput(true);
         conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");

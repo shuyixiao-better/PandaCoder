@@ -440,6 +440,10 @@ public class SettingConfigurable implements SearchableConfigurable {
         String apiKey = String.valueOf(baiduApiKeyField.getPassword()).trim();
         String appId = baiduAppIdField.getText().trim();
         
+        System.out.println("[testBaiduApiConfiguration] 验证按钮被点击");
+        System.out.println("[testBaiduApiConfiguration] 从界面读取 - 应用ID: '" + appId + "'");
+        System.out.println("[testBaiduApiConfiguration] 从界面读取 - API密钥: '" + apiKey + "' (长度: " + apiKey.length() + ")");
+        
         if (apiKey.isEmpty() || appId.isEmpty()) {
             JOptionPane.showMessageDialog(panel, 
                 "请先输入百度 API 密钥和应用ID", 
@@ -449,8 +453,9 @@ public class SettingConfigurable implements SearchableConfigurable {
         }
         
         try {
-            // 使用现有的百度API验证方法
-            if (com.shuyixiao.BaiduAPI.validateApiConfiguration()) {
+            // 直接使用界面上的值进行验证，不需要先保存到PluginSettings
+            System.out.println("[testBaiduApiConfiguration] 调用验证方法，使用界面上的值...");
+            if (com.shuyixiao.BaiduAPI.validateApiConfiguration(appId, apiKey)) {
                 JOptionPane.showMessageDialog(panel, 
                     "百度翻译 API 配置验证成功！", 
                     "验证成功", 
@@ -462,6 +467,8 @@ public class SettingConfigurable implements SearchableConfigurable {
                     JOptionPane.ERROR_MESSAGE);
             }
         } catch (Exception ex) {
+            System.err.println("[testBaiduApiConfiguration] 验证异常: " + ex.getMessage());
+            ex.printStackTrace();
             JOptionPane.showMessageDialog(panel, 
                 "百度翻译 API 验证失败：\n" + ex.getMessage(), 
                 "验证失败", 
@@ -487,6 +494,10 @@ public class SettingConfigurable implements SearchableConfigurable {
         String modelDisplayName = domesticAIModelComboBox.getSelectedItem().toString();
         String modelValue = getValueByDisplayName(modelDisplayName);
         
+        System.out.println("[testDomesticAPIConfiguration] 验证按钮被点击");
+        System.out.println("[testDomesticAPIConfiguration] 从界面读取 - 模型: '" + modelValue + "' (" + modelDisplayName + ")");
+        System.out.println("[testDomesticAPIConfiguration] 从界面读取 - API密钥: '" + apiKey + "' (长度: " + apiKey.length() + ")");
+        
         if (apiKey.isEmpty() || modelValue.isEmpty()) {
             JOptionPane.showMessageDialog(panel, 
                 "请先输入国内大模型API密钥和模型", 
@@ -496,33 +507,26 @@ public class SettingConfigurable implements SearchableConfigurable {
         }
         
         try {
-            // 临时设置配置进行测试
-            PluginSettings tempSettings = PluginSettings.getInstance();
-            String oldApiKey = tempSettings.getDomesticAIApiKey();
-            String oldModel = tempSettings.getDomesticAIModel();
-            
-            tempSettings.setDomesticAIApiKey(apiKey);
-            tempSettings.setDomesticAIModel(modelValue);
-            
-            // 测试翻译
-            String testResult = com.shuyixiao.DomesticAITranslationAPI.translate("测试");
-            
-            // 恢复原配置
-            tempSettings.setDomesticAIApiKey(oldApiKey);
-            tempSettings.setDomesticAIModel(oldModel);
+            // 直接使用界面上的值进行验证，不需要修改PluginSettings
+            System.out.println("[testDomesticAPIConfiguration] 调用验证方法，使用界面上的值...");
+            String testResult = com.shuyixiao.DomesticAITranslationAPI.translate("测试", modelValue, apiKey);
             
             if (testResult != null && !testResult.trim().isEmpty()) {
+                System.out.println("[testDomesticAPIConfiguration] 验证成功! 翻译结果: " + testResult);
                 JOptionPane.showMessageDialog(panel, 
                     "国内大模型配置验证成功！\n模型：" + modelDisplayName + "\n测试翻译：测试 → " + testResult, 
                     "验证成功", 
                     JOptionPane.INFORMATION_MESSAGE);
             } else {
+                System.err.println("[testDomesticAPIConfiguration] API返回结果为空");
                 JOptionPane.showMessageDialog(panel, 
                     "国内大模型API返回结果为空，请检查配置", 
                     "验证失败", 
                     JOptionPane.ERROR_MESSAGE);
             }
         } catch (Exception ex) {
+            System.err.println("[testDomesticAPIConfiguration] 验证异常: " + ex.getMessage());
+            ex.printStackTrace();
             JOptionPane.showMessageDialog(panel, 
                 "国内大模型验证失败：\n" + ex.getMessage(), 
                 "验证失败", 
@@ -578,20 +582,40 @@ public class SettingConfigurable implements SearchableConfigurable {
     @Override
     public void apply() {
         PluginSettings settings = PluginSettings.getInstance();
+        
+        // 获取界面输入值
+        String baiduApiKey = String.valueOf(baiduApiKeyField.getPassword());
+        String baiduAppId = baiduAppIdField.getText();
+        
+        // 调试日志
+        System.out.println("[SettingConfigurable] 保存配置...");
+        System.out.println("[SettingConfigurable] 百度应用ID (从界面): '" + baiduAppId + "'");
+        System.out.println("[SettingConfigurable] 百度API密钥 (从界面): '" + baiduApiKey + "' (长度: " + baiduApiKey.length() + ")");
+        
+        // 保存配置
         settings.setEnableGoogleTranslation(enableGoogleTranslationCheckBox.isSelected());
         settings.setGoogleApiKey(String.valueOf(googleApiKeyField.getPassword()));
         settings.setGoogleProjectId(googleProjectIdField.getText());
         settings.setGoogleRegion(googleRegionComboBox.getSelectedItem().toString());
         settings.setTemplate(templateTextArea.getText());
-        settings.setBaiduApiKey(String.valueOf(baiduApiKeyField.getPassword()));
-        settings.setBaiduAppId(baiduAppIdField.getText());
+        settings.setBaiduApiKey(baiduApiKey);
+        settings.setBaiduAppId(baiduAppId);
         settings.setEnableDomesticAI(enableDomesticAICheckBox.isSelected());
         settings.setDomesticAIModel(getValueByDisplayName(domesticAIModelComboBox.getSelectedItem().toString()));
         settings.setDomesticAIApiKey(String.valueOf(domesticAIApiKeyField.getPassword()));
         settings.setUseCustomPrompt(useCustomPromptCheckBox.isSelected());
         settings.setTranslationPrompt(translationPromptArea.getText());
         settings.setEnableLocalBugStorage(enableLocalBugStorageCheckBox.isSelected());
+        
+        // 验证保存结果
+        System.out.println("[SettingConfigurable] 保存后验证...");
+        System.out.println("[SettingConfigurable] 百度应用ID (从settings): '" + settings.getBaiduAppId() + "'");
+        System.out.println("[SettingConfigurable] 百度API密钥 (从settings): '" + settings.getBaiduApiKey() + "' (长度: " + settings.getBaiduApiKey().length() + ")");
+        
+        // 清除翻译验证缓存
         com.shuyixiao.util.TranslationUtil.clearValidationCache();
+        
+        System.out.println("[SettingConfigurable] 配置保存完成!");
     }
 
     @Override

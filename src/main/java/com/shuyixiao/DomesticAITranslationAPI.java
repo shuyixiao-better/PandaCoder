@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -25,11 +26,11 @@ public class DomesticAITranslationAPI {
     // 智谱API
     private static final String ZHIPU_API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
 
-    // 腾讯混元API（码云）
-    private static final String HUNYUAN_API_URL = "https://ai.gitee.com/api/v1/chat/completions";
+    // 腾讯混元API（码云）- 注意：URL是 /v1/ 不是 /api/v1/
+    private static final String HUNYUAN_API_URL = "https://ai.gitee.com/v1/chat/completions";
 
     /**
-     * 使用国内大模型进行翻译
+     * 使用国内大模型进行翻译（从设置中读取配置）
      * @param text 待翻译的中文文本
      * @return 翻译后的英文文本
      * @throws IOException 翻译过程中的异常
@@ -39,8 +40,28 @@ public class DomesticAITranslationAPI {
         String modelType = settings.getDomesticAIModel();
         String apiKey = settings.getDomesticAIApiKey();
         
+        return translate(text, modelType, apiKey);
+    }
+    
+    /**
+     * 使用国内大模型进行翻译（使用指定的配置）
+     * @param text 待翻译的中文文本
+     * @param modelType 模型类型（qianwen/wenxin/zhipu/hunyuan）
+     * @param apiKey API密钥
+     * @return 翻译后的英文文本
+     * @throws IOException 翻译过程中的异常
+     */
+    public static String translate(String text, String modelType, String apiKey) throws IOException {
+        System.out.println("[国内大模型] 翻译请求 - 模型: " + modelType + ", API密钥: " + (apiKey != null && !apiKey.isEmpty() ? "已配置(" + apiKey.length() + "个字符)" : "未配置"));
+        
         if (apiKey == null || apiKey.isEmpty()) {
             throw new IOException("国内大模型API密钥不能为空");
+        }
+        
+        if (modelType == null || modelType.isEmpty()) {
+            // 使用配置文件中的默认模型
+            modelType = TranslationModelConfig.getInstance().getDefaultDomesticAIModel();
+            System.out.println("[国内大模型] 使用默认模型: " + modelType);
         }
         
         switch (modelType) {
@@ -55,7 +76,7 @@ public class DomesticAITranslationAPI {
             default:
                 // 使用配置文件中的默认模型
                 String defaultModel = TranslationModelConfig.getInstance().getDefaultDomesticAIModel();
-                System.out.println("[INFO] 使用配置文件默认模型: " + defaultModel);
+                System.out.println("[国内大模型] 使用配置文件默认模型: " + defaultModel);
 
                 if ("hunyuan".equals(defaultModel)) {
                     return translateWithHunyuan(text, apiKey);
@@ -315,7 +336,13 @@ public class DomesticAITranslationAPI {
      * 发送HTTP请求
      */
     private static String sendRequest(String urlString, String requestBody, String apiKey, String modelType) throws IOException {
-        URL url = new URL(urlString);
+        System.out.println("[国内大模型-sendRequest] ========== 开始发送请求 ==========");
+        System.out.println("[国内大模型-sendRequest] URL: " + urlString);
+        System.out.println("[国内大模型-sendRequest] 模型类型: " + modelType);
+        System.out.println("[国内大模型-sendRequest] API密钥: " + (apiKey != null ? apiKey.substring(0, Math.min(10, apiKey.length())) + "..." : "null"));
+        System.out.println("[国内大模型-sendRequest] 请求体: " + requestBody);
+        
+        URL url = URI.create(urlString).toURL();
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
         conn.setRequestMethod("POST");
         conn.setDoOutput(true);
@@ -324,19 +351,31 @@ public class DomesticAITranslationAPI {
         conn.setReadTimeout(10000);
         
         // 根据不同模型设置不同的请求头
+        String authHeader = null;
         switch (modelType) {
             case "qianwen":
-                conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+                authHeader = "Bearer " + apiKey;
+                conn.setRequestProperty("Authorization", authHeader);
                 break;
             case "wenxin":
                 // 文心一言的token已经在URL中
+                System.out.println("[国内大模型-sendRequest] 文心一言：token在URL中");
                 break;
             case "zhipu":
-                conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+                authHeader = "Bearer " + apiKey;
+                conn.setRequestProperty("Authorization", authHeader);
                 break;
             case "hunyuan":
-                conn.setRequestProperty("Authorization", "Bearer " + apiKey);
+                authHeader = "Bearer " + apiKey;
+                conn.setRequestProperty("Authorization", authHeader);
+                // 腾讯混元需要额外的请求头
+                conn.setRequestProperty("X-Failover-Enabled", "true");
+                System.out.println("[国内大模型-sendRequest] 腾讯混元：添加 X-Failover-Enabled 请求头");
                 break;
+        }
+        
+        if (authHeader != null) {
+            System.out.println("[国内大模型-sendRequest] Authorization: " + authHeader.substring(0, Math.min(20, authHeader.length())) + "...");
         }
         
         // 发送请求体
@@ -344,7 +383,11 @@ public class DomesticAITranslationAPI {
             os.write(requestBody.getBytes(StandardCharsets.UTF_8));
         }
         
+        System.out.println("[国内大模型-sendRequest] 请求已发送，等待响应...");
+        
         int responseCode = conn.getResponseCode();
+        System.out.println("[国内大模型-sendRequest] 响应码: " + responseCode);
+        
         InputStream is = (responseCode == 200) ? conn.getInputStream() : conn.getErrorStream();
         
         StringBuilder response = new StringBuilder();
@@ -355,9 +398,14 @@ public class DomesticAITranslationAPI {
             }
         }
         
+        System.out.println("[国内大模型-sendRequest] 响应内容: " + response.toString());
+        
         if (responseCode != 200) {
+            System.err.println("[国内大模型-sendRequest] ❌ 请求失败!");
             throw new IOException("国内大模型API请求失败 (HTTP " + responseCode + "): " + response.toString());
         }
+        
+        System.out.println("[国内大模型-sendRequest] ✓ 请求成功!");
         
         // 解析响应
         return parseResponse(response.toString(), modelType);

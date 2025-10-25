@@ -11,8 +11,6 @@ import org.jetbrains.annotations.Nullable;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.net.URI;
 
@@ -60,7 +58,7 @@ public class QRCodeDialog extends DialogWrapper {
                 // 网络图片加载
                 System.out.println("检测到网络URL，开始下载图片...");
                 try {
-                    java.net.URL imageUrl = new java.net.URL(qrCodePath);
+                    java.net.URL imageUrl = java.net.URI.create(qrCodePath).toURL();
                     qrCodeIcon = new ImageIcon(imageUrl);
                     
                     // 等待网络图片加载完成
