@@ -33,39 +33,47 @@ public class PandaCoderBalloon {
      * @param editor 编辑器（可为null）
      */
     public static void showWelcome(Project project, Editor editor) {
-        String html = createWelcomeHtml();
-        
-        Balloon balloon = JBPopupFactory.getInstance()
-            .createHtmlTextBalloonBuilder(
-                html,
-                MessageType.INFO,
-                createHyperlinkListener(project)
-            )
-            .setFadeoutTime(7000)  // 7秒自动消失
-            .setHideOnClickOutside(true)
-            .setHideOnKeyOutside(true)
-            .setAnimationCycle(200)
-            .setCloseButtonEnabled(true)
-            .createBalloon();
-        
-        if (editor != null) {
-            // 在编辑器中显示
-            balloon.show(
-                JBPopupFactory.getInstance().guessBestPopupLocation(editor),
-                Balloon.Position.below
-            );
-        } else if (project != null) {
-            // 在屏幕中央显示
-            try {
-                JFrame frame = WindowManager.getInstance().getFrame(project);
-                if (frame != null) {
-                    balloon.show(
-                        RelativePoint.getCenterOf(frame.getRootPane()),
-                        Balloon.Position.above
-                    );
+        try {
+            String html = createWelcomeHtml();
+            
+            Balloon balloon = JBPopupFactory.getInstance()
+                .createHtmlTextBalloonBuilder(
+                    html,
+                    MessageType.INFO,
+                    createHyperlinkListener(project)
+                )
+                .setFadeoutTime(7000)  // 7秒自动消失
+                .setHideOnClickOutside(true)
+                .setHideOnKeyOutside(true)
+                .setAnimationCycle(200)
+                .setCloseButtonEnabled(true)
+                .createBalloon();
+            
+            if (editor != null) {
+                // 在编辑器中显示
+                balloon.show(
+                    JBPopupFactory.getInstance().guessBestPopupLocation(editor),
+                    Balloon.Position.below
+                );
+            } else if (project != null) {
+                // 在屏幕中央显示
+                try {
+                    JFrame frame = WindowManager.getInstance().getFrame(project);
+                    if (frame != null) {
+                        balloon.show(
+                            RelativePoint.getCenterOf(frame.getRootPane()),
+                            Balloon.Position.above
+                        );
+                    }
+                } catch (Exception e) {
+                    // 如果获取窗口失败，降级到对话框
+                    WelcomeDialog.show(project);
                 }
-            } catch (Exception e) {
-                // 如果获取窗口失败，降级到对话框
+            }
+        } catch (Exception e) {
+            // 如果HTML渲染失败（如CSS解析错误），降级到对话框
+            // 这可以处理IntelliJ平台对某些CSS样式的兼容性问题
+            if (project != null) {
                 WelcomeDialog.show(project);
             }
         }
@@ -73,56 +81,56 @@ public class PandaCoderBalloon {
     
     /**
      * 创建欢迎消息 HTML
+     * 使用简化的样式以避免IntelliJ平台的CSS解析兼容性问题
      */
     private static String createWelcomeHtml() {
         return "<html>" +
-               "<div style='padding: 15px; width: 380px; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Arial, sans-serif;'>" +
+               "<body style='padding: 15px; width: 380px; font-family: Arial, sans-serif;'>" +
                
                // 标题
-               "<h2 style='margin: 0 0 10px 0; color: #2C3E50; font-size: 18px;'>" +
+               "<h2 style='margin: 0 0 10px 0; font-size: 18px;'>" +
                "🐼 PandaCoder v" + VERSION + "</h2>" +
                
-               "<p style='margin: 5px 0 15px 0; color: #5A6C7D; font-size: 13px;'>" +
+               "<p style='margin: 5px 0 15px 0; font-size: 13px;'>" +
                "中文开发者的智能编码助手" +
                "</p>" +
                
-               "<hr style='border: none; border-top: 1px solid #E1E8ED; margin: 15px 0;'/>" +
+               "<hr/>" +
                
                // 快速功能介绍
                "<div style='margin: 12px 0;'>" +
-               "<p style='margin: 5px 0; font-weight: 600; color: #2C3E50; font-size: 13px;'>⚡ 核心功能</p>" +
-               "<p style='margin: 3px 0; font-size: 12px; line-height: 1.6; color: #5A6C7D;'>" +
+               "<p style='margin: 5px 0; font-weight: bold; font-size: 13px;'>⚡ 核心功能</p>" +
+               "<p style='margin: 3px 0; font-size: 12px;'>" +
                "• Git 统计分析 | ES/SQL 监控<br/>" +
                "• Jenkins 增强 | Spring Boot 图标<br/>" +
                "• 中文智能转换 | 多引擎翻译" +
                "</p>" +
                "</div>" +
                
-               "<hr style='border: none; border-top: 1px solid #E1E8ED; margin: 15px 0;'/>" +
+               "<hr/>" +
                
                // 操作链接
                "<div style='margin: 15px 0; text-align: center;'>" +
-               "<a href='open_toolwindow' style='color: #1DA1F2; text-decoration: none; font-size: 13px; margin: 0 8px;'>" +
+               "<a href='open_toolwindow' style='text-decoration: none; font-size: 13px;'>" +
                "📂 打开功能面板</a> | " +
-               "<a href='show_features' style='color: #1DA1F2; text-decoration: none; font-size: 13px; margin: 0 8px;'>" +
+               "<a href='show_features' style='text-decoration: none; font-size: 13px;'>" +
                "✨ 查看所有功能</a>" +
                "</div>" +
                
                "<div style='margin: 10px 0; text-align: center;'>" +
-               "<a href='follow_wechat' style='color: #27AE60; text-decoration: none; font-size: 13px; margin: 0 8px;'>" +
+               "<a href='follow_wechat' style='text-decoration: none; font-size: 13px;'>" +
                "📱 关注公众号</a> | " +
-               "<a href='github' style='color: #9B59B6; text-decoration: none; font-size: 13px; margin: 0 8px;'>" +
+               "<a href='github' style='text-decoration: none; font-size: 13px;'>" +
                "⭐ GitHub Star</a>" +
                "</div>" +
                
                // 底部提示
-               "<div style='margin-top: 15px; padding-top: 12px; border-top: 1px solid #E1E8ED; " +
-               "text-align: center; font-size: 11px; color: #95A5A6;'>" +
-               "💡 提示：按 <kbd style='padding: 2px 6px; background: #F5F8FA; border: 1px solid #E1E8ED; " +
-               "border-radius: 3px; font-family: monospace;'>Alt+P</kbd> 随时打开助手面板" +
+               "<hr/>" +
+               "<div style='margin-top: 15px; text-align: center; font-size: 11px;'>" +
+               "💡 提示：按 <b>Alt+P</b> 随时打开助手面板" +
                "</div>" +
                
-               "</div>" +
+               "</body>" +
                "</html>";
     }
     
@@ -193,64 +201,69 @@ public class PandaCoderBalloon {
         String message = getMilestoneMessage(usageCount);
         if (message == null) return;
         
-        Balloon balloon = JBPopupFactory.getInstance()
-            .createHtmlTextBalloonBuilder(
-                message,
-                MessageType.INFO,
-                createHyperlinkListener(project)
-            )
-            .setFadeoutTime(5000)  // 5秒自动消失
-            .setHideOnClickOutside(true)
-            .setCloseButtonEnabled(true)
-            .createBalloon();
-        
-        // 在状态栏右侧显示
         try {
-            JFrame frame = WindowManager.getInstance().getFrame(project);
-            if (frame != null && frame.getRootPane() != null) {
-                // 在窗口右下角显示
-                balloon.show(
-                    RelativePoint.getSouthEastOf(frame.getRootPane()),
-                    Balloon.Position.atRight
-                );
+            Balloon balloon = JBPopupFactory.getInstance()
+                .createHtmlTextBalloonBuilder(
+                    message,
+                    MessageType.INFO,
+                    createHyperlinkListener(project)
+                )
+                .setFadeoutTime(5000)  // 5秒自动消失
+                .setHideOnClickOutside(true)
+                .setCloseButtonEnabled(true)
+                .createBalloon();
+            
+            // 在状态栏右侧显示
+            try {
+                JFrame frame = WindowManager.getInstance().getFrame(project);
+                if (frame != null && frame.getRootPane() != null) {
+                    // 在窗口右下角显示
+                    balloon.show(
+                        RelativePoint.getSouthEastOf(frame.getRootPane()),
+                        Balloon.Position.atRight
+                    );
+                }
+            } catch (Exception e) {
+                // 忽略错误
             }
         } catch (Exception e) {
-            // 忽略错误
+            // 如果HTML渲染失败，静默忽略（里程碑提示不是关键功能）
         }
     }
     
     /**
      * 获取里程碑消息
+     * 使用简化的样式以避免IntelliJ平台的CSS解析兼容性问题
      */
     private static String getMilestoneMessage(int count) {
         String content;
         
         switch (count) {
             case 10:
-                content = "<h3 style='margin: 0 0 8px 0; color: #2C3E50;'>🎉 您已使用 PandaCoder 10 次！</h3>" +
-                         "<p style='margin: 0; font-size: 13px; color: #5A6C7D;'>" +
-                         "觉得有用？<a href='github' style='color: #1DA1F2;'>给个 Star</a> 支持作者 😊</p>";
+                content = "<h3 style='margin: 0 0 8px 0;'>🎉 您已使用 PandaCoder 10 次！</h3>" +
+                         "<p style='margin: 0; font-size: 13px;'>" +
+                         "觉得有用？<a href='github'>给个 Star</a> 支持作者 😊</p>";
                 break;
                 
             case 50:
-                content = "<h3 style='margin: 0 0 8px 0; color: #2C3E50;'>🚀 您已使用 PandaCoder 50 次！</h3>" +
-                         "<p style='margin: 0; font-size: 13px; color: #5A6C7D;'>" +
-                         "成为资深用户啦！<a href='follow_wechat' style='color: #27AE60;'>关注公众号</a>获取高级技巧</p>";
+                content = "<h3 style='margin: 0 0 8px 0;'>🚀 您已使用 PandaCoder 50 次！</h3>" +
+                         "<p style='margin: 0; font-size: 13px;'>" +
+                         "成为资深用户啦！<a href='follow_wechat'>关注公众号</a>获取高级技巧</p>";
                 break;
                 
             case 100:
-                content = "<h3 style='margin: 0 0 8px 0; color: #2C3E50;'>💎 您已使用 PandaCoder 100 次！</h3>" +
-                         "<p style='margin: 0; font-size: 13px; color: #5A6C7D;'>" +
-                         "感谢一路相伴！<a href='follow_wechat' style='color: #27AE60;'>关注公众号</a>第一时间获取新功能</p>";
+                content = "<h3 style='margin: 0 0 8px 0;'>💎 您已使用 PandaCoder 100 次！</h3>" +
+                         "<p style='margin: 0; font-size: 13px;'>" +
+                         "感谢一路相伴！<a href='follow_wechat'>关注公众号</a>第一时间获取新功能</p>";
                 break;
                 
             default:
                 return null;
         }
         
-        return "<html><div style='padding: 12px; width: 300px; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Arial, sans-serif;'>" +
+        return "<html><body style='padding: 12px; width: 300px; font-family: Arial, sans-serif;'>" +
                content +
-               "</div></html>";
+               "</body></html>";
     }
     
     /**
