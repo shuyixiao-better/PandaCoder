@@ -83,7 +83,7 @@
         
         <!-- Jenkins Pipeline支持扩展 -->
         <!-- 文件类型：注册Jenkins文件类型和特殊文件名 -->
-        <fileType name="Jenkins" 
+        <fileType name="Jenkins Pipeline" 
                   implementationClass="com.shuyixiao.jenkins.file.JenkinsFileType" 
                   fieldName="INSTANCE"
                   language="Groovy"
