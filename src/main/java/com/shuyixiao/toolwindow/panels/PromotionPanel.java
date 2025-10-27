@@ -147,6 +147,16 @@ public class PromotionPanel extends JBPanel<PromotionPanel> {
             PluginAdviceDialog.show(project);
         });
         panel.add(adviceButton);
+        JButton versionHistoryButton = new JButton("📋 历史版本说明");
+        versionHistoryButton.putClientProperty("JButton.buttonType", "borderless");
+        versionHistoryButton.setFont(coffeeButton.getFont().deriveFont(12f));
+        versionHistoryButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        versionHistoryButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        versionHistoryButton.addActionListener(e -> {
+            // 打开历史版本说明链接
+            openUrl("https://www.shuyixiao.cn/articles/panda-coder-intro.html");
+        });
+        panel.add(versionHistoryButton);
         
         panel.add(Box.createVerticalStrut(10));
         
