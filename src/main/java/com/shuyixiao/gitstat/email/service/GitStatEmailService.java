@@ -71,6 +71,11 @@ public final class GitStatEmailService {
         try {
             LOG.info("Sending email for date: " + date);
             
+            // 0. 刷新 Git 统计数据，确保获取最新数据
+            LOG.info("Refreshing Git statistics before collecting email content");
+            gitStatService.refreshStatistics();
+            LOG.info("Git statistics refreshed successfully");
+            
             // 1. 收集统计数据
             GitStatEmailContent content = collectStatistics(date);
             
