@@ -295,7 +295,7 @@ public class QRCodeDialog extends DialogWrapper {
         // 微信收款码
         JBPanel<?> wechatPanel = createCompactPaymentPanel(
             "💚 微信收款",
-            "/images/微信收款.jpg",
+            "/images/wechat-pay.jpg",
             "微信扫码支持"
         );
         contentPanel.add(wechatPanel);
@@ -303,7 +303,7 @@ public class QRCodeDialog extends DialogWrapper {
         // 支付宝收款码
         JBPanel<?> alipayPanel = createCompactPaymentPanel(
             "💙 支付宝收款",
-            "/images/支付宝收款.jpg",
+            "/images/alipay-pay.jpg",
             "支付宝扫码支持"
         );
         contentPanel.add(alipayPanel);

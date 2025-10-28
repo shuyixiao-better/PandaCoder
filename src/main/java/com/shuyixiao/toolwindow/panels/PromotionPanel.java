@@ -371,7 +371,7 @@ public class PromotionPanel extends JBPanel<PromotionPanel> {
     private void showTorchVContactDialog() {
         try {
             // 加载图片
-            java.net.URL imageUrl = getClass().getResource("/images/TorchV商务联系.png");
+            java.net.URL imageUrl = getClass().getResource("/images/torchv-business.png");
             if (imageUrl == null) {
                 JOptionPane.showMessageDialog(
                     this,
