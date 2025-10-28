@@ -53,8 +53,9 @@
     <depends>com.intellij.modules.java</depends>
     <depends>com.intellij.modules.vcs</depends>
     <depends>org.intellij.groovy</depends>
-    <depends>org.jetbrains.plugins.yaml</depends>
-    <depends>com.intellij.properties</depends>
+    <!-- YAML 和 Properties 插件设为可选，增强兼容性 -->
+    <depends optional="true">org.jetbrains.plugins.yaml</depends>
+    <depends optional="true">com.intellij.properties</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <applicationService serviceImplementation="com.shuyixiao.setting.PluginSettings"/>
