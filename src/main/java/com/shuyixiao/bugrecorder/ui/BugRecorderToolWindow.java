@@ -14,6 +14,7 @@ import com.shuyixiao.bugrecorder.model.ErrorType;
 import com.shuyixiao.bugrecorder.service.BugAnalysisService;
 import com.shuyixiao.bugrecorder.service.BugRecordService;
 import com.shuyixiao.bugrecorder.service.ConsoleMonitoringService;
+import com.shuyixiao.ui.EnhancedNotificationUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -728,7 +729,7 @@ public class BugRecorderToolWindow extends JPanel {
                 java.awt.Toolkit.getDefaultToolkit()
                         .getSystemClipboard()
                         .setContents(new java.awt.datatransfer.StringSelection(details.toString()), null);
-                Messages.showInfoMessage(project, "已复制到剪贴板", "操作成功");
+                EnhancedNotificationUtil.showCopySuccess(project, "已复制到剪贴板");
             } catch (Exception ex) {
                 Messages.showErrorDialog(project, "复制失败: " + ex.getMessage(), "错误");
             }

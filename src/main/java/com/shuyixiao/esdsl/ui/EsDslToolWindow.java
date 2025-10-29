@@ -11,6 +11,7 @@ import com.intellij.util.ui.JBUI;
 import com.shuyixiao.esdsl.model.EsDslRecord;
 import com.shuyixiao.esdsl.service.EsDslMonitoringService;
 import com.shuyixiao.esdsl.service.EsDslRecordService;
+import com.shuyixiao.ui.EnhancedNotificationUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -302,66 +303,66 @@ public class EsDslToolWindow extends JPanel {
                 JMenuItem copyMethodItem = new JMenuItem("复制方法");
                 copyMethodItem.addActionListener(ev -> {
                     copyToClipboard(record.getMethod());
-                    Messages.showInfoMessage(project, "方法已复制", "操作成功");
+                    EnhancedNotificationUtil.showCopySuccess(project, "方法已复制");
                 });
                 popupMenu.add(copyMethodItem);
-                
+
                 // 复制索引
                 if (record.getIndex() != null) {
                     JMenuItem copyIndexItem = new JMenuItem("复制索引");
                     copyIndexItem.addActionListener(ev -> {
                         copyToClipboard(record.getIndex());
-                        Messages.showInfoMessage(project, "索引已复制", "操作成功");
+                        EnhancedNotificationUtil.showCopySuccess(project, "索引已复制");
                     });
                     popupMenu.add(copyIndexItem);
                 }
-                
+
                 // 复制API路径
                 if (record.getApiPath() != null) {
                     JMenuItem copyApiPathItem = new JMenuItem("复制API路径");
                     copyApiPathItem.addActionListener(ev -> {
                         copyToClipboard(record.getApiPath());
-                        Messages.showInfoMessage(project, "API路径已复制", "操作成功");
+                        EnhancedNotificationUtil.showCopySuccess(project, "API路径已复制");
                     });
                     popupMenu.add(copyApiPathItem);
                 }
-                
+
                 // 复制DSL摘要
                 JMenuItem copyDslSummaryItem = new JMenuItem("复制DSL摘要");
                 copyDslSummaryItem.addActionListener(ev -> {
                     copyToClipboard(record.getShortQuery());
-                    Messages.showInfoMessage(project, "DSL摘要已复制", "操作成功");
+                    EnhancedNotificationUtil.showCopySuccess(project, "DSL摘要已复制");
                 });
                 popupMenu.add(copyDslSummaryItem);
-                
+
                 popupMenu.addSeparator();
-                
+
                 // 复制完整DSL
                 JMenuItem copyFullDslItem = new JMenuItem("复制完整DSL");
                 copyFullDslItem.addActionListener(ev -> {
                     copyToClipboard(record.getDslQuery());
-                    Messages.showInfoMessage(project, "完整DSL已复制", "操作成功");
+                    EnhancedNotificationUtil.showCopySuccess(project, "完整DSL已复制");
                 });
                 popupMenu.add(copyFullDslItem);
-                
+
                 // 复制端点
                 if (record.getEndpoint() != null) {
                     JMenuItem copyEndpointItem = new JMenuItem("复制端点");
                     copyEndpointItem.addActionListener(ev -> {
                         copyToClipboard(record.getEndpoint());
-                        Messages.showInfoMessage(project, "端点已复制", "操作成功");
+                        EnhancedNotificationUtil.showCopySuccess(project, "端点已复制");
                     });
                     popupMenu.add(copyEndpointItem);
                 }
-                
+
                 popupMenu.addSeparator();
-                
+
                 // 复制全部信息
                 JMenuItem copyAllInfoItem = new JMenuItem("复制全部信息");
                 copyAllInfoItem.addActionListener(ev -> {
                     String allInfo = buildExportText(record);
                     copyToClipboard(allInfo);
-                    Messages.showInfoMessage(project, "全部信息已复制", "操作成功");
+                    EnhancedNotificationUtil.showCopySuccess(project, "全部信息已复制");
                 });
                 popupMenu.add(copyAllInfoItem);
             }
@@ -563,20 +564,20 @@ public class EsDslToolWindow extends JPanel {
             Messages.showWarningDialog(project, "请先选择一个查询记录", "提示");
             return;
         }
-        
+
         EsDslRecord record = tableModel.getRecordAt(selectedRow);
         if (record != null) {
             copyToClipboard(record.getDslQuery());
-            Messages.showInfoMessage(project, "DSL 已复制到剪贴板", "操作成功");
+            EnhancedNotificationUtil.showCopySuccess(project, "DSL 已复制到剪贴板");
         }
     }
-    
+
     /**
      * 复制全部到剪贴板
      */
     private void copyAllToClipboard() {
         copyToClipboard(detailArea.getText());
-        Messages.showInfoMessage(project, "已复制到剪贴板", "操作成功");
+        EnhancedNotificationUtil.showCopySuccess(project, "已复制到剪贴板");
     }
     
     /**
@@ -634,11 +635,9 @@ public class EsDslToolWindow extends JPanel {
             
             // 复制到剪贴板
             copyToClipboard(kibanaQuery.toString());
-            
+
             // 显示成功消息
-            Messages.showInfoMessage(project, 
-                "Kibana格式已复制到剪贴板\n\n可以直接粘贴到Kibana Dev Tools中使用", 
-                "操作成功");
+            EnhancedNotificationUtil.showCopySuccess(project, "Kibana格式已复制到剪贴板");
             
         } catch (Exception e) {
             Messages.showErrorDialog(project, "生成Kibana格式失败: " + e.getMessage(), "错误");

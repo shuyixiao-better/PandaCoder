@@ -11,6 +11,7 @@ import com.intellij.util.ui.JBUI;
 import com.shuyixiao.sql.model.SqlRecord;
 import com.shuyixiao.sql.service.SqlMonitoringService;
 import com.shuyixiao.sql.service.SqlRecordService;
+import com.shuyixiao.ui.EnhancedNotificationUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -296,16 +297,16 @@ public class SqlToolWindow extends JPanel {
                 JMenuItem copyOperationItem = new JMenuItem("复制操作类型");
                 copyOperationItem.addActionListener(ev -> {
                     copyToClipboard(record.getOperation());
-                    Messages.showInfoMessage(project, "操作类型已复制", "操作成功");
+                    EnhancedNotificationUtil.showCopySuccess(project, "操作类型已复制");
                 });
                 popupMenu.add(copyOperationItem);
-                
+
                 // 复制表名
                 if (record.getTableName() != null) {
                     JMenuItem copyTableNameItem = new JMenuItem("复制表名");
                     copyTableNameItem.addActionListener(ev -> {
                         copyToClipboard(record.getTableName());
-                        Messages.showInfoMessage(project, "表名已复制", "操作成功");
+                        EnhancedNotificationUtil.showCopySuccess(project, "表名已复制");
                     });
                     popupMenu.add(copyTableNameItem);
                 }
@@ -315,11 +316,11 @@ public class SqlToolWindow extends JPanel {
                     JMenuItem copyApiPathItem = new JMenuItem("复制API路径");
                     copyApiPathItem.addActionListener(ev -> {
                         copyToClipboard(record.getApiPath());
-                        Messages.showInfoMessage(project, "API路径已复制", "操作成功");
+                        EnhancedNotificationUtil.showCopySuccess(project, "API路径已复制");
                     });
                     popupMenu.add(copyApiPathItem);
                 }
-                
+
                 // 复制SQL摘要
                 JMenuItem copySqlSummaryItem = new JMenuItem("复制SQL摘要");
                 copySqlSummaryItem.addActionListener(ev -> {
@@ -328,46 +329,46 @@ public class SqlToolWindow extends JPanel {
                         executableSql = executableSql.substring(0, 100) + "...";
                     }
                     copyToClipboard(executableSql);
-                    Messages.showInfoMessage(project, "SQL摘要已复制", "操作成功");
+                    EnhancedNotificationUtil.showCopySuccess(project, "SQL摘要已复制");
                 });
                 popupMenu.add(copySqlSummaryItem);
-                
+
                 popupMenu.addSeparator();
-                
+
                 // 复制可执行SQL
                 JMenuItem copyExecutableSqlItem = new JMenuItem("复制可执行SQL");
                 copyExecutableSqlItem.addActionListener(ev -> {
                     copyToClipboard(record.getExecutableSql());
-                    Messages.showInfoMessage(project, "可执行SQL已复制", "操作成功");
+                    EnhancedNotificationUtil.showCopySuccess(project, "可执行SQL已复制");
                 });
                 popupMenu.add(copyExecutableSqlItem);
-                
+
                 // 复制原始SQL
                 JMenuItem copyOriginalSqlItem = new JMenuItem("复制原始SQL");
                 copyOriginalSqlItem.addActionListener(ev -> {
                     copyToClipboard(record.getSqlStatement());
-                    Messages.showInfoMessage(project, "原始SQL已复制", "操作成功");
+                    EnhancedNotificationUtil.showCopySuccess(project, "原始SQL已复制");
                 });
                 popupMenu.add(copyOriginalSqlItem);
-                
+
                 // 复制参数
                 if (record.getParameters() != null && !record.getParameters().isEmpty()) {
                     JMenuItem copyParametersItem = new JMenuItem("复制参数");
                     copyParametersItem.addActionListener(ev -> {
                         copyToClipboard(record.getParameters());
-                        Messages.showInfoMessage(project, "参数已复制", "操作成功");
+                        EnhancedNotificationUtil.showCopySuccess(project, "参数已复制");
                     });
                     popupMenu.add(copyParametersItem);
                 }
-                
+
                 popupMenu.addSeparator();
-                
+
                 // 复制全部信息
                 JMenuItem copyAllInfoItem = new JMenuItem("复制全部信息");
                 copyAllInfoItem.addActionListener(ev -> {
                     String allInfo = buildExportText(record);
                     copyToClipboard(allInfo);
-                    Messages.showInfoMessage(project, "全部信息已复制", "操作成功");
+                    EnhancedNotificationUtil.showCopySuccess(project, "全部信息已复制");
                 });
                 popupMenu.add(copyAllInfoItem);
             }
@@ -536,12 +537,12 @@ public class SqlToolWindow extends JPanel {
             Messages.showWarningDialog(project, "请先选择一个查询记录", "提示");
             return;
         }
-        
+
         SqlRecord record = tableModel.getRecordAt(selectedRow);
         if (record != null) {
             String exported = buildExportText(record);
             copyToClipboard(exported);
-            Messages.showInfoMessage(project, "已导出到剪贴板", "操作成功");
+            EnhancedNotificationUtil.showCopySuccess(project, "已导出到剪贴板");
         }
     }
     
@@ -578,22 +579,22 @@ public class SqlToolWindow extends JPanel {
             Messages.showWarningDialog(project, "请先选择一个查询记录", "提示");
             return;
         }
-        
+
         SqlRecord record = tableModel.getRecordAt(selectedRow);
         if (record != null) {
             // 复制可执行的SQL（参数已替换）
             String executableSql = record.getExecutableSql();
             copyToClipboard(executableSql);
-            Messages.showInfoMessage(project, "可执行 SQL 已复制到剪贴板", "操作成功");
+            EnhancedNotificationUtil.showCopySuccess(project, "可执行 SQL 已复制到剪贴板");
         }
     }
-    
+
     /**
      * 复制全部到剪贴板
      */
     private void copyAllToClipboard() {
         copyToClipboard(detailArea.getText());
-        Messages.showInfoMessage(project, "已复制到剪贴板", "操作成功");
+        EnhancedNotificationUtil.showCopySuccess(project, "已复制到剪贴板");
     }
     
     /**

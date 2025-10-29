@@ -18,6 +18,7 @@ import com.shuyixiao.gitstat.model.GitAuthorStat;
 import com.shuyixiao.gitstat.model.GitDailyStat;
 import com.shuyixiao.gitstat.model.GitProjectStat;
 import com.shuyixiao.gitstat.service.GitStatService;
+import com.shuyixiao.ui.EnhancedNotificationUtil;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -688,13 +689,13 @@ public class GitStatToolWindow extends JPanel {
         sb.append("Git 统计报告\n");
         sb.append("=".repeat(80)).append("\n\n");
         sb.append(overviewArea.getText());
-        
+
         // 复制到剪贴板
         try {
             Toolkit.getDefaultToolkit()
                     .getSystemClipboard()
                     .setContents(new java.awt.datatransfer.StringSelection(sb.toString()), null);
-            Messages.showInfoMessage(project, "统计信息已复制到剪贴板", "导出成功");
+            EnhancedNotificationUtil.showCopySuccess(project, "统计信息已复制到剪贴板");
         } catch (Exception e) {
             Messages.showErrorDialog(project, "导出失败: " + e.getMessage(), "错误");
         }

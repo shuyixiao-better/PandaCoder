@@ -194,8 +194,36 @@ public class EnhancedNotificationUtil {
                 title,
                 message,
                 NotificationType.INFORMATION);
-        
+
         notification.notify(project);
+    }
+
+    /**
+     * 显示复制成功的自动消失通知
+     * 2秒后自动消失，无需手动点击确定
+     *
+     * @param project 项目
+     * @param message 复制成功的消息，例如 "DSL 已复制到剪贴板"
+     */
+    public static void showCopySuccess(Project project, String message) {
+        Notification notification = GROUP.createNotification(
+                "✅ " + message,
+                NotificationType.INFORMATION);
+
+        notification.notify(project);
+
+        // 在后台线程中等待2秒后自动消失，避免阻塞UI线程
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            try {
+                Thread.sleep(2000);
+                // 在EDT线程上执行expire操作
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    notification.expire();
+                });
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
     }
 
     /**

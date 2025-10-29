@@ -134,9 +134,6 @@
         <projectService serviceImplementation="com.shuyixiao.gitstat.email.service.GitStatEmailService"/>
         <projectService serviceImplementation="com.shuyixiao.gitstat.email.config.GitStatEmailConfigState"/>
 
-        <!-- 现有的启动活动 -->
-        <postStartupActivity implementation="com.shuyixiao.spring.boot.startup.YamlConfigStartupActivity"/>
-
         <!-- Bug记录器启动活动 -->
         <postStartupActivity implementation="com.shuyixiao.bugrecorder.startup.BugRecorderStartupActivity"/>
 
