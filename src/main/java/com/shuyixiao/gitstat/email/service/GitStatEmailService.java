@@ -105,6 +105,21 @@ public final class GitStatEmailService {
         GitStatEmailContent content = new GitStatEmailContent();
         content.setStatisticsDate(date);
         
+        // 收集项目信息
+        if (project != null) {
+            content.setProjectName(project.getName());
+            String basePath = project.getBasePath();
+            if (basePath != null) {
+                // 简化路径显示，只显示最后两级目录
+                content.setProjectPath(basePath);
+            } else {
+                content.setProjectPath("");
+            }
+        } else {
+            content.setProjectName("未知项目");
+            content.setProjectPath("");
+        }
+        
         String filterAuthor = config.getFilterAuthor();
         
         if (filterAuthor != null && !filterAuthor.isEmpty()) {

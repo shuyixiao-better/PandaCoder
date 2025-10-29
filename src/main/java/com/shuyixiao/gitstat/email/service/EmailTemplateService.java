@@ -64,6 +64,21 @@ public class EmailTemplateService {
         // Content
         html.append("        <div class=\"content\">\n");
         
+        // 项目信息卡片
+        if (content.getProjectName() != null && !content.getProjectName().isEmpty()) {
+            html.append("            <div class=\"project-info-card\">\n");
+            html.append("                <div style=\"display: flex; align-items: center; gap: 10px;\">\n");
+            html.append("                    <span style=\"font-size: 18px;\">📁</span>\n");
+            html.append("                    <div style=\"flex: 1;\">\n");
+            html.append("                        <div style=\"font-weight: 600; color: #333; font-size: 15px; margin-bottom: 4px;\">").append(escapeHtml(content.getProjectName())).append("</div>\n");
+            if (content.getProjectPath() != null && !content.getProjectPath().isEmpty()) {
+                html.append("                        <div style=\"color: #666; font-size: 12px; font-family: 'Consolas', 'Monaco', monospace;\">").append(escapeHtml(simplifyPath(content.getProjectPath()))).append("</div>\n");
+            }
+            html.append("                    </div>\n");
+            html.append("                </div>\n");
+            html.append("            </div>\n");
+        }
+        
         // Today's Summary
         html.append("            <div class=\"stat-card\">\n");
         html.append("                <h2 style=\"margin-top: 0;\">🎯 今日概览</h2>\n");
@@ -312,7 +327,16 @@ public class EmailTemplateService {
         text.append("📊 Git 统计日报\n");
         text.append("========================================\n");
         text.append("日期: ").append(content.getStatisticsDate().format(DATE_FORMATTER)).append("\n");
-        text.append("作者: ").append(content.getAuthorName()).append("\n\n");
+        text.append("作者: ").append(content.getAuthorName()).append("\n");
+        
+        // 项目信息
+        if (content.getProjectName() != null && !content.getProjectName().isEmpty()) {
+            text.append("项目: ").append(content.getProjectName()).append("\n");
+            if (content.getProjectPath() != null && !content.getProjectPath().isEmpty()) {
+                text.append("路径: ").append(simplifyPath(content.getProjectPath())).append("\n");
+            }
+        }
+        text.append("\n");
         
         text.append("🎯 今日概览\n");
         text.append("----------------------------------------\n");
@@ -382,6 +406,7 @@ public class EmailTemplateService {
                "        .header h1 { margin: 0; font-size: 28px; font-weight: 600; }\n" +
                "        .header p { margin: 10px 0 0 0; opacity: 0.9; font-size: 14px; }\n" +
                "        .content { padding: 30px; }\n" +
+               "        .project-info-card { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-left: 4px solid #667eea; border-radius: 6px; padding: 16px; margin-bottom: 20px; }\n" +
                "        .stat-card { background: #f8f9fa; border-radius: 6px; padding: 20px; margin-bottom: 20px; }\n" +
                "        .stat-row { display: flex; justify-content: space-around; margin: 15px 0; }\n" +
                "        .stat-item { text-align: center; flex: 1; }\n" +
@@ -392,6 +417,44 @@ public class EmailTemplateService {
                "        .footer { background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 12px; }\n" +
                "        .badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; margin: 0 4px; }\n" +
                "        .badge-info { background-color: #d1ecf1; color: #0c5460; }\n";
+    }
+    
+    /**
+     * HTML转义
+     */
+    private String escapeHtml(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.replace("&", "&amp;")
+                  .replace("<", "&lt;")
+                  .replace(">", "&gt;")
+                  .replace("\"", "&quot;")
+                  .replace("'", "&#39;");
+    }
+    
+    /**
+     * 简化路径显示，只显示最后两级目录
+     */
+    private String simplifyPath(String path) {
+        if (path == null || path.isEmpty()) {
+            return "";
+        }
+        try {
+            // 处理Windows和Unix路径
+            String separator = path.contains("\\") ? "\\" : "/";
+            String[] parts = path.split(separator.replace("\\", "\\\\"));
+            
+            if (parts.length <= 2) {
+                return path;
+            }
+            
+            // 返回最后两级目录
+            return "... " + separator + parts[parts.length - 2] + separator + parts[parts.length - 1];
+        } catch (Exception e) {
+            // 如果处理失败，返回原路径
+            return path;
+        }
     }
 }
 
