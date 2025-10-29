@@ -1,93 +1,194 @@
 package com.shuyixiao.esdsl.parser;
 
 import com.shuyixiao.esdsl.model.EsDslRecord;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * ES DSL 解析器 - 优化版
- * 从控制台输出中解析 Elasticsearch 查询 DSL
- * 支持多种日志格式,包括长 DSL 和 TRACE 级别日志
+ * ES DSL 解析器 - 智能版
+ * 采用多阶段解析策略，不依赖特定日志格式
+ * 核心思路：先提取JSON，再关联上下文，最后语义验证
  */
 public class EsDslParser {
-    
-    // 匹配 Elasticsearch REST 请求日志
-    // 例如: [2024-10-17 10:30:45] DEBUG o.e.c.RestClient - request [POST http://localhost:9200/users/_search] ...
-    private static final Pattern ES_REQUEST_PATTERN = Pattern.compile(
-        "(?i).*?(GET|POST|PUT|DELETE)\\s+(?:https?://)?[^/]+/(\\S+)\\s+\\{(.+?)\\}",
-        Pattern.DOTALL
-    );
-    
-    // 匹配 Spring Data Elasticsearch 日志
-    private static final Pattern SPRING_DATA_ES_PATTERN = Pattern.compile(
-        "(?i).*?Elasticsearch\\s+(?:Request|Query).*?\\{(.+?)\\}",
-        Pattern.DOTALL
-    );
-    
-    // 匹配 cURL 格式的请求 - 优化版,支持 -iX 和长 DSL
-    // 支持格式: curl -iX POST 'url' -d '{"json":"data"}'
-    private static final Pattern CURL_PATTERN = Pattern.compile(
-        "curl\\s+(?:-[iI]\\s+)?-[Xx]\\s+(GET|POST|PUT|DELETE)\\s+['\"]?(https?://[^\\s'\"]+)['\"]?\\s+-d\\s+['\"](.+?)['\"](?:\\s*#|\\n#|\\s*$)",
-        Pattern.CASE_INSENSITIVE | Pattern.DOTALL
-    );
-    
-    // 匹配 TRACE 级别的详细 curl 日志 - 新增
-    // 格式: curl -iX POST 'url' -d '完整JSON'
-    //       # HTTP/1.1 200 OK
-    //       # 响应内容
-    private static final Pattern TRACE_CURL_PATTERN = Pattern.compile(
-        "curl\\s+(?:-[iI]\\s+)?-[Xx]\\s+(GET|POST|PUT|DELETE)\\s+['\"]?(https?://[^\\s'\"]+)['\"]?\\s+-d\\s+['\"]\\{(.+?)\\}['\"]\\s*(?:#|\\n)",
-        Pattern.CASE_INSENSITIVE | Pattern.DOTALL
-    );
-    
-    // 匹配 RequestLogger 的 TRACE curl 日志 - 支持POST/PUT (带 -d)
-    // 格式: TRACE (RequestLogger.java:90)- curl -iX POST 'url' -d '{"json":"data"}'
-    // ✅ 关键改进: -iX可能连在一起，使用 -[iIxX]+ 匹配
-    private static final Pattern REQUEST_LOGGER_PATTERN = Pattern.compile(
-        "TRACE\\s*\\(RequestLogger\\.java:\\d+\\)-?\\s*curl\\s+-[iIxX]+\\s+(POST|PUT|DELETE)\\s+'([^']+)'(?:.*?)-d\\s+'(\\{.+?\\})'",
-        Pattern.CASE_INSENSITIVE | Pattern.DOTALL
-    );
-    
-    // 匹配 RequestLogger 的 GET 请求 (无 -d 参数)
-    // 格式: TRACE (RequestLogger.java:90)- curl -iX GET 'url'
-    // ✅ 关键改进: -iX可能连在一起，使用 -[iIxX]+ 匹配
-    private static final Pattern REQUEST_LOGGER_GET_PATTERN = Pattern.compile(
-        "TRACE\\s*\\(RequestLogger\\.java:\\d+\\)-?\\s*curl\\s+-[iIxX]+\\s+GET\\s+'([^']+)'",
-        Pattern.CASE_INSENSITIVE
-    );
-    
-    // 匹配 JSON 格式的 DSL
-    private static final Pattern JSON_DSL_PATTERN = Pattern.compile(
-        "\\{\\s*\"(?:query|aggs|aggregations|sort|from|size)\"\\s*:.+?\\}",
-        Pattern.DOTALL
-    );
-    
+
+    // ==================== 第一阶段：JSON提取 ====================
+
+    /**
+     * 智能提取所有可能的JSON块（支持嵌套）
+     * 使用栈匹配算法，而不是正则表达式
+     */
+    private static List<JsonBlock> extractJsonBlocks(String text) {
+        List<JsonBlock> blocks = new ArrayList<>();
+        int len = text.length();
+
+        for (int i = 0; i < len; i++) {
+            if (text.charAt(i) == '{') {
+                // 找到JSON起始位置，使用栈匹配
+                int start = i;
+                int braceCount = 0;
+                boolean inString = false;
+                boolean escaped = false;
+
+                for (int j = i; j < len; j++) {
+                    char c = text.charAt(j);
+
+                    if (escaped) {
+                        escaped = false;
+                        continue;
+                    }
+
+                    if (c == '\\') {
+                        escaped = true;
+                        continue;
+                    }
+
+                    if (c == '"') {
+                        inString = !inString;
+                        continue;
+                    }
+
+                    if (!inString) {
+                        if (c == '{') {
+                            braceCount++;
+                        } else if (c == '}') {
+                            braceCount--;
+                            if (braceCount == 0) {
+                                // 找到完整的JSON块
+                                String json = text.substring(start, j + 1);
+                                blocks.add(new JsonBlock(json, start, j + 1));
+                                i = j; // 跳过已处理的部分
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return blocks;
+    }
+
+    /**
+     * JSON块数据结构
+     */
+    private static class JsonBlock {
+        String content;
+        int startPos;
+        int endPos;
+
+        JsonBlock(String content, int startPos, int endPos) {
+            this.content = content;
+            this.startPos = startPos;
+            this.endPos = endPos;
+        }
+    }
+
+    // ==================== 第二阶段：语义验证 ====================
+
+    /**
+     * 验证JSON是否是ES DSL（查询请求，而非响应）
+     * 检查是否包含ES特征字段，同时排除响应数据
+     */
+    private static boolean isEsDsl(String json) {
+        if (json == null || json.trim().isEmpty()) {
+            return false;
+        }
+
+        String lower = json.toLowerCase();
+
+        // ❌ 排除ES响应数据（包含这些字段的是响应，不是DSL）
+        if (lower.contains("\"_index\"") ||
+            lower.contains("\"_id\"") ||
+            lower.contains("\"_score\"") ||
+            lower.contains("\"hits\"") && lower.contains("\"total\"") && lower.contains("\"max_score\"") ||
+            lower.contains("\"took\"") && lower.contains("\"timed_out\"") && lower.contains("\"_shards\"")) {
+            return false;
+        }
+
+        // ✅ ES DSL 特征关键词（查询请求）
+        return lower.contains("\"query\"") ||
+               lower.contains("\"aggs\"") ||
+               lower.contains("\"aggregations\"") ||
+               lower.contains("\"bool\"") ||
+               lower.contains("\"match\"") ||
+               lower.contains("\"term\"") ||
+               lower.contains("\"range\"") ||
+               lower.contains("\"sort\"") ||
+               lower.contains("\"_source\"") ||
+               lower.contains("\"size\"") && lower.contains("\"from\"") ||
+               lower.contains("\"must\"") ||
+               lower.contains("\"should\"") ||
+               lower.contains("\"filter\"");
+    }
+
+    // ==================== 第三阶段：上下文提取 ====================
+
+    /**
+     * 从文本中提取HTTP方法
+     */
+    private static String extractHttpMethod(String text, int jsonPos) {
+        // 在JSON前面查找HTTP方法（向前查找200个字符）
+        int searchStart = Math.max(0, jsonPos - 200);
+        String context = text.substring(searchStart, jsonPos);
+
+        Pattern methodPattern = Pattern.compile("\\b(GET|POST|PUT|DELETE|PATCH)\\b", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = methodPattern.matcher(context);
+
+        String lastMethod = null;
+        while (matcher.find()) {
+            lastMethod = matcher.group(1).toUpperCase();
+        }
+
+        return lastMethod != null ? lastMethod : "POST"; // 默认POST
+    }
+
+    /**
+     * 从文本中提取URL
+     */
+    private static String extractUrl(String text, int jsonPos) {
+        // 在JSON前面查找URL（向前查找300个字符）
+        int searchStart = Math.max(0, jsonPos - 300);
+        String context = text.substring(searchStart, jsonPos);
+
+        // 匹配 http://... 或 https://...
+        Pattern urlPattern = Pattern.compile("(https?://[^\\s'\"\\)\\]]+)", Pattern.CASE_INSENSITIVE);
+        Matcher matcher = urlPattern.matcher(context);
+
+        String lastUrl = null;
+        while (matcher.find()) {
+            lastUrl = matcher.group(1);
+        }
+
+        return lastUrl;
+    }
+
+    // ==================== 辅助正则（仅用于特定信息提取） ====================
+
     // 匹配执行时间
     private static final Pattern EXECUTION_TIME_PATTERN = Pattern.compile(
         "(?i)(?:took|time|duration)[:=]?\\s*(\\d+)\\s*(?:ms|milliseconds?)?",
         Pattern.CASE_INSENSITIVE
     );
-    
+
     // 匹配 HTTP 状态码
     private static final Pattern HTTP_STATUS_PATTERN = Pattern.compile(
         "(?i)(?:status|HTTP/[\\d.]+)\\s+(\\d{3})",
         Pattern.CASE_INSENSITIVE
     );
-    
+
     // ✅ 匹配API接口路径（Controller层）
-    // 格式示例: "API:/kl/api/saas/element/detail/list" 或 "uri:/kl/api/saas/element/detail/list"
     private static final Pattern API_PATH_PATTERN = Pattern.compile(
         "(?:API|uri)\\s*[:：]\\s*(/[^\\s,，;；\\)）}]+)",
         Pattern.CASE_INSENSITIVE
     );
-    
+
     // ✅ 匹配调用ES的Java类
-    // 格式示例: "VectorDataRetrieverElastic.java:450" 或 "INFO (VectorDataRetrieverElastic.java:450)"
     private static final Pattern CALLER_CLASS_PATTERN = Pattern.compile(
         "\\(([A-Z][a-zA-Z0-9]+\\.java:\\d+)\\)",
         Pattern.CASE_INSENSITIVE
     );
-    
+
     /**
      * 判断文本是否包含 ES DSL 查询
      */
@@ -95,210 +196,127 @@ public class EsDslParser {
         if (text == null || text.isEmpty()) {
             return false;
         }
-        
-        // 检查是否包含 Elasticsearch 相关关键词
+
+        // 快速检查：是否包含 Elasticsearch 相关关键词
         String lowerText = text.toLowerCase();
-        return lowerText.contains("elasticsearch") || 
-               lowerText.contains("_search") || 
-               lowerText.contains("requestlogger") ||
-               lowerText.contains("es query") ||
-               lowerText.contains("es request") ||
-               (lowerText.contains("curl") && lowerText.contains("-d")) ||
-               JSON_DSL_PATTERN.matcher(text).find();
+        boolean hasEsKeyword = lowerText.contains("elasticsearch") ||
+                               lowerText.contains("_search") ||
+                               lowerText.contains("requestlogger") ||
+                               lowerText.contains("curl");
+
+        if (!hasEsKeyword) {
+            return false;
+        }
+
+        // 深度检查：提取JSON并验证
+        List<JsonBlock> jsonBlocks = extractJsonBlocks(text);
+        for (JsonBlock block : jsonBlocks) {
+            if (isEsDsl(block.content)) {
+                return true;
+            }
+        }
+
+        return false;
     }
     
     /**
-     * 解析 ES DSL 查询
+     * 解析 ES DSL 查询 - 智能版
+     * 采用多阶段策略：JSON提取 -> 语义验证 -> 上下文关联
      */
     public static EsDslRecord parseEsDsl(String text, String projectName) {
-        if (!containsEsDsl(text)) {
+        if (text == null || text.isEmpty()) {
             return null;
         }
-        
+
         try {
+            // 第一阶段：提取所有JSON块
+            List<JsonBlock> jsonBlocks = extractJsonBlocks(text);
+            if (jsonBlocks.isEmpty()) {
+                return null;
+            }
+
+            // 第二阶段：找到第一个ES DSL
+            JsonBlock esDslBlock = null;
+            for (JsonBlock block : jsonBlocks) {
+                if (isEsDsl(block.content)) {
+                    esDslBlock = block;
+                    break;
+                }
+            }
+
+            if (esDslBlock == null) {
+                return null;
+            }
+
+            // 第三阶段：构建记录
             EsDslRecord.Builder builder = EsDslRecord.builder()
-                .project(projectName);
-            
-            // 1. 首先尝试匹配 RequestLogger TRACE 格式 - POST/PUT/DELETE (带 -d)
-            // 格式: TRACE (RequestLogger.java:90)- curl -iX POST 'url' -d '{"query":...}'
-            Matcher requestLoggerMatcher = REQUEST_LOGGER_PATTERN.matcher(text);
-            if (requestLoggerMatcher.find()) {
-                String method = requestLoggerMatcher.group(1).toUpperCase();
-                String url = requestLoggerMatcher.group(2);
-                String dslQuery = requestLoggerMatcher.group(3);  // ✅ 直接使用,不再添加额外的 {}
-                
-                System.out.println("[DEBUG] 匹配到 RequestLogger TRACE:");
-                System.out.println("  Method: " + method);
-                System.out.println("  URL: " + url);
-                System.out.println("  DSL (前100字符): " + dslQuery.substring(0, Math.min(100, dslQuery.length())));
-                
-                // 验证 DSL 是否为有效的 JSON
-                if (dslQuery.trim().startsWith("{") && dslQuery.trim().endsWith("}")) {
-                    builder.method(method)
-                           .dslQuery(formatJson(dslQuery))
-                           .source("RequestLogger (TRACE)");
-                    
-                    // 从 URL 提取索引和端点
-                    String[] urlParts = extractUrlParts(url);
-                    System.out.println("[DEBUG] URL解析结果: " + (urlParts != null ? String.join(" | ", urlParts) : "null"));
-                    if (urlParts != null && urlParts.length >= 2) {
-                        builder.index(urlParts[0]);
-                        builder.endpoint(urlParts[1]);
-                    }
-                    
-                    // 尝试提取 HTTP 状态码
-                    extractHttpStatus(text, builder);
-                    
-                    return buildRecord(builder, text);
-                }
-                // 如果 JSON 验证失败,继续尝试其他模式匹配
-            }
-            
-            // 2. 尝试匹配 RequestLogger GET 请求 (无 -d 参数)
-            // 格式: TRACE (RequestLogger.java:90)- curl -iX GET 'url'
-            Matcher requestLoggerGetMatcher = REQUEST_LOGGER_GET_PATTERN.matcher(text);
-            if (requestLoggerGetMatcher.find()) {
-                String url = requestLoggerGetMatcher.group(1);
-                
-                System.out.println("[DEBUG] 匹配到 RequestLogger GET:");
-                System.out.println("  URL: " + url);
-                
-                builder.method("GET")
-                       .source("RequestLogger (TRACE)");
-                
-                // 从 URL 提取索引和端点
-                String[] urlParts = extractUrlParts(url);
-                System.out.println("[DEBUG] URL解析结果: " + (urlParts != null ? String.join(" | ", urlParts) : "null"));
-                if (urlParts != null && urlParts.length >= 2) {
-                    builder.index(urlParts[0]);
-                    builder.endpoint(urlParts[1]);
-                }
-                
-                // 尝试提取 HTTP 状态码
-                extractHttpStatus(text, builder);
-                
-                // ✅ 尝试从响应中提取JSON (即使不完整也显示)
-                String responseJson = extractResponseJson(text);
-                System.out.println("[DEBUG] 提取的响应JSON: " + (responseJson != null ? 
-                    responseJson.substring(0, Math.min(100, responseJson.length())) + "..." : "null"));
-                
-                if (responseJson != null && !responseJson.isEmpty()) {
-                    // 检查JSON是否完整
-                    boolean isComplete = responseJson.trim().endsWith("}");
-                    String label = isComplete ? "完整响应: " : "部分响应(截断): ";
-                    try {
-                        builder.dslQuery(label + formatJson(responseJson));
-                    } catch (Exception e) {
-                        // 格式化失败,使用原始JSON
-                        builder.dslQuery(label + responseJson);
-                    }
-                } else {
-                    // 没有响应JSON,只记录请求
-                    builder.dslQuery("GET 请求 (无响应数据)");
-                }
-                
-                return buildRecord(builder, text);
-            }
-            
-            // 3. 尝试匹配 TRACE 级别的 curl 日志
-            Matcher traceCurlMatcher = TRACE_CURL_PATTERN.matcher(text);
-            if (traceCurlMatcher.find()) {
-                String method = traceCurlMatcher.group(1).toUpperCase();
-                String url = traceCurlMatcher.group(2);
-                String dslQuery = "{" + traceCurlMatcher.group(3) + "}";
-                
-                builder.method(method)
-                       .dslQuery(formatJson(dslQuery))
-                       .source("cURL (TRACE)");
-                
-                // 从 URL 提取索引和端点
+                .project(projectName)
+                .dslQuery(formatJson(esDslBlock.content));
+
+            // 提取HTTP方法
+            String method = extractHttpMethod(text, esDslBlock.startPos);
+            builder.method(method);
+
+            // 提取URL
+            String url = extractUrl(text, esDslBlock.startPos);
+            if (url != null) {
                 String[] urlParts = extractUrlParts(url);
                 if (urlParts != null && urlParts.length >= 2) {
                     builder.index(urlParts[0]);
                     builder.endpoint(urlParts[1]);
                 }
-                
-                return buildRecord(builder, text);
             }
-            
-            // 4. 尝试匹配标准 REST 请求格式
-            Matcher restMatcher = ES_REQUEST_PATTERN.matcher(text);
-            if (restMatcher.find()) {
-                String method = restMatcher.group(1).toUpperCase();
-                String endpoint = restMatcher.group(2);
-                String dslQuery = restMatcher.group(3);
-                
-                builder.method(method)
-                       .endpoint(endpoint)
-                       .dslQuery(formatJson(dslQuery))
-                       .source("RestClient");
-                
-                // 提取索引名称
-                String index = extractIndexFromEndpoint(endpoint);
-                if (index != null) {
-                    builder.index(index);
-                }
-                
-                return buildRecord(builder, text);
-            } 
-            
-            // 5. 尝试匹配标准 cURL 格式
-            Matcher curlMatcher = CURL_PATTERN.matcher(text);
-            if (curlMatcher.find()) {
-                String method = curlMatcher.group(1).toUpperCase();
-                String url = curlMatcher.group(2);
-                String dslQuery = curlMatcher.group(3);
-                
-                builder.method(method)
-                       .dslQuery(formatJson(dslQuery))
-                       .source("cURL");
-                
-                // 从 URL 提取索引和端点
-                String[] urlParts = extractUrlParts(url);
-                if (urlParts != null && urlParts.length >= 2) {
-                    builder.index(urlParts[0]);
-                    builder.endpoint(urlParts[1]);
-                }
-                
-                return buildRecord(builder, text);
+
+            // 判断来源
+            String source = detectSource(text);
+            builder.source(source);
+
+            // 提取其他信息
+            extractHttpStatus(text, builder);
+            extractExecutionTime(text, builder);
+            extractApiPath(text, builder);
+            extractCallerClass(text, builder);
+
+            // 如果没有状态码，默认为 200
+            EsDslRecord tempRecord = builder.build();
+            if (tempRecord.getHttpStatus() == null) {
+                builder.httpStatus(200);
             }
-            
-            // 6. 尝试匹配 Spring Data Elasticsearch 格式
-            Matcher springMatcher = SPRING_DATA_ES_PATTERN.matcher(text);
-            if (springMatcher.find()) {
-                String dslQuery = springMatcher.group(1);
-                builder.dslQuery(formatJson(dslQuery))
-                       .method("POST")
-                       .source("Spring Data Elasticsearch");
-                
-                return buildRecord(builder, text);
-            }
-            
-            // 7. 尝试直接提取 JSON DSL
-            Matcher jsonMatcher = JSON_DSL_PATTERN.matcher(text);
-            if (jsonMatcher.find()) {
-                String dslQuery = jsonMatcher.group(0);
-                builder.dslQuery(formatJson(dslQuery))
-                       .method("POST")
-                       .source("Unknown");
-                
-                return buildRecord(builder, text);
-            }
-            
-            return null;
-            
+
+            return builder.build();
+
         } catch (Exception e) {
-            // 解析失败时返回 null
+            System.err.println("[ES DSL Parser] 解析失败: " + e.getMessage());
             return null;
         }
     }
-    
+
     /**
-     * 构建记录并提取元数据
+     * 检测日志来源
      */
-    private static EsDslRecord buildRecord(EsDslRecord.Builder builder, String fullText) {
-        // 提取执行时间
-        Matcher timeMatcher = EXECUTION_TIME_PATTERN.matcher(fullText);
+    private static String detectSource(String text) {
+        String lower = text.toLowerCase();
+
+        if (lower.contains("requestlogger")) {
+            return "RequestLogger";
+        } else if (lower.contains("spring") && lower.contains("elasticsearch")) {
+            return "Spring Data Elasticsearch";
+        } else if (lower.contains("restclient")) {
+            return "RestClient";
+        } else if (lower.contains("curl")) {
+            return "cURL";
+        } else {
+            return "Unknown";
+        }
+    }
+
+    // ==================== 辅助方法：信息提取 ====================
+
+    /**
+     * 提取执行时间
+     */
+    private static void extractExecutionTime(String text, EsDslRecord.Builder builder) {
+        Matcher timeMatcher = EXECUTION_TIME_PATTERN.matcher(text);
         if (timeMatcher.find()) {
             try {
                 long executionTime = Long.parseLong(timeMatcher.group(1));
@@ -307,103 +325,69 @@ public class EsDslParser {
                 // 忽略
             }
         }
-        
-        // 提取 HTTP 状态码
-        Matcher statusMatcher = HTTP_STATUS_PATTERN.matcher(fullText);
-        if (statusMatcher.find()) {
-            try {
-                int httpStatus = Integer.parseInt(statusMatcher.group(1));
-                builder.httpStatus(httpStatus);
-            } catch (NumberFormatException e) {
-                // 忽略
-            }
-        }
-        
-        // ✅ 提取API接口路径
-        String apiPath = extractApiPath(fullText);
-        if (apiPath != null) {
-            builder.apiPath(apiPath);
-        }
-        
-        // ✅ 提取调用ES的Java类
-        String callerClass = extractCallerClass(fullText);
-        if (callerClass != null) {
-            builder.callerClass(callerClass);
-        }
-        
-        // 如果没有状态码，默认为 200
-        EsDslRecord tempRecord = builder.build();
-        if (tempRecord.getHttpStatus() == null) {
-            builder.httpStatus(200);
-        }
-        
-        return builder.build();
     }
     
     /**
      * 提取 HTTP 状态码
-     * 从 TRACE 日志的响应部分提取状态码
-     * 例如: # HTTP/1.1 200 OK
      */
     private static void extractHttpStatus(String text, EsDslRecord.Builder builder) {
         try {
-            Pattern statusPattern = Pattern.compile("#\\s*HTTP/\\d\\.\\d\\s+(\\d{3})\\s+OK");
-            Matcher statusMatcher = statusPattern.matcher(text);
-            if (statusMatcher.find()) {
-                builder.httpStatus(Integer.parseInt(statusMatcher.group(1)));
+            // 尝试多种状态码格式
+            Pattern statusPattern1 = Pattern.compile("#\\s*HTTP/\\d\\.\\d\\s+(\\d{3})");
+            Pattern statusPattern2 = Pattern.compile("returned\\s+\\[HTTP/\\d\\.\\d\\s+(\\d{3})");
+            Pattern statusPattern3 = Pattern.compile("status[:\\s]+(\\d{3})", Pattern.CASE_INSENSITIVE);
+
+            Matcher matcher = statusPattern1.matcher(text);
+            if (!matcher.find()) {
+                matcher = statusPattern2.matcher(text);
+            }
+            if (!matcher.find()) {
+                matcher = statusPattern3.matcher(text);
+            }
+
+            if (matcher.find()) {
+                builder.httpStatus(Integer.parseInt(matcher.group(1)));
             }
         } catch (Exception e) {
             // 忽略提取失败
         }
     }
-    
+
     /**
-     * 从TRACE日志响应中提取JSON
-     * 例如: # {"cluster_name":"elasticsearch",...}
+     * 提取API路径
      */
-    private static String extractResponseJson(String text) {
-        try {
-            // 查找响应JSON (以 # { 开始或 #\n# { 开始)
-            // 使用非贪婪匹配,并尝试提取完整的JSON对象
-            Pattern jsonPattern = Pattern.compile("#\\s*\\{[^}]*\\}(?:\\}*)", Pattern.DOTALL);
-            Matcher jsonMatcher = jsonPattern.matcher(text);
-            
-            if (jsonMatcher.find()) {
-                String json = jsonMatcher.group(0).trim();
-                // 移除开头的 #
-                json = json.replaceFirst("^#\\s*", "");
-                
-                // 简单验证是否是有效的JSON开头
-                if (json.startsWith("{")) {
-                    return json;
-                }
-            }
-            
-            // 如果上面的匹配失败,尝试更宽松的匹配
-            // 查找 # { 之后的所有内容(即使JSON不完整)
-            int jsonStart = text.indexOf("# {");
-            if (jsonStart == -1) {
-                jsonStart = text.indexOf("#\n# {");
-                if (jsonStart != -1) {
-                    jsonStart += 3; // 跳过 "#\n#"
-                }
-            }
-            
-            if (jsonStart >= 0) {
-                String remaining = text.substring(jsonStart).trim();
-                // 移除开头的 #
-                remaining = remaining.replaceFirst("^#\\s*", "");
-                
-                if (remaining.startsWith("{")) {
-                    // 即使JSON不完整,也返回(用于诊断)
-                    return remaining.trim();
-                }
-            }
-        } catch (Exception e) {
-            // 忽略提取失败
-            System.out.println("[DEBUG] extractResponseJson 异常: " + e.getMessage());
+    private static void extractApiPath(String text, EsDslRecord.Builder builder) {
+        Matcher matcher = API_PATH_PATTERN.matcher(text);
+        if (matcher.find()) {
+            builder.apiPath(matcher.group(1));
         }
-        return null;
+    }
+
+    /**
+     * 提取调用类
+     */
+    private static void extractCallerClass(String text, EsDslRecord.Builder builder) {
+        Matcher matcher = CALLER_CLASS_PATTERN.matcher(text);
+        String lastMatch = null;
+        String lastRelevantMatch = null;
+
+        while (matcher.find()) {
+            String className = matcher.group(1);
+            lastMatch = className;
+
+            // 优先选择ES相关的类
+            String lowerClass = className.toLowerCase();
+            if (lowerClass.contains("elastic") ||
+                lowerClass.contains("vector") ||
+                lowerClass.contains("retriev")) {
+                lastRelevantMatch = className;
+            }
+        }
+
+        String result = lastRelevantMatch != null ? lastRelevantMatch : lastMatch;
+        if (result != null) {
+            builder.callerClass(result);
+        }
     }
     
     /**
@@ -415,7 +399,7 @@ public class EsDslParser {
         if (url == null || url.isEmpty()) {
             return null;
         }
-        
+
         try {
             // 去掉协议和主机部分
             String path = url;
@@ -425,48 +409,20 @@ public class EsDslParser {
                     path = path.substring(path.indexOf("/") + 1);
                 }
             }
-            
+
             // 提取索引名称(第一个路径段)
             String index = null;
             String endpoint = path;
-            
+
             String[] parts = path.split("/");
             if (parts.length > 0 && !parts[0].isEmpty()) {
                 index = parts[0].split("\\?")[0]; // 去掉查询参数
             }
-            
+
             return new String[]{index, endpoint};
         } catch (Exception e) {
             return null;
         }
-    }
-    
-    /**
-     * 从端点中提取索引名称
-     */
-    private static String extractIndexFromEndpoint(String endpoint) {
-        if (endpoint == null || endpoint.isEmpty()) {
-            return null;
-        }
-        
-        // 去掉查询参数
-        endpoint = endpoint.split("\\?")[0];
-        
-        // 提取第一个路径段作为索引名称
-        String[] parts = endpoint.split("/");
-        if (parts.length > 0) {
-            String index = parts[0];
-            // 排除一些保留关键词
-            if (!index.equals("_search") && 
-                !index.equals("_bulk") && 
-                !index.equals("_doc") &&
-                !index.equals("_update") &&
-                !index.isEmpty()) {
-                return index;
-            }
-        }
-        
-        return null;
     }
     
     /**
@@ -552,51 +508,50 @@ public class EsDslParser {
             return json;
         }
     }
-    
+
+    // ==================== 公共方法（供测试使用） ====================
+
     /**
-     * ✅ 提取API接口路径
-     * 从日志文本中提取Controller层的API路径（公开方法供测试使用）
+     * 提取API接口路径（公共方法）
      */
     public static String extractApiPath(String text) {
         if (text == null || text.isEmpty()) {
             return null;
         }
-        
+
         Matcher matcher = API_PATH_PATTERN.matcher(text);
         if (matcher.find()) {
             return matcher.group(1).trim();
         }
-        
+
         return null;
     }
-    
+
     /**
-     * ✅ 提取调用ES的Java类
-     * 从日志文本中提取最接近ES请求的Java类信息
+     * 提取调用ES的Java类（公共方法）
      */
     public static String extractCallerClass(String text) {
         if (text == null || text.isEmpty()) {
             return null;
         }
-        
-        // 查找所有匹配的类信息
+
         Matcher matcher = CALLER_CLASS_PATTERN.matcher(text);
         String lastMatch = null;
         String lastRelevantMatch = null;
-        
+
         while (matcher.find()) {
             String className = matcher.group(1);
             lastMatch = className;
-            
-            // 优先选择ES相关的类（VectorDataRetriever, ElasticSearch等）
-            if (className.toLowerCase().contains("elastic") || 
-                className.toLowerCase().contains("vector") ||
-                className.toLowerCase().contains("retriev")) {
+
+            // 优先选择ES相关的类
+            String lowerClass = className.toLowerCase();
+            if (lowerClass.contains("elastic") ||
+                lowerClass.contains("vector") ||
+                lowerClass.contains("retriev")) {
                 lastRelevantMatch = className;
             }
         }
-        
-        // 优先返回ES相关的类，否则返回最后一个匹配的类
+
         return lastRelevantMatch != null ? lastRelevantMatch : lastMatch;
     }
 }
