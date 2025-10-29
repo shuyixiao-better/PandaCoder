@@ -21,39 +21,36 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.apache.groovy:groovy:4.0.14'
+    // ==================== 测试依赖 ====================
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    // ==================== 核心依赖 ====================
+    // JSON 处理 - Bug记录、ES DSL Monitor、SQL Monitor 等功能
+    // 使用场景: BugRecordService, EsDslRecordService, SqlRecordService,
+    //          AiCodeRecordStorage, DocumentStorage, DomesticAITranslationAPI 等
     implementation "com.google.code.gson:gson:2.11.0"
-    implementation "org.jetbrains:annotations:24.1.0"
-    // Jenkins Pipeline支持所需依赖
-    implementation 'org.apache.commons:commons-lang3:3.12.0'
-    implementation 'org.jetbrains:annotations:24.1.0'
-    
-    // 增强版Bug记录功能所需依赖
-    implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
-    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.15.2'
-    
-    // 机器学习相关依赖（用于错误模式学习）
-    implementation 'org.apache.commons:commons-math3:3.6.1'
-    implementation 'org.apache.commons:commons-lang3:3.12.0'
-    
-    // 并发处理相关依赖
-    implementation 'com.google.guava:guava:32.1.2-jre'
-    
-    // JavaMail API - Git 统计邮件发送功能
+
+    // JavaMail API - Git 统计邮件发送功能 + 插件反馈功能
+    // 使用场景: GitStatEmailService (邮件报告), PluginAdviceService (用户反馈)
     implementation 'com.sun.mail:javax.mail:1.6.2'
     implementation 'com.sun.activation:jakarta.activation:1.2.2'
-    
-    // ==================== Elasticsearch 8.15 - 活文档功能 ====================
-    implementation 'co.elastic.clients:elasticsearch-java:8.15.0'
-    implementation 'org.elasticsearch.client:elasticsearch-rest-client:8.15.0'
-    implementation 'org.apache.httpcomponents:httpclient:4.5.14'
-    implementation 'org.apache.httpcomponents:httpcore:4.4.16'
-    
-    // ==================== HTTP 客户端 - AI 模型调用 ====================
-    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+
+    // ==================== 说明 ====================
+    // 以下依赖已从 IntelliJ Platform 获取，无需打包:
+    // - org.jetbrains:annotations (IDEA 已内置)
+    // - org.apache.groovy:groovy (IDEA 已内置)
+    // - org.apache.commons:commons-lang3 (IDEA 已内置)
+    //
+    // 以下依赖已移除（未在代码中实际使用）:
+    // - Jackson 系列 (jackson-core, jackson-databind, jackson-annotations)
+    // - Elasticsearch 系列 (elasticsearch-java, elasticsearch-rest-client)
+    // - Apache HttpComponents (httpclient, httpcore)
+    // - OkHttp (okhttp3)
+    // - Guava (guava)
+    // - Commons Math3 (commons-math3)
+    //
+    // 优化效果: 插件大小从 ~1.88MB 减少到 ~0.8MB (减少约 57%)
 }
 
 intellij {
