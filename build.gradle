@@ -21,18 +21,14 @@ repositories {
 }
 
 dependencies {
-    // Groovy - 使用 compileOnly 避免与 IDEA 平台冲突
-    compileOnly 'org.apache.groovy:groovy:4.0.14'
-    
+    implementation 'org.apache.groovy:groovy:4.0.14'
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     implementation "com.google.code.gson:gson:2.11.0"
-    
-    // JetBrains annotations - 使用 compileOnly 避免与 IDEA 平台冲突
-    compileOnly "org.jetbrains:annotations:24.1.0"
-    
+    implementation "org.jetbrains:annotations:24.1.0"
     // Jenkins Pipeline支持所需依赖
     implementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'org.jetbrains:annotations:24.1.0'
     
     // 增强版Bug记录功能所需依赖
     implementation 'com.fasterxml.jackson.core:jackson-core:2.15.2'
@@ -57,12 +53,7 @@ dependencies {
     implementation 'org.apache.httpcomponents:httpcore:4.4.16'
     
     // ==================== HTTP 客户端 - AI 模型调用 ====================
-    implementation('com.squareup.okhttp3:okhttp:4.12.0') {
-        exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib'
-        exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-common'
-        exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
-        exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
-    }
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
 }
 
 intellij {
@@ -70,11 +61,6 @@ intellij {
     type = 'IU'
     plugins = ['java', 'org.intellij.groovy', 'properties', 'vcs-git']
     updateSinceUntilBuild = false
-}
-
-// 确保ZIP文件使用UTF-8编码
-tasks.withType(Zip) {
-    metadataCharset = 'UTF-8'
 }
 
 // 禁用插件版本检查，避免网络问题导致的警告
