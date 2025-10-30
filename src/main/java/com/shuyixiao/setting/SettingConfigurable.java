@@ -696,11 +696,11 @@ public class SettingConfigurable implements SearchableConfigurable {
         JButton versionHistoryButton = new JButton("📋 查看版本历史");
         versionHistoryButton.addActionListener(e -> {
             try {
-                Desktop.getDesktop().browse(new URI("https://www.shuyixiao.cn/articles/panda-coder-intro.html"));
+                Desktop.getDesktop().browse(new URI("https://www.poeticcoder.com/articles/panda-coder-intro.html"));
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(
                     panel,
-                    "无法打开浏览器，请手动访问：https://www.shuyixiao.cn/articles/panda-coder-intro.html",
+                    "无法打开浏览器，请手动访问：https://www.poeticcoder.com/articles/panda-coder-intro.html",
                     "提示",
                     JOptionPane.INFORMATION_MESSAGE
                 );

@@ -392,7 +392,7 @@ docs/
 
 - **作者**: PandaCoder Team
 - **邮箱**: yixiaoshu88@163.com
-- **主站**: https://www.shuyixiao.cn
+- **主站**: https://www.poeticcoder.com
 - **备用站**: https://www.shuyixiao.top
 
 ---

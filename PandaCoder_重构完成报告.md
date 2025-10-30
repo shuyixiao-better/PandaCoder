@@ -461,7 +461,7 @@ tail -f build/idea-sandbox/system/log/idea.log | grep PandaCoder
 - **微信**：Tobeabetterman1001
 - **公众号**：舒一笑的架构笔记
 - **GitHub**：https://github.com/shuyixiao-better/PandaCoder
-- **博客**：https://www.shuyixiao.cn
+- **博客**：https://www.poeticcoder.com
 
 ---
 

@@ -223,7 +223,7 @@ IDEA → Settings → Plugins → Install from Disk
 
 👨‍💻 **舒一笑** - 一个热爱开源的Java开发者
 
-- 🌐 个人网站：https://www.shuyixiao.cn/
+- 🌐 个人网站：https://www.poeticcoder.com/
 - 💬 公众号：**舒一笑的架构笔记**（关注获取更多干货）
 - 🐙 GitHub：https://github.com/shuyixiao
 

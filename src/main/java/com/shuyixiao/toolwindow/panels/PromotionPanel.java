@@ -154,7 +154,7 @@ public class PromotionPanel extends JBPanel<PromotionPanel> {
         versionHistoryButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         versionHistoryButton.addActionListener(e -> {
             // 打开历史版本说明链接
-            openUrl("https://www.shuyixiao.cn/articles/panda-coder-intro.html");
+            openUrl("https://www.poeticcoder.com/articles/panda-coder-intro.html");
         });
         panel.add(versionHistoryButton);
         
@@ -172,7 +172,7 @@ public class PromotionPanel extends JBPanel<PromotionPanel> {
                 "https://gitee.com/shuyixiao-only/PandaCoder"));
         linksPanel.add(new JBLabel("|"));
         linksPanel.add(createLinkLabel("📝 博客", 
-            "https://www.shuyixiao.cn"));
+            "https://www.poeticcoder.com"));
         
         panel.add(linksPanel);
         
