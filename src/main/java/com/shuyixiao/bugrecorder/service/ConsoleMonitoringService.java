@@ -148,8 +148,15 @@ public final class ConsoleMonitoringService {
                     @Override
                     public void processStarted(@NotNull String executorId, @NotNull ExecutionEnvironment env,
                                                @NotNull ProcessHandler handler) {
+                        // ✅ 关键修复：只处理当前项目的进程，避免跨项目数据串扰
+                        if (env.getProject() != project) {
+                            LOG.debug("[Bug Recorder] 忽略其他项目的进程: " + env.getProject().getName());
+                            return;
+                        }
+
                         // 进程启动时自动附加监听器
                         ApplicationManager.getApplication().invokeLater(() -> {
+                            LOG.info("[Bug Recorder] 为当前项目附加监听器: " + project.getName());
                             attachListener(handler);
                         });
                     }
@@ -168,6 +175,11 @@ public final class ConsoleMonitoringService {
                     @Override
                     public void processTerminated(@NotNull String executorId, @NotNull ExecutionEnvironment env,
                                                   @NotNull ProcessHandler handler, int exitCode) {
+                        // ✅ 关键修复：只处理当前项目的进程
+                        if (env.getProject() != project) {
+                            return;
+                        }
+
                         // 进程终止时自动移除监听器
                         removeListener(handler);
                     }

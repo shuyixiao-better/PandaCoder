@@ -115,19 +115,27 @@ public final class EnhancedExecutionListener {
             return;
         }
 
+        // ✅ 关键修复：只处理当前项目的进程，避免跨项目数据串扰
+        if (env.getProject() != project) {
+            LOG.debug("[Enhanced Bug Recorder] 忽略其他项目的进程: " + env.getProject().getName());
+            return;
+        }
+
         try {
             String processId = generateProcessId(handler);
-            
+
+            LOG.info("[Enhanced Bug Recorder] 为当前项目附加监听器: " + project.getName());
+
             // 创建增强版监听器
             EnhancedConsoleOutputListener listener = new EnhancedConsoleOutputListener(project);
-            
+
             // 注册监听器
             handler.addProcessListener(listener);
             monitoringService.addListener(processId, listener);
             processListeners.put(processId, listener);
-            
+
             totalStartedProcesses.incrementAndGet();
-            
+
             LOG.debug("Enhanced console listener attached to process: " + processId +
                      " (total started: " + totalStartedProcesses.get() + ")");
 
@@ -158,9 +166,14 @@ public final class EnhancedExecutionListener {
             return;
         }
 
+        // ✅ 关键修复：只处理当前项目的进程
+        if (env.getProject() != project) {
+            return;
+        }
+
         try {
             String processId = generateProcessId(handler);
-            
+
             // 清理监听器
             EnhancedConsoleOutputListener listener = processListeners.remove(processId);
             if (listener != null) {
@@ -181,9 +194,14 @@ public final class EnhancedExecutionListener {
             return;
         }
 
+        // ✅ 关键修复：只处理当前项目的进程
+        if (env.getProject() != project) {
+            return;
+        }
+
         try {
             String processId = generateProcessId(handler);
-            
+
             // 清理监听器
             EnhancedConsoleOutputListener listener = processListeners.remove(processId);
             if (listener != null) {

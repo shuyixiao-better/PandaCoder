@@ -143,30 +143,42 @@ public final class EsDslMonitoringService {
                     public void processStartScheduled(@NotNull String executorId, @NotNull ExecutionEnvironment env) {
                         // 进程即将启动时的处理
                     }
-                    
+
                     @Override
                     public void processStarted(@NotNull String executorId, @NotNull ExecutionEnvironment env,
                                                @NotNull ProcessHandler handler) {
+                        // ✅ 关键修复：只处理当前项目的进程，避免跨项目数据串扰
+                        if (env.getProject() != project) {
+                            LOG.debug("[ES DSL Monitor] 忽略其他项目的进程: " + env.getProject().getName());
+                            return;
+                        }
+
                         // 进程启动时自动附加监听器
                         ApplicationManager.getApplication().invokeLater(() -> {
+                            LOG.info("[ES DSL Monitor] 为当前项目附加监听器: " + project.getName());
                             attachListener(handler);
                         });
                     }
-                    
+
                     @Override
                     public void processNotStarted(@NotNull String executorId, @NotNull ExecutionEnvironment env) {
                         // 进程启动失败时的处理
                     }
-                    
+
                     @Override
                     public void processTerminating(@NotNull String executorId, @NotNull ExecutionEnvironment env,
                                                    @NotNull ProcessHandler handler) {
                         // 进程即将终止时的处理
                     }
-                    
+
                     @Override
                     public void processTerminated(@NotNull String executorId, @NotNull ExecutionEnvironment env,
                                                   @NotNull ProcessHandler handler, int exitCode) {
+                        // ✅ 关键修复：只处理当前项目的进程
+                        if (env.getProject() != project) {
+                            return;
+                        }
+
                         // 进程终止时自动移除监听器
                         removeListener(handler);
                     }
