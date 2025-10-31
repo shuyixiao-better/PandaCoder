@@ -2,7 +2,10 @@ package com.shuyixiao.bugrecorder.service;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.Strictness;
 import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -596,39 +599,65 @@ public final class BugRecordService {
 
             if (Files.exists(filePath)) {
                 String content = Files.readString(filePath);
-                Type listType = new TypeToken<List<BugRecord>>(){}.getType();
-                List<BugRecord> records = gson.fromJson(content, listType);
 
-                if (records != null) {
-                    // 确保所有记录都有正确的状态
-                    List<BugRecord> migratedRecords = new ArrayList<>();
-                    boolean hasChanges = false;
-                    
-                    for (BugRecord record : records) {
-                        if (record.getStatus() == null) {
-                            // 根据resolved字段确定状态
-                            BugStatus newStatus = record.isResolved() ? BugStatus.RESOLVED : BugStatus.PENDING;
-                            BugRecord updatedRecord = record.withStatus(newStatus);
-                            migratedRecords.add(updatedRecord);
-                            hasChanges = true;
-                            LOG.info("Migrated loaded bug record: " + record.getId() + " -> " + newStatus.getDisplayName());
+                // ✅ 使用 JsonReader 并设置 LENIENT 模式来容忍格式不严格的 JSON
+                try (StringReader stringReader = new StringReader(content)) {
+                    JsonReader jsonReader = new JsonReader(stringReader);
+                    jsonReader.setStrictness(Strictness.LENIENT);
+
+                    Type listType = new TypeToken<List<BugRecord>>(){}.getType();
+                    List<BugRecord> records = gson.fromJson(jsonReader, listType);
+
+                    if (records != null) {
+                        // 确保所有记录都有正确的状态
+                        List<BugRecord> migratedRecords = new ArrayList<>();
+                        boolean hasChanges = false;
+
+                        for (BugRecord record : records) {
+                            if (record.getStatus() == null) {
+                                // 根据resolved字段确定状态
+                                BugStatus newStatus = record.isResolved() ? BugStatus.RESOLVED : BugStatus.PENDING;
+                                BugRecord updatedRecord = record.withStatus(newStatus);
+                                migratedRecords.add(updatedRecord);
+                                hasChanges = true;
+                                LOG.info("Migrated loaded bug record: " + record.getId() + " -> " + newStatus.getDisplayName());
+                            } else {
+                                migratedRecords.add(record);
+                            }
+                        }
+
+                        if (hasChanges) {
+                            // 保存迁移后的记录
+                            cache.put(dateKey, new CopyOnWriteArrayList<>(migratedRecords));
+                            saveDailyRecords(dateKey, migratedRecords);
                         } else {
-                            migratedRecords.add(record);
+                            cache.put(dateKey, new CopyOnWriteArrayList<>(records));
                         }
                     }
-                    
-                    if (hasChanges) {
-                        // 保存迁移后的记录
-                        cache.put(dateKey, new CopyOnWriteArrayList<>(migratedRecords));
-                        saveDailyRecords(dateKey, migratedRecords);
-                    } else {
-                        cache.put(dateKey, new CopyOnWriteArrayList<>(records));
-                    }
+                } catch (JsonSyntaxException e) {
+                    // ✅ JSON 格式错误，备份损坏的文件
+                    LOG.error("Bug records file is corrupted for date: " + dateKey + ", backing up", e);
+                    backupCorruptedFile(filePath);
                 }
             }
 
         } catch (Exception e) {
             LOG.warn("Failed to load records for date: " + dateKey, e);
+        }
+    }
+
+    /**
+     * 备份损坏的记录文件
+     */
+    private void backupCorruptedFile(Path filePath) {
+        try {
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            Path backupPath = filePath.resolveSibling(filePath.getFileName() + ".corrupted." + timestamp);
+
+            Files.move(filePath, backupPath);
+            LOG.info("Corrupted bug records file backed up to: " + backupPath.getFileName());
+        } catch (Exception e) {
+            LOG.error("Error backing up corrupted bug records file", e);
         }
     }
 

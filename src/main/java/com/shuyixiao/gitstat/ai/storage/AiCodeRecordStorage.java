@@ -2,6 +2,9 @@ package com.shuyixiao.gitstat.ai.storage;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.Strictness;
+import com.google.gson.stream.JsonReader;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -10,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -89,8 +94,12 @@ public final class AiCodeRecordStorage {
             // 读取现有数据
             AiCodeTrackingData data;
             if (trackingFile.exists()) {
-                try (FileReader reader = new FileReader(trackingFile)) {
-                    data = gson.fromJson(reader, AiCodeTrackingData.class);
+                try (FileReader fileReader = new FileReader(trackingFile)) {
+                    // ✅ 使用 JsonReader 并设置 LENIENT 模式来容忍格式不严格的 JSON
+                    JsonReader jsonReader = new JsonReader(fileReader);
+                    jsonReader.setStrictness(Strictness.LENIENT);
+
+                    data = gson.fromJson(jsonReader, AiCodeTrackingData.class);
                     if (data == null) {
                         data = new AiCodeTrackingData();
                     }
@@ -127,22 +136,49 @@ public final class AiCodeRecordStorage {
         try {
             File trackingFile = new File(project.getBasePath(), TRACKING_FILE);
             if (trackingFile.exists()) {
-                try (FileReader reader = new FileReader(trackingFile)) {
-                    AiCodeTrackingData data = gson.fromJson(reader, AiCodeTrackingData.class);
-                    
+                try (FileReader fileReader = new FileReader(trackingFile)) {
+                    // ✅ 使用 JsonReader 并设置 LENIENT 模式来容忍格式不严格的 JSON
+                    JsonReader jsonReader = new JsonReader(fileReader);
+                    jsonReader.setStrictness(Strictness.LENIENT);
+
+                    AiCodeTrackingData data = gson.fromJson(jsonReader, AiCodeTrackingData.class);
+
                     if (data != null && data.getRecords() != null) {
                         // 加载到缓存
                         for (AiCodeRecord record : data.getRecords()) {
                             String date = getDateKey(record.getTimestamp());
                             recordCache.computeIfAbsent(date, k -> new ArrayList<>()).add(record);
                         }
-                        
+
                         LOG.info("Loaded " + data.getRecords().size() + " AI code records");
                     }
+                } catch (JsonSyntaxException e) {
+                    // ✅ JSON 格式错误，备份损坏的文件并重新开始
+                    LOG.error("AI code tracking file is corrupted, backing up and starting fresh", e);
+                    backupCorruptedFile(trackingFile);
                 }
             }
         } catch (Exception e) {
             LOG.error("Failed to load AI code records", e);
+        }
+    }
+
+    /**
+     * 备份损坏的记录文件
+     */
+    private void backupCorruptedFile(File file) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
+            String timestamp = sdf.format(new Date());
+            File backupFile = new File(file.getParent(), file.getName() + ".corrupted." + timestamp);
+
+            if (file.renameTo(backupFile)) {
+                LOG.info("Corrupted AI code tracking file backed up to: " + backupFile.getName());
+            } else {
+                LOG.warn("Failed to backup corrupted AI code tracking file");
+            }
+        } catch (Exception e) {
+            LOG.error("Error backing up corrupted AI code tracking file", e);
         }
     }
     

@@ -2,7 +2,10 @@ package com.shuyixiao.sql.service;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.Strictness;
 import com.google.gson.reflect.TypeToken;
+import com.google.gson.stream.JsonReader;
 import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -15,6 +18,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -285,17 +289,47 @@ public final class SqlRecordService {
         if (storageFile == null || !storageFile.exists()) {
             return;
         }
-        
-        try (FileReader reader = new FileReader(storageFile)) {
+
+        try (FileReader fileReader = new FileReader(storageFile)) {
+            // ✅ 使用 JsonReader 并设置 LENIENT 模式来容忍格式不严格的 JSON
+            JsonReader jsonReader = new JsonReader(fileReader);
+            jsonReader.setStrictness(Strictness.LENIENT);
+
             Type listType = new TypeToken<ArrayList<SqlRecord>>() {}.getType();
-            List<SqlRecord> loadedRecords = gson.fromJson(reader, listType);
-            
+            List<SqlRecord> loadedRecords = gson.fromJson(jsonReader, listType);
+
             if (loadedRecords != null) {
                 records.addAll(loadedRecords);
                 LOG.info("Loaded " + loadedRecords.size() + " SQL records from file");
             }
+        } catch (JsonSyntaxException e) {
+            // ✅ JSON 格式错误，备份损坏的文件并重新开始
+            LOG.error("SQL records file is corrupted, backing up and starting fresh", e);
+            backupCorruptedFile();
         } catch (IOException e) {
             LOG.warn("Failed to load SQL records from file", e);
+        }
+    }
+
+    /**
+     * 备份损坏的记录文件
+     */
+    private void backupCorruptedFile() {
+        if (storageFile == null || !storageFile.exists()) {
+            return;
+        }
+
+        try {
+            String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+            File backupFile = new File(storageFile.getParent(), "sql-records.json.corrupted." + timestamp);
+
+            if (storageFile.renameTo(backupFile)) {
+                LOG.info("Corrupted SQL records file backed up to: " + backupFile.getName());
+            } else {
+                LOG.warn("Failed to backup corrupted SQL records file");
+            }
+        } catch (Exception e) {
+            LOG.error("Error backing up corrupted SQL records file", e);
         }
     }
     
