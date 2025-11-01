@@ -51,33 +51,40 @@ public final class GitStatService {
      */
     public void refreshStatistics() {
         try {
+            System.out.println("GitStatService.refreshStatistics: 开始刷新统计数据");
             authorStatsCache.clear();
             dailyStatsCache.clear();
             authorDailyStatsCache.clear();
             projectStat = new GitProjectStat();
-            
+
             // 获取项目的 Git 仓库
             Collection<GitRepository> repositories = GitUtil.getRepositories(project);
+            System.out.println("  找到 " + repositories.size() + " 个 Git 仓库");
             if (repositories.isEmpty()) {
                 LOG.warn("No Git repositories found in project");
+                System.out.println("  警告：没有找到 Git 仓库");
                 return;
             }
-            
+
             // 遍历所有 Git 仓库
             for (GitRepository repository : repositories) {
                 VirtualFile root = repository.getRoot();
+                System.out.println("  处理仓库: " + root.getPath());
                 processRepository(root);
                 calculateProjectStats(root);
-                
+
                 // 分析 AI 统计
                 if (aiStatService != null) {
                     aiStatService.analyzeAiStatistics(root);
                 }
             }
-            
+
+            System.out.println("  刷新完成，作者统计数量: " + authorStatsCache.size());
             lastRefreshDate = LocalDate.now();
-            
+
         } catch (Exception e) {
+            System.out.println("  刷新统计数据异常: " + e.getMessage());
+            e.printStackTrace();
             LOG.error("Failed to refresh Git statistics", e);
         }
     }

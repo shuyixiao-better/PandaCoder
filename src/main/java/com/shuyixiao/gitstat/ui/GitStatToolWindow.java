@@ -358,6 +358,7 @@ public class GitStatToolWindow extends JPanel {
      * @param showDialog 是否显示弹窗提示（true=弹窗，false=右下角通知）
      */
     private void refreshData(boolean showDialog) {
+        System.out.println("GitStatToolWindow.refreshData: 开始刷新数据");
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 // 显示加载提示
@@ -366,11 +367,14 @@ public class GitStatToolWindow extends JPanel {
                     statusLabel.setForeground(JBColor.BLUE);
                 });
 
+                System.out.println("  调用 gitStatService.refreshStatistics()");
                 // 刷新统计数据
                 gitStatService.refreshStatistics();
+                System.out.println("  gitStatService.refreshStatistics() 完成");
 
                 // 更新 UI
                 ApplicationManager.getApplication().invokeLater(() -> {
+                    System.out.println("  开始更新 UI");
                     updateAuthorSelectionComboBox();
                     updateEmailAuthorComboBoxes();
                     updateAuthorTable();
@@ -380,6 +384,7 @@ public class GitStatToolWindow extends JPanel {
                     updateOverviewArea();
                     updateAiStats();  // 更新 AI 统计
                     updateStatusLabel();
+                    System.out.println("  UI 更新完成");
 
                     // 根据参数决定显示方式
                     if (showDialog) {
@@ -399,6 +404,8 @@ public class GitStatToolWindow extends JPanel {
                 });
 
             } catch (Exception e) {
+                System.out.println("  刷新数据异常: " + e.getMessage());
+                e.printStackTrace();
                 ApplicationManager.getApplication().invokeLater(() -> {
                     Messages.showErrorDialog(project, "刷新数据失败: " + e.getMessage(), "错误");
                     statusLabel.setText("刷新失败");
@@ -450,9 +457,12 @@ public class GitStatToolWindow extends JPanel {
 
         // 如果是第一次调用（下拉框只有默认项），从配置中加载
         boolean isFirstTime = scheduleFilterAuthorComboBox.getItemCount() <= 1;
+        System.out.println("GitStatToolWindow.updateEmailAuthorComboBoxes: isFirstTime=" + isFirstTime +
+                          ", scheduleFilterAuthorComboBox.getItemCount()=" + scheduleFilterAuthorComboBox.getItemCount());
         if (isFirstTime) {
             GitStatEmailConfig config = emailService.getConfig();
             scheduleSelection = config.getFilterAuthor();
+            System.out.println("  从配置加载定时发送作者筛选: " + scheduleSelection);
             manualSelection = null;  // 手动发送不需要从配置加载
         }
 
@@ -507,13 +517,16 @@ public class GitStatToolWindow extends JPanel {
     private void updateAuthorTable() {
         String sortType = (String) authorSortComboBox.getSelectedItem();
         List<GitAuthorStat> stats;
-        
+
         if ("按新增代码".equals(sortType)) {
             stats = gitStatService.getAuthorStatsSortedByLines();
         } else {
             stats = gitStatService.getAuthorStatsSortedByCommits();
         }
-        
+
+        // 添加日志
+        System.out.println("GitStatToolWindow.updateAuthorTable: 获取到 " + stats.size() + " 条作者统计数据");
+
         authorTableModel.updateData(stats);
     }
     
@@ -1311,6 +1324,12 @@ public class GitStatToolWindow extends JPanel {
     private SmtpPreset findMatchingPreset(GitStatEmailConfig config) {
         SmtpPreset[] presets = SmtpPreset.getPresets();
 
+        // 添加日志
+        System.out.println("GitStatToolWindow.findMatchingPreset: 配置信息 - Host=" + config.getSmtpHost() +
+                          ", Port=" + config.getSmtpPort() +
+                          ", TLS=" + config.isEnableTLS() +
+                          ", SSL=" + config.isEnableSSL());
+
         // 遍历所有预设，查找完全匹配的
         for (SmtpPreset preset : presets) {
             // 跳过"自定义"选项
@@ -1318,16 +1337,24 @@ public class GitStatToolWindow extends JPanel {
                 continue;
             }
 
+            System.out.println("  检查预设: " + preset.getName() +
+                              " - Host=" + preset.getSmtpHost() +
+                              ", Port=" + preset.getSmtpPort() +
+                              ", TLS=" + preset.isEnableTLS() +
+                              ", SSL=" + preset.isEnableSSL());
+
             // 检查是否完全匹配
             if (preset.getSmtpHost().equals(config.getSmtpHost()) &&
                 preset.getSmtpPort() == config.getSmtpPort() &&
                 preset.isEnableTLS() == config.isEnableTLS() &&
                 preset.isEnableSSL() == config.isEnableSSL()) {
+                System.out.println("  找到匹配的预设: " + preset.getName());
                 return preset;
             }
         }
 
         // 没有找到匹配的预设
+        System.out.println("  没有找到匹配的预设");
         return null;
     }
 
@@ -1337,6 +1364,13 @@ public class GitStatToolWindow extends JPanel {
     private void loadEmailConfig() {
         GitStatEmailConfigState state = GitStatEmailConfigState.getInstance(project);
         GitStatEmailConfig config = new GitStatEmailConfig();
+
+        System.out.println("GitStatToolWindow.loadEmailConfig: 从持久化状态加载配置");
+        System.out.println("  smtpHost=" + state.smtpHost);
+        System.out.println("  smtpPort=" + state.smtpPort);
+        System.out.println("  enableTLS=" + state.enableTLS);
+        System.out.println("  enableSSL=" + state.enableSSL);
+        System.out.println("  filterAuthor=" + state.filterAuthor);
 
         config.setSmtpHost(state.smtpHost);
         config.setSmtpPort(state.smtpPort);
@@ -1349,12 +1383,15 @@ public class GitStatToolWindow extends JPanel {
             try {
                 String decryptedPassword = PasswordEncryptor.decrypt(state.senderPassword, project);
                 config.setSenderPassword(decryptedPassword);
+                System.out.println("  密码解密成功");
             } catch (Exception e) {
                 // 如果解密失败，可能是旧版本的明文密码，直接使用
                 config.setSenderPassword(state.senderPassword);
+                System.out.println("  密码解密失败，使用原始值: " + e.getMessage());
             }
         } else {
             config.setSenderPassword("");
+            System.out.println("  密码为空");
         }
 
         config.setSenderName(state.senderName);
@@ -1365,6 +1402,8 @@ public class GitStatToolWindow extends JPanel {
         config.setIncludeTrends(state.includeTrends);
         config.setSendHtml(state.sendHtml);
         config.setEmailSubject(state.emailSubject);
+
+        System.out.println("  加载后 config.getFilterAuthor()=" + config.getFilterAuthor());
 
         emailService.setConfig(config);
     }
