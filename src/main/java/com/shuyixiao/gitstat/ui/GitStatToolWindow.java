@@ -86,9 +86,13 @@ public class GitStatToolWindow extends JPanel {
         initializeUI();
         setupEventHandlers();
 
-        // 延迟刷新数据，确保 UI 完全初始化后再刷新
-        ApplicationManager.getApplication().invokeLater(() -> {
-            refreshData();
+        // 等待 IDEA 退出 dumb mode 后再刷新数据
+        com.intellij.openapi.project.DumbService.getInstance(project).runWhenSmart(() -> {
+            System.out.println("GitStatToolWindow: IDEA 已退出 dumb mode，开始刷新数据");
+            // 延迟一小段时间，确保 Git 仓库完全初始化
+            ApplicationManager.getApplication().invokeLater(() -> {
+                refreshData();
+            });
         });
     }
     

@@ -52,6 +52,14 @@ public final class GitStatService {
     public void refreshStatistics() {
         try {
             System.out.println("GitStatService.refreshStatistics: 开始刷新统计数据");
+
+            // 检查是否在 dumb mode
+            if (com.intellij.openapi.project.DumbService.isDumb(project)) {
+                System.out.println("  警告：IDEA 正在 dumb mode，跳过刷新");
+                LOG.warn("Cannot refresh statistics during dumb mode");
+                return;
+            }
+
             authorStatsCache.clear();
             dailyStatsCache.clear();
             authorDailyStatsCache.clear();
@@ -63,6 +71,7 @@ public final class GitStatService {
             if (repositories.isEmpty()) {
                 LOG.warn("No Git repositories found in project");
                 System.out.println("  警告：没有找到 Git 仓库");
+                System.out.println("  项目路径: " + project.getBasePath());
                 return;
             }
 
