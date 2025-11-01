@@ -955,13 +955,21 @@ public class GitStatToolWindow extends JPanel {
         JButton saveButton = new JButton("保存配置");
         
         testButton.addActionListener(e -> {
-            if (saveSmtpConfig(smtpHostField, smtpPortField, senderEmailField, 
+            if (saveSmtpConfig(smtpHostField, smtpPortField, senderEmailField,
                               senderPasswordField, recipientEmailField, tlsCheckBox, sslCheckBox)) {
-                if (emailService.testConnection()) {
-                    Messages.showInfoMessage(project, "SMTP 连接测试成功！", "测试成功");
-                } else {
-                    Messages.showErrorDialog(project, "SMTP 连接测试失败，请检查配置！", "测试失败");
-                }
+                // 在后台线程中执行网络连接测试
+                ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                    boolean success = emailService.testConnection();
+
+                    // 在EDT线程中显示结果
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        if (success) {
+                            Messages.showInfoMessage(project, "SMTP 连接测试成功！", "测试成功");
+                        } else {
+                            Messages.showErrorDialog(project, "SMTP 连接测试失败，请检查配置！", "测试失败");
+                        }
+                    });
+                });
             }
         });
         
@@ -1079,50 +1087,80 @@ public class GitStatToolWindow extends JPanel {
             // 临时设置筛选作者
             String selectedAuthor = (String) manualFilterAuthorComboBox.getSelectedItem();
             String originalFilter = emailService.getConfig().getFilterAuthor();
-            
-            try {
-                GitStatEmailConfig tempConfig = emailService.getConfig();
-                tempConfig.setFilterAuthor("(所有作者)".equals(selectedAuthor) ? null : selectedAuthor);
-                emailService.setConfig(tempConfig);
-                
-                if (emailService.sendTodayEmail()) {
-                    Messages.showInfoMessage(project, 
-                        "今日统计邮件已发送！\n作者: " + selectedAuthor, 
-                        "发送成功");
-                } else {
-                    Messages.showErrorDialog(project, "邮件发送失败，请检查配置或网络！", "发送失败");
+
+            // 显示进度提示
+            ApplicationManager.getApplication().invokeLater(() -> {
+                Messages.showInfoMessage(project,
+                    "正在后台发送邮件，请稍候...\n作者: " + selectedAuthor,
+                    "发送中");
+            });
+
+            // 在后台线程中执行耗时操作
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                try {
+                    GitStatEmailConfig tempConfig = emailService.getConfig();
+                    tempConfig.setFilterAuthor("(所有作者)".equals(selectedAuthor) ? null : selectedAuthor);
+                    emailService.setConfig(tempConfig);
+
+                    boolean success = emailService.sendTodayEmail();
+
+                    // 在EDT线程中显示结果
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        if (success) {
+                            Messages.showInfoMessage(project,
+                                "今日统计邮件已发送！\n作者: " + selectedAuthor,
+                                "发送成功");
+                        } else {
+                            Messages.showErrorDialog(project, "邮件发送失败，请检查配置或网络！", "发送失败");
+                        }
+                    });
+                } finally {
+                    // 恢复原始配置
+                    GitStatEmailConfig restoreConfig = emailService.getConfig();
+                    restoreConfig.setFilterAuthor(originalFilter);
+                    emailService.setConfig(restoreConfig);
                 }
-            } finally {
-                // 恢复原始配置
-                GitStatEmailConfig restoreConfig = emailService.getConfig();
-                restoreConfig.setFilterAuthor(originalFilter);
-                emailService.setConfig(restoreConfig);
-            }
+            });
         });
         
         sendYesterdayButton.addActionListener(e -> {
             // 临时设置筛选作者
             String selectedAuthor = (String) manualFilterAuthorComboBox.getSelectedItem();
             String originalFilter = emailService.getConfig().getFilterAuthor();
-            
-            try {
-                GitStatEmailConfig tempConfig = emailService.getConfig();
-                tempConfig.setFilterAuthor("(所有作者)".equals(selectedAuthor) ? null : selectedAuthor);
-                emailService.setConfig(tempConfig);
-                
-                if (emailService.sendEmail(java.time.LocalDate.now().minusDays(1))) {
-                    Messages.showInfoMessage(project, 
-                        "昨日统计邮件已发送！\n作者: " + selectedAuthor, 
-                        "发送成功");
-                } else {
-                    Messages.showErrorDialog(project, "邮件发送失败，请检查配置或网络！", "发送失败");
+
+            // 显示进度提示
+            ApplicationManager.getApplication().invokeLater(() -> {
+                Messages.showInfoMessage(project,
+                    "正在后台发送邮件，请稍候...\n作者: " + selectedAuthor,
+                    "发送中");
+            });
+
+            // 在后台线程中执行耗时操作
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                try {
+                    GitStatEmailConfig tempConfig = emailService.getConfig();
+                    tempConfig.setFilterAuthor("(所有作者)".equals(selectedAuthor) ? null : selectedAuthor);
+                    emailService.setConfig(tempConfig);
+
+                    boolean success = emailService.sendEmail(java.time.LocalDate.now().minusDays(1));
+
+                    // 在EDT线程中显示结果
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        if (success) {
+                            Messages.showInfoMessage(project,
+                                "昨日统计邮件已发送！\n作者: " + selectedAuthor,
+                                "发送成功");
+                        } else {
+                            Messages.showErrorDialog(project, "邮件发送失败，请检查配置或网络！", "发送失败");
+                        }
+                    });
+                } finally {
+                    // 恢复原始配置
+                    GitStatEmailConfig restoreConfig = emailService.getConfig();
+                    restoreConfig.setFilterAuthor(originalFilter);
+                    emailService.setConfig(restoreConfig);
                 }
-            } finally {
-                // 恢复原始配置
-                GitStatEmailConfig restoreConfig = emailService.getConfig();
-                restoreConfig.setFilterAuthor(originalFilter);
-                emailService.setConfig(restoreConfig);
-            }
+            });
         });
         
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
