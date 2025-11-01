@@ -88,10 +88,21 @@ public class GitStatToolWindow extends JPanel {
 
         // 等待 IDEA 退出 dumb mode 后再刷新数据
         com.intellij.openapi.project.DumbService.getInstance(project).runWhenSmart(() -> {
-            System.out.println("GitStatToolWindow: IDEA 已退出 dumb mode，开始刷新数据");
-            // 延迟一小段时间，确保 Git 仓库完全初始化
-            ApplicationManager.getApplication().invokeLater(() -> {
-                refreshData();
+            System.out.println("GitStatToolWindow: IDEA 已退出 dumb mode，准备刷新数据");
+            // 延迟 2 秒，确保 Git 仓库和其他服务完全初始化，避免影响 IDEA 启动性能
+            // 使用后台线程延迟，不阻塞 EDT
+            ApplicationManager.getApplication().executeOnPooledThread(() -> {
+                try {
+                    Thread.sleep(2000);  // 延迟 2 秒
+                    System.out.println("GitStatToolWindow: 延迟完成，开始后台加载数据");
+                    // 首次自动加载不显示通知，静默加载
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        refreshData();  // 使用不显示通知的版本
+                    });
+                } catch (InterruptedException e) {
+                    System.out.println("GitStatToolWindow: 延迟加载被中断");
+                    Thread.currentThread().interrupt();
+                }
             });
         });
     }
@@ -354,7 +365,7 @@ public class GitStatToolWindow extends JPanel {
      * 刷新数据
      */
     private void refreshData() {
-        refreshData(false);  // 默认不显示弹窗
+        refreshData(false, false);  // 默认不显示弹窗，不显示通知
     }
 
     /**
@@ -362,7 +373,16 @@ public class GitStatToolWindow extends JPanel {
      * @param showDialog 是否显示弹窗提示（true=弹窗，false=右下角通知）
      */
     private void refreshData(boolean showDialog) {
-        System.out.println("GitStatToolWindow.refreshData: 开始刷新数据");
+        refreshData(showDialog, true);  // 手动刷新时显示通知
+    }
+
+    /**
+     * 刷新数据
+     * @param showDialog 是否显示弹窗提示（true=弹窗，false=右下角通知）
+     * @param showNotification 是否显示通知（首次自动加载时不显示，手动刷新时显示）
+     */
+    private void refreshData(boolean showDialog, boolean showNotification) {
+        System.out.println("GitStatToolWindow.refreshData: 开始刷新数据 (showDialog=" + showDialog + ", showNotification=" + showNotification + ")");
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 // 显示加载提示
@@ -380,13 +400,23 @@ public class GitStatToolWindow extends JPanel {
                 long endTime = System.currentTimeMillis();
                 System.out.println("  gitStatService.refreshStatistics() 完成，耗时: " + (endTime - startTime) + "ms");
 
-                // 获取统计数据数量
+                // 验证数据是否加载成功
                 int authorCount = gitStatService.getAllAuthorStats().size();
-                System.out.println("  当前作者统计数量: " + authorCount);
+                int dailyCount = gitStatService.getAllDailyStats().size();
+                System.out.println("  数据验证 - 作者统计: " + authorCount + ", 每日统计: " + dailyCount);
+
+                // 判断数据是否有效
+                boolean hasValidData = authorCount > 0 || dailyCount > 0;
+
+                if (!hasValidData) {
+                    System.out.println("  警告：刷新完成但没有找到有效的统计数据");
+                }
 
                 // 更新 UI（在EDT线程中）
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    System.out.println("  开始更新 UI");
+                    System.out.println("  开始更新 UI (hasValidData=" + hasValidData + ")");
+
+                    // 无论是否有数据都更新 UI，确保界面状态正确
                     updateAuthorSelectionComboBox();
                     updateEmailAuthorComboBoxes();
                     updateAuthorTable();
@@ -398,22 +428,38 @@ public class GitStatToolWindow extends JPanel {
                     updateStatusLabel();
                     System.out.println("  UI 更新完成");
 
-                    // 根据参数决定显示方式
-                    if (showDialog) {
-                        Messages.showInfoMessage(project,
-                            "Git 统计数据已刷新\n作者数量: " + authorCount,
-                            "刷新成功");
-                    } else {
-                        // 使用右下角通知（会自动消失）
-                        com.intellij.notification.Notifications.Bus.notify(
-                            new com.intellij.notification.Notification(
-                                "GitStat",
-                                "Git 统计",
-                                "Git 统计数据已刷新 (作者数量: " + authorCount + ")",
-                                com.intellij.notification.NotificationType.INFORMATION
-                            ),
-                            project
-                        );
+                    // 只有在需要显示通知且数据加载成功时才显示
+                    if (showNotification) {
+                        if (hasValidData) {
+                            // 根据参数决定显示方式
+                            if (showDialog) {
+                                Messages.showInfoMessage(project,
+                                    "Git 统计数据已刷新\n作者数量: " + authorCount,
+                                    "刷新成功");
+                            } else {
+                                // 使用右下角通知（会自动消失）
+                                com.intellij.notification.Notifications.Bus.notify(
+                                    new com.intellij.notification.Notification(
+                                        "GitStat",
+                                        "Git 统计",
+                                        "Git 统计数据已刷新 (作者数量: " + authorCount + ")",
+                                        com.intellij.notification.NotificationType.INFORMATION
+                                    ),
+                                    project
+                                );
+                            }
+                        } else {
+                            // 如果是手动刷新但没有数据，给出警告提示
+                            com.intellij.notification.Notifications.Bus.notify(
+                                new com.intellij.notification.Notification(
+                                    "GitStat",
+                                    "Git 统计",
+                                    "未找到 Git 统计数据，请确认项目包含 Git 仓库",
+                                    com.intellij.notification.NotificationType.WARNING
+                                ),
+                                project
+                            );
+                        }
                     }
                 });
 
@@ -421,7 +467,10 @@ public class GitStatToolWindow extends JPanel {
                 System.out.println("  刷新数据异常: " + e.getMessage());
                 e.printStackTrace();
                 ApplicationManager.getApplication().invokeLater(() -> {
-                    Messages.showErrorDialog(project, "刷新数据失败: " + e.getMessage(), "错误");
+                    // 只有在手动刷新时才显示错误对话框
+                    if (showNotification) {
+                        Messages.showErrorDialog(project, "刷新数据失败: " + e.getMessage(), "错误");
+                    }
                     statusLabel.setText("刷新失败");
                     statusLabel.setForeground(JBColor.RED);
                 });
