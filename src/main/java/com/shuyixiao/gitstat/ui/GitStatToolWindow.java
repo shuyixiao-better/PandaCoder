@@ -368,11 +368,19 @@ public class GitStatToolWindow extends JPanel {
                 });
 
                 System.out.println("  调用 gitStatService.refreshStatistics()");
-                // 刷新统计数据
-                gitStatService.refreshStatistics();
-                System.out.println("  gitStatService.refreshStatistics() 完成");
+                long startTime = System.currentTimeMillis();
 
-                // 更新 UI
+                // 刷新统计数据（这是阻塞操作，会等待完成）
+                gitStatService.refreshStatistics();
+
+                long endTime = System.currentTimeMillis();
+                System.out.println("  gitStatService.refreshStatistics() 完成，耗时: " + (endTime - startTime) + "ms");
+
+                // 获取统计数据数量
+                int authorCount = gitStatService.getAllAuthorStats().size();
+                System.out.println("  当前作者统计数量: " + authorCount);
+
+                // 更新 UI（在EDT线程中）
                 ApplicationManager.getApplication().invokeLater(() -> {
                     System.out.println("  开始更新 UI");
                     updateAuthorSelectionComboBox();
@@ -388,14 +396,16 @@ public class GitStatToolWindow extends JPanel {
 
                     // 根据参数决定显示方式
                     if (showDialog) {
-                        Messages.showInfoMessage(project, "Git 统计数据已刷新", "刷新成功");
+                        Messages.showInfoMessage(project,
+                            "Git 统计数据已刷新\n作者数量: " + authorCount,
+                            "刷新成功");
                     } else {
                         // 使用右下角通知（会自动消失）
                         com.intellij.notification.Notifications.Bus.notify(
                             new com.intellij.notification.Notification(
                                 "GitStat",
                                 "Git 统计",
-                                "Git 统计数据已刷新",
+                                "Git 统计数据已刷新 (作者数量: " + authorCount + ")",
                                 com.intellij.notification.NotificationType.INFORMATION
                             ),
                             project
@@ -1032,15 +1042,26 @@ public class GitStatToolWindow extends JPanel {
 
         // 根据配置智能匹配邮箱服务（在添加监听器之前设置）
         SmtpPreset matchedPreset = findMatchingPreset(config);
+        System.out.println("GitStatToolWindow: 匹配到的预设 = " + (matchedPreset != null ? matchedPreset.getName() : "null"));
+
         if (matchedPreset != null) {
-            emailServiceComboBox.setSelectedItem(matchedPreset);
-            serviceDescLabel.setText("💡 " + matchedPreset.getDescription());
+            // 使用索引来选择，而不是对象匹配
+            for (int i = 0; i < emailServiceComboBox.getItemCount(); i++) {
+                SmtpPreset preset = emailServiceComboBox.getItemAt(i);
+                if (preset.getName().equals(matchedPreset.getName())) {
+                    System.out.println("  设置下拉框索引为: " + i + " (" + preset.getName() + ")");
+                    emailServiceComboBox.setSelectedIndex(i);
+                    serviceDescLabel.setText("💡 " + preset.getDescription());
+                    break;
+                }
+            }
         } else {
             // 如果没有匹配的预设，选择"自定义"
             for (int i = 0; i < emailServiceComboBox.getItemCount(); i++) {
                 SmtpPreset preset = emailServiceComboBox.getItemAt(i);
                 if ("自定义".equals(preset.getName())) {
-                    emailServiceComboBox.setSelectedItem(preset);
+                    System.out.println("  没有匹配的预设，设置为自定义，索引: " + i);
+                    emailServiceComboBox.setSelectedIndex(i);
                     serviceDescLabel.setText("💡 " + preset.getDescription());
                     break;
                 }

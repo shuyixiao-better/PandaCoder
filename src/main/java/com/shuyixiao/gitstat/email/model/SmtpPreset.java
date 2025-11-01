@@ -160,5 +160,29 @@ public class SmtpPreset {
     public String toString() {
         return name;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+
+        SmtpPreset that = (SmtpPreset) obj;
+
+        if (smtpPort != that.smtpPort) return false;
+        if (enableTLS != that.enableTLS) return false;
+        if (enableSSL != that.enableSSL) return false;
+        if (!name.equals(that.name)) return false;
+        return smtpHost.equals(that.smtpHost);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = name.hashCode();
+        result = 31 * result + smtpHost.hashCode();
+        result = 31 * result + smtpPort;
+        result = 31 * result + (enableTLS ? 1 : 0);
+        result = 31 * result + (enableSSL ? 1 : 0);
+        return result;
+    }
 }
 
