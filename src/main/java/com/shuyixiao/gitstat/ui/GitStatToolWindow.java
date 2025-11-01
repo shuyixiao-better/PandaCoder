@@ -85,7 +85,11 @@ public class GitStatToolWindow extends JPanel {
         loadEmailConfig();
         initializeUI();
         setupEventHandlers();
-        refreshData();
+
+        // 延迟刷新数据，确保 UI 完全初始化后再刷新
+        ApplicationManager.getApplication().invokeLater(() -> {
+            refreshData();
+        });
     }
     
     /**
@@ -121,7 +125,7 @@ public class GitStatToolWindow extends JPanel {
         toolbar.setBorder(JBUI.Borders.empty(5));
         
         JButton refreshButton = new JButton("刷新数据");
-        refreshButton.addActionListener(e -> refreshData(true));  // 手动点击显示弹窗
+        refreshButton.addActionListener(e -> refreshData(false));  // 手动点击也使用右下角通知
         toolbar.add(refreshButton);
         
         toolbar.add(new JBLabel(" | "));
