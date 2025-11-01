@@ -31,12 +31,12 @@ public class GitStatEmailStartupActivity implements StartupActivity {
         LOG.info("初始化 Git 统计邮件功能 for project: " + project.getName());
         
         try {
-            // 获取当前配置
+            // 获取当前配置（项目级别）
             GitStatEmailConfigState configState = GitStatEmailConfigState.getInstance(project);
-            
+
             // 检查并迁移配置
             EmailConfigMigration.checkAndMigrate(project);
-            
+
             // 验证配置完整性
             boolean isValid = EmailConfigMigration.validateConfig(configState);
             if (isValid) {

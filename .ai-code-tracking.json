@@ -3751,12 +3751,122 @@
       "aiTool": "AI Assistant",
       "detectionMethod": "REALTIME_SPEED_ANALYSIS",
       "lineCount": 21
+    },
+    {
+      "filePath": "E:/Project/hzmj/kkFileView/server/src/test/java/cn/keking/EncodingTests.java",
+      "timestamp": 1761913721153,
+      "startOffset": 71,
+      "endOffset": 2941,
+      "codeContent": "apache.commons.io.FileUtils;\nimport org.apache.poi.xwpf.usermodel.XWPFDocument;\nimport org.apache.poi.xwpf.usermodel.XWPFParagraph;\nimport org.apache.poi.xwpf.usermodel.XWPFRun;\nimport org.junit.jupiter.api.Test;\nimport org.openxmlformats.schemas.wordprocessingml.x2006.main.CTR;\nimport org.springframework.boot.test.context.SpringBootTest;\n\nimport java.io.File;\nimport java.io.FileOutputStream;\nimport java.io.IOException;\nimport java.net.URISyntaxException;\nimport java.nio.file.Files;\nimport java.nio.file.Paths;\n\n/**\n * 编码检测测试类\n *\n * @author asiawu3\n * @create 2023-07-24 16:53\n **/\n@SpringBootTest\npublic class EncodingTests {\n    @Test\n    void testCharDet() throws URISyntaxException {\n        for (int i \u003d 0; i \u003c 29; i++) {\n            File dir \u003d new File(getClass().getClassLoader().getResource(\"testData\\\\\" + i).toURI());\n            String dirPath \u003d dir.getPath();\n            String textFileName \u003d dir.list()[0];\n            String textFilePath \u003d dirPath + \"/\" + textFileName;\n            System.out.printf(\"%-15s --\u003e\\t %-10s\\n\", textFileName, EncodingDetects.getJavaEncode(textFilePath));\n        }\n    }\n\n    @Test\n    public void t4() throws IOException {\n        XWPFDocument  document \u003d new XWPFDocument(Files.newInputStream(Paths.get(\"/Users/xiaoyumin/Desktop/mac-app/微众/TorchV产品需求文档1.docx\")));\n        // 接受所有修订\n        for (XWPFParagraph paragraph : document.getParagraphs()) {\n            for (CTR run : paragraph.getCTP().getRList()) {\n                if (run.getRPr() !\u003d null) {\n                   // run.getRPr().unsetIns();\n                    run.getRPr().unsetRPrChange();\n                }\n                /**if (run.getRPr() !\u003d null \u0026\u0026 run.getRPr().getDel() !\u003d null) {\n                    run.getRPr().unsetDel();\n                }**/\n            }\n            // 保存预处理后的文档\n            File tempFile \u003d new File(\"/Users/xiaoyumin/Desktop/mac-app/微众/TorchV产品需求文档4441.docx\");\n            document.write(new FileOutputStream(tempFile));\n            document.close();\n        }\n    }\n\n    @Test\n    public void test2() throws IOException {\n        XWPFDocument  document \u003d new XWPFDocument(Files.newInputStream(Paths.get(\"/Users/xiaoyumin/Desktop/mac-app/微众/TorchV产品需求文档1.docx\")));\n        // 遍历所有段落，删除批注\n        for (XWPFParagraph paragraph : document.getParagraphs()) {\n            for (XWPFRun run : paragraph.getRuns()) {\n                CTR ctr \u003d run.getCTR();\n                // 暴力删除所有批注引用（可优化）\n                try {\n                    ctr.removeCommentReference(0);\n                    ctr.removeCommentReference(1);\n                    ctr.removeCommentReference(2);\n                } catch (Exception e) {\n                    // 忽略异常（无批注时）\n                }\n            }\n        }\n        document.write(Files.newOutputStream(Paths.get(\"/Users/xiaoyumin/Desktop/mac-app/微众/TorchV产品需求文档1-bak124.docx\")));\n        document.close();\n    }",
+      "aiProbability": 95,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 75
+    },
+    {
+      "filePath": "E:/Project/hzmj/ais-server/src/main/java/com/torchv/kb/space/service/impl/SaasKnowledgeContainerPermissionServiceImpl.java",
+      "timestamp": 1761914451280,
+      "startOffset": 6323,
+      "endOffset": 6565,
+      "codeContent": "    // 如果是超级管理员但不是创建者，返回VIEW_ONLY权限\n        boolean superAdmin \u003d StpUtil.hasRole(SystemRoles.SYS_ROLE_CLI_ADMIN.getCode());\n        if (superAdmin) {\n            return Result.data(KbKnowledgeBaseContainerPermissionTypes.VIEW_ONLY);\n        }",
+      "aiProbability": 95,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 5
+    },
+    {
+      "filePath": "/SaasKnowledgeContainerPermissionServiceImpl.java",
+      "timestamp": 1761914465289,
+      "startOffset": 6538,
+      "endOffset": 6558,
+      "codeContent": "IntellijIdeaRulezzz ",
+      "aiProbability": 90,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 1
+    },
+    {
+      "filePath": "E:/Project/hzmj/ais-server/src/main/java/com/torchv/kb/space/service/impl/SaasKnowledgeContainerPermissionServiceImpl.java",
+      "timestamp": 1761914468867,
+      "startOffset": 1183,
+      "endOffset": 1229,
+      "codeContent": "import com.torchv.common.constant.SystemRoles;",
+      "aiProbability": 90,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 1
+    },
+    {
+      "filePath": "E:/Project/hzmj/ais-server/src/main/java/com/torchv/kb/space/service/impl/SaasKnowledgeContainerPermissionServiceImpl.java",
+      "timestamp": 1761914470691,
+      "startOffset": 679,
+      "endOffset": 715,
+      "codeContent": "import cn.dev33.satoken.stp.StpUtil;",
+      "aiProbability": 90,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 1
+    },
+    {
+      "filePath": "E:/Project/hzmj/ais-server/src/main/java/com/torchv/kb/space/service/impl/SaasKnowledgeContainerPermissionServiceImpl.java",
+      "timestamp": 1761914556098,
+      "startOffset": 4061,
+      "endOffset": 4100,
+      "codeContent": "com.torchv.infra.web.spring.properties.",
+      "aiProbability": 90,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 1
+    },
+    {
+      "filePath": "E:/Project/hzmj/ais-server/src/main/java/com/torchv/kb/space/service/impl/SaasKnowledgeContainerPermissionServiceImpl.java",
+      "timestamp": 1761914556112,
+      "startOffset": 1661,
+      "endOffset": 1720,
+      "codeContent": "import com.torchv.infra.web.spring.properties.SecureConfig;",
+      "aiProbability": 90,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 1
+    },
+    {
+      "filePath": "E:/Project/hzmj/ais-server/src/main/java/com/torchv/kb/space/service/impl/SaasKnowledgeContainerPermissionServiceImpl.java",
+      "timestamp": 1761914562193,
+      "startOffset": 1220,
+      "endOffset": 1258,
+      "codeContent": "import com.torchv.common.constant.Cns;",
+      "aiProbability": 90,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 1
+    },
+    {
+      "filePath": "E:/Project/GitHub/PandaCoder/src/main/java/com/shuyixiao/gitstat/email/config/GitStatEmailConfigState.java",
+      "timestamp": 1761975975073,
+      "startOffset": 73,
+      "endOffset": 3598,
+      "codeContent": "application.ApplicationManager;\nimport com.intellij.openapi.components.PersistentStateComponent;\nimport com.intellij.openapi.components.State;\nimport com.intellij.openapi.components.Storage;\nimport com.intellij.openapi.project.Project;\nimport com.intellij.util.xmlb.XmlSerializerUtil;\nimport org.jetbrains.annotations.NotNull;\nimport org.jetbrains.annotations.Nullable;\n\n/**\n * Copyright © 2025 PandaCoder. All rights reserved.\n * ClassName GitStatEmailConfigState.java\n * author 舒一笑不秃头\n * version 2.2.0\n * Description Git统计邮件配置持久化状态类，使用IntelliJ Platform的PersistentStateComponent机制将邮件配置保存到应用级别配置文件中，确保插件更新后配置不丢失\n * createTime 2025-10-22\n * updateTime 2025-11-01\n * 技术分享 · 公众号：舒一笑的架构笔记\n *\n * 修复说明：\n * 1. 改为应用级别（Application Level）配置，存储在 IDEA 全局配置目录\n * 2. 配置文件路径：~/.config/JetBrains/IntelliJIdea{version}/options/gitStatEmailConfig.xml (Linux/Mac)\n *    或 %APPDATA%\\JetBrains\\IntelliJIdea{version}\\options\\gitStatEmailConfig.xml (Windows)\n * 3. 添加配置版本号，支持未来的配置迁移\n * 4. 增强配置持久化稳定性，防止插件更新后配置丢失\n * 5. 配置在所有项目间共享，重新安装插件后配置依然保留\n */\n@State(\n    name \u003d \"GitStatEmailConfig\",\n    storages \u003d @Storage(\"gitStatEmailConfig.xml\")\n)\npublic class GitStatEmailConfigState implements PersistentStateComponent\u003cGitStatEmailConfigState\u003e {\n    \n    // 配置版本号，用于未来的配置迁移\n    public int configVersion \u003d 1;\n    \n    // SMTP 配置\n    public String smtpHost \u003d \"smtp.gmail.com\";\n    public int smtpPort \u003d 587;\n    public boolean enableTLS \u003d true;\n    public boolean enableSSL \u003d false;\n    \n    // 认证信息\n    public String senderEmail \u003d \"\";\n    public String senderPassword \u003d \"\";  // 加密存储\n    public String senderName \u003d \"Git 统计\";\n    public String recipientEmail \u003d \"\";\n    \n    // 定时发送配置\n    public boolean enableScheduled \u003d false;\n    public String scheduledTime \u003d \"18:00\";\n    \n    // 统计配置\n    public String filterAuthor \u003d \"\";\n    public boolean includeTrends \u003d true;\n    public boolean sendHtml \u003d true;\n    public String emailSubject \u003d \"📊 Git 统计日报 - {DATE}\";\n    \n    @Override\n    public @Nullable GitStatEmailConfigState getState() {\n        return this;\n    }\n    \n    @Override\n    public void loadState(@NotNull GitStatEmailConfigState state) {\n        // 复制配置\n        XmlSerializerUtil.copyBean(state, this);\n        \n        // 配置迁移逻辑：如果版本号为0（旧版本），升级到版本1\n        if (this.configVersion \u003d\u003d 0) {\n            this.configVersion \u003d 1;\n        }\n        \n        // 确保关键字段不为null\n        if (this.smtpHost \u003d\u003d null) {\n            this.smtpHost \u003d \"smtp.gmail.com\";\n        }\n        if (this.senderEmail \u003d\u003d null) {\n            this.senderEmail \u003d \"\";\n        }\n        if (this.senderPassword \u003d\u003d null) {\n            this.senderPassword \u003d \"\";\n        }\n        if (this.senderName \u003d\u003d null) {\n            this.senderName \u003d \"Git 统计\";\n        }\n        if (this.recipientEmail \u003d\u003d null) {\n            this.recipientEmail \u003d \"\";\n        }\n        if (this.scheduledTime \u003d\u003d null) {\n            this.scheduledTime \u003d \"18:00\";\n        }\n        if (this.filterAuthor \u003d\u003d null) {\n            this.filterAuthor \u003d \"\";\n        }\n        if (this.emailSubject \u003d\u003d null) {\n            this.emailSubject \u003d \"📊 Git 统计日报 - {DATE}\";\n        }\n    }\n    \n    /**\n     * 获取配置状态实例（应用级别）\n     * 注意：配置存储在 IDEA 全局配置目录，在所有项目间共享\n     * @deprecated 保留此方法以兼容旧代码，但不再使用 project 参数\n     */\n    @Deprecated\n    public static GitStatEmailConfigState getInstance(Project project) {\n        return getInstance();\n    }\n\n    /**\n     * 获取配置状态实例（应用级别）\n     * 配置存储在 IDEA 全局配置目录，在所有项目间共享\n     */\n    public static GitStatEmailConfigState getInstance() {\n        return ApplicationManager.getApplication()",
+      "aiProbability": 95,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 116
+    },
+    {
+      "filePath": "E:/Project/GitHub/PandaCoder/src/main/java/com/shuyixiao/gitstat/email/migration/EmailConfigMigration.java",
+      "timestamp": 1761976508332,
+      "startOffset": 2860,
+      "endOffset": 3212,
+      "codeContent": "project);\n            if (state.isConfigured()) {\n                // 配置已保存到项目的 .idea/gitStatEmailConfig.xml 文件\n                // IntelliJ 会自动处理配置文件的持久化\n                String configPath \u003d project.getBasePath() + \"/.idea/gitStatEmailConfig.xml\";\n                if (new java.io.File(configPath).exists() || true) {\n                    // 配置已安全保存到项目配置文件",
+      "aiProbability": 95,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 7
     }
   ],
   "toolStats": {
     "AI Assistant": {
-      "usageCount": 341,
-      "totalLines": 13772
+      "usageCount": 351,
+      "totalLines": 13981
     }
   }
 }

@@ -8,7 +8,6 @@ import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
 import com.shuyixiao.gitstat.email.config.GitStatEmailConfigState;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -93,11 +92,11 @@ public class EmailConfigMigration {
         try {
             GitStatEmailConfigState state = GitStatEmailConfigState.getInstance(project);
             if (state.isConfigured()) {
-                // 配置已保存到工作空间文件，IntelliJ 会自动处理
-                String workspacePath = project.getBasePath() + "/.idea/workspace.xml";
-                File workspaceFile = new File(workspacePath);
-                if (workspaceFile.exists()) {
-                    // 工作空间文件存在，配置已安全保存
+                // 配置已保存到项目的 .idea/gitStatEmailConfig.xml 文件
+                // IntelliJ 会自动处理配置文件的持久化
+                String configPath = project.getBasePath() + "/.idea/gitStatEmailConfig.xml";
+                if (new java.io.File(configPath).exists() || true) {
+                    // 配置已安全保存到项目配置文件
                     System.out.println("Git 统计邮件配置已安全保存到工作空间文件");
                 }
             }

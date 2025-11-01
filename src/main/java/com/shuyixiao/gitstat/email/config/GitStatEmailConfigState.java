@@ -1,9 +1,9 @@
 package com.shuyixiao.gitstat.email.config;
 
 import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.components.Service;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
@@ -13,23 +13,23 @@ import org.jetbrains.annotations.Nullable;
  * Copyright © 2025 PandaCoder. All rights reserved.
  * ClassName GitStatEmailConfigState.java
  * author 舒一笑不秃头
- * version 2.1.0
- * Description Git统计邮件配置持久化状态类，使用IntelliJ Platform的PersistentStateComponent机制将邮件配置保存到工作空间文件中，确保插件更新后配置不丢失
+ * version 2.2.0
+ * Description Git统计邮件配置持久化状态类，使用IntelliJ Platform的PersistentStateComponent机制将邮件配置保存到项目配置文件中
  * createTime 2025-10-22
- * updateTime 2025-10-23
+ * updateTime 2025-11-01
  * 技术分享 · 公众号：舒一笑的架构笔记
- * 
+ *
  * 修复说明：
- * 1. 使用 StoragePathMacros.WORKSPACE_FILE 确保配置存储在稳定的工作空间文件中
- * 2. 添加配置版本号，支持未来的配置迁移
- * 3. 增强配置持久化稳定性，防止插件更新后配置丢失
+ * 1. 使用项目级别（Project Level）配置，每个项目独立配置
+ * 2. 配置存储在项目的 .idea/gitStatEmailConfig.xml 文件中（独立文件，不在workspace.xml中）
+ * 3. 独立的配置文件不会被 IDEA 的 workspace.xml 清理影响
+ * 4. 插件升级或重装后，只要项目的 .idea 目录存在，配置就会保留
+ * 5. 不同项目有独立的配置，适合不同团队的需求
  */
+@Service(Service.Level.PROJECT)
 @State(
     name = "GitStatEmailConfig",
-    storages = {
-        @Storage(value = StoragePathMacros.WORKSPACE_FILE),
-        @Storage(value = "gitStatEmailConfig.xml", deprecated = true)  // 保留旧配置作为备用
-    }
+    storages = @Storage("gitStatEmailConfig.xml")
 )
 public class GitStatEmailConfigState implements PersistentStateComponent<GitStatEmailConfigState> {
     
@@ -101,8 +101,9 @@ public class GitStatEmailConfigState implements PersistentStateComponent<GitStat
     }
     
     /**
-     * 获取配置状态实例
-     * 注意：此方法会自动从多个存储位置加载配置，优先使用工作空间文件
+     * 获取配置状态实例（项目级别）
+     * 注意：配置存储在项目的 .idea/gitStatEmailConfig.xml 文件中
+     * 每个项目有独立的配置，插件升级后配置保留
      */
     public static GitStatEmailConfigState getInstance(Project project) {
         return project.getService(GitStatEmailConfigState.class);
