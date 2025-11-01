@@ -995,6 +995,23 @@ public class GitStatToolWindow extends JPanel {
         tlsCheckBox.setSelected(config.isEnableTLS());
         sslCheckBox.setSelected(config.isEnableSSL());
 
+        // 根据配置智能匹配邮箱服务
+        SmtpPreset matchedPreset = findMatchingPreset(config);
+        if (matchedPreset != null) {
+            emailServiceComboBox.setSelectedItem(matchedPreset);
+            serviceDescLabel.setText("💡 " + matchedPreset.getDescription());
+        } else {
+            // 如果没有匹配的预设，选择"自定义"
+            for (int i = 0; i < emailServiceComboBox.getItemCount(); i++) {
+                SmtpPreset preset = emailServiceComboBox.getItemAt(i);
+                if ("自定义".equals(preset.getName())) {
+                    emailServiceComboBox.setSelectedItem(preset);
+                    serviceDescLabel.setText("💡 " + preset.getDescription());
+                    break;
+                }
+            }
+        }
+
         return panel;
     }
     
@@ -1252,6 +1269,32 @@ public class GitStatToolWindow extends JPanel {
         }
     }
     
+    /**
+     * 根据配置查找匹配的邮箱服务预设
+     */
+    private SmtpPreset findMatchingPreset(GitStatEmailConfig config) {
+        SmtpPreset[] presets = SmtpPreset.getPresets();
+
+        // 遍历所有预设，查找完全匹配的
+        for (SmtpPreset preset : presets) {
+            // 跳过"自定义"选项
+            if ("自定义".equals(preset.getName())) {
+                continue;
+            }
+
+            // 检查是否完全匹配
+            if (preset.getSmtpHost().equals(config.getSmtpHost()) &&
+                preset.getSmtpPort() == config.getSmtpPort() &&
+                preset.isEnableTLS() == config.isEnableTLS() &&
+                preset.isEnableSSL() == config.isEnableSSL()) {
+                return preset;
+            }
+        }
+
+        // 没有找到匹配的预设
+        return null;
+    }
+
     /**
      * 加载邮件配置
      */
