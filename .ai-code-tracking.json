@@ -3861,12 +3861,78 @@
       "aiTool": "AI Assistant",
       "detectionMethod": "REALTIME_SPEED_ANALYSIS",
       "lineCount": 7
+    },
+    {
+      "filePath": "E:/Project/hzmj/ais-server/src/main/java/com/torchv/infra/vector/handler/retriever/VectorDataRetrieverElastic.java",
+      "timestamp": 1761985126021,
+      "startOffset": 42005,
+      "endOffset": 42993,
+      "codeContent": "，使用稳定排序确保结果一致性\n        // 当RRF分数相同时，按原始检索分数排序；如果仍相同，按文档key排序\n        List\u003cDataSetScoreChunkInfo\u003e fusedResults \u003d documentMap.entrySet().stream()\n                .sorted((entry1, entry2) -\u003e {\n                    // 首先按RRF分数降序排序\n                    int rrfCompare \u003d Double.compare(\n                            rrfScores.get(entry2.getKey()),\n                            rrfScores.get(entry1.getKey()));\n                    if (rrfCompare !\u003d 0) {\n                        return rrfCompare;\n                    }\n                    // RRF分数相同时，按原始检索分数降序排序\n                    int scoreCompare \u003d Double.compare(\n                            searchSumScores.get(entry2.getKey()),\n                            searchSumScores.get(entry1.getKey()));\n                    if (scoreCompare !\u003d 0) {\n                        return scoreCompare;\n                    }\n                    // 如果分数都相同，按文档key升序排序，确保稳定性\n                    return entry1.getKey().compareTo(entry2.getKey());\n                }",
+      "aiProbability": 95,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 21
+    },
+    {
+      "filePath": "E:/Project/GitHub/PandaCoder/src/main/java/com/shuyixiao/gitstat/ui/GitStatToolWindow.java",
+      "timestamp": 1761993486551,
+      "startOffset": 48678,
+      "endOffset": 49421,
+      "codeContent": "根据配置查找匹配的邮箱服务预设\n     */\n    private SmtpPreset findMatchingPreset(GitStatEmailConfig config) {\n        SmtpPreset[] presets \u003d SmtpPreset.getPresets();\n\n        // 遍历所有预设，查找完全匹配的\n        for (SmtpPreset preset : presets) {\n            // 跳过\"自定义\"选项\n            if (\"自定义\".equals(preset.getName())) {\n                continue;\n            }\n\n            // 检查是否完全匹配\n            if (preset.getSmtpHost().equals(config.getSmtpHost()) \u0026\u0026\n                preset.getSmtpPort() \u003d\u003d config.getSmtpPort() \u0026\u0026\n                preset.isEnableTLS() \u003d\u003d config.isEnableTLS() \u0026\u0026\n                preset.isEnableSSL() \u003d\u003d config.isEnableSSL()) {\n                return preset;\n            }\n        }\n\n        // 没有找到匹配的预设\n        return null;\n    }\n\n    /**\n     * ",
+      "aiProbability": 95,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 27
+    },
+    {
+      "filePath": "E:/Project/GitHub/PandaCoder/src/main/java/com/shuyixiao/gitstat/ui/GitStatToolWindow.java",
+      "timestamp": 1761995265420,
+      "startOffset": 50100,
+      "endOffset": 51375,
+      "codeContent": "添加日志\n        System.out.println(\"GitStatToolWindow.findMatchingPreset: 配置信息 - Host\u003d\" + config.getSmtpHost() +\n                          \", Port\u003d\" + config.getSmtpPort() +\n                          \", TLS\u003d\" + config.isEnableTLS() +\n                          \", SSL\u003d\" + config.isEnableSSL());\n\n        // 遍历所有预设，查找完全匹配的\n        for (SmtpPreset preset : presets) {\n            // 跳过\"自定义\"选项\n            if (\"自定义\".equals(preset.getName())) {\n                continue;\n            }\n\n            System.out.println(\"  检查预设: \" + preset.getName() +\n                              \" - Host\u003d\" + preset.getSmtpHost() +\n                              \", Port\u003d\" + preset.getSmtpPort() +\n                              \", TLS\u003d\" + preset.isEnableTLS() +\n                              \", SSL\u003d\" + preset.isEnableSSL());\n\n            // 检查是否完全匹配\n            if (preset.getSmtpHost().equals(config.getSmtpHost()) \u0026\u0026\n                preset.getSmtpPort() \u003d\u003d config.getSmtpPort() \u0026\u0026\n                preset.isEnableTLS() \u003d\u003d config.isEnableTLS() \u0026\u0026\n                preset.isEnableSSL() \u003d\u003d config.isEnableSSL()) {\n                System.out.println(\"  找到匹配的预设: \" + preset.getName());\n                return preset;\n            }\n        }\n\n        // 没有找到匹配的预设\n        System.out.println(\"  没有找到匹配的预设\");",
+      "aiProbability": 95,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 31
+    },
+    {
+      "filePath": "E:/Project/GitHub/PandaCoder/src/main/java/com/shuyixiao/gitstat/ui/GitStatToolWindow.java",
+      "timestamp": 1761995325506,
+      "startOffset": 51929,
+      "endOffset": 53770,
+      "codeContent": "System.out.println(\"GitStatToolWindow.loadEmailConfig: 从持久化状态加载配置\");\n        System.out.println(\"  smtpHost\u003d\" + state.smtpHost);\n        System.out.println(\"  smtpPort\u003d\" + state.smtpPort);\n        System.out.println(\"  enableTLS\u003d\" + state.enableTLS);\n        System.out.println(\"  enableSSL\u003d\" + state.enableSSL);\n        System.out.println(\"  filterAuthor\u003d\" + state.filterAuthor);\n\n        config.setSmtpHost(state.smtpHost);\n        config.setSmtpPort(state.smtpPort);\n        config.setEnableTLS(state.enableTLS);\n        config.setEnableSSL(state.enableSSL);\n        config.setSenderEmail(state.senderEmail);\n\n        // 解密密码（state 中存储的是加密后的密码）\n        if (state.senderPassword !\u003d null \u0026\u0026 !state.senderPassword.isEmpty()) {\n            try {\n                String decryptedPassword \u003d PasswordEncryptor.decrypt(state.senderPassword, project);\n                config.setSenderPassword(decryptedPassword);\n                System.out.println(\"  密码解密成功\");\n            } catch (Exception e) {\n                // 如果解密失败，可能是旧版本的明文密码，直接使用\n                config.setSenderPassword(state.senderPassword);\n                System.out.println(\"  密码解密失败，使用原始值: \" + e.getMessage());\n            }\n        } else {\n            config.setSenderPassword(\"\");\n            System.out.println(\"  密码为空\");\n        }\n\n        config.setSenderName(state.senderName);\n        config.setRecipientEmail(state.recipientEmail);\n        config.setEnableScheduled(state.enableScheduled);\n        config.setScheduledTime(state.scheduledTime);\n        config.setFilterAuthor(state.filterAuthor.isEmpty() ? null : state.filterAuthor);\n        config.setIncludeTrends(state.includeTrends);\n        config.setSendHtml(state.sendHtml);\n        config.setEmailSubject(state.emailSubject);\n\n        System.out.println(\"  加载后 config.getFilterAuthor()\u003d\" + config.getFilterAuthor()",
+      "aiProbability": 70,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 39
+    },
+    {
+      "filePath": "E:/Project/GitHub/PandaCoder/src/main/java/com/shuyixiao/gitstat/ui/GitStatToolWindow.java",
+      "timestamp": 1761995743305,
+      "startOffset": 12624,
+      "endOffset": 14737,
+      "codeContent": "System.out.println(\"GitStatToolWindow.refreshData: 开始刷新数据\");\n        ApplicationManager.getApplication().executeOnPooledThread(() -\u003e {\n            try {\n                // 显示加载提示\n                ApplicationManager.getApplication().invokeLater(() -\u003e {\n                    statusLabel.setText(\"正在加载 Git 统计数据...\");\n                    statusLabel.setForeground(JBColor.BLUE);\n                });\n\n                System.out.println(\"  调用 gitStatService.refreshStatistics()\");\n                // 刷新统计数据\n                gitStatService.refreshStatistics();\n                System.out.println(\"  gitStatService.refreshStatistics() 完成\");\n\n                // 更新 UI\n                ApplicationManager.getApplication().invokeLater(() -\u003e {\n                    System.out.println(\"  开始更新 UI\");\n                    updateAuthorSelectionComboBox();\n                    updateEmailAuthorComboBoxes();\n                    updateAuthorTable();\n                    updateDailyTable();\n                    updateAuthorDailyTable();\n                    updateProjectStatsArea();\n                    updateOverviewArea();\n                    updateAiStats();  // 更新 AI 统计\n                    updateStatusLabel();\n                    System.out.println(\"  UI 更新完成\");\n\n                    // 根据参数决定显示方式\n                    if (showDialog) {\n                        Messages.showInfoMessage(project, \"Git 统计数据已刷新\", \"刷新成功\");\n                    } else {\n                        // 使用右下角通知（会自动消失）\n                        com.intellij.notification.Notifications.Bus.notify(\n                            new com.intellij.notification.Notification(\n                                \"GitStat\",\n                                \"Git 统计\",\n                                \"Git 统计数据已刷新\",\n                                com.intellij.notification.NotificationType.INFORMATION\n                            ),\n                            project\n                        );\n                    }\n                });\n\n            } catch (Exception e) {\n                System.out.println(\"  刷新数据异常: \" + e.getMessage());\n                e.printStackTrace();",
+      "aiProbability": 95,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 48
+    },
+    {
+      "filePath": "E:/Project/GitHub/PandaCoder/src/main/java/com/shuyixiao/gitstat/ui/GitStatToolWindow.java",
+      "timestamp": 1761996204523,
+      "startOffset": 38860,
+      "endOffset": 39932,
+      "codeContent": "System.out.println(\"GitStatToolWindow: 匹配到的预设 \u003d \" + (matchedPreset !\u003d null ? matchedPreset.getName() : \"null\"));\n\n        if (matchedPreset !\u003d null) {\n            // 使用索引来选择，而不是对象匹配\n            for (int i \u003d 0; i \u003c emailServiceComboBox.getItemCount(); i++) {\n                SmtpPreset preset \u003d emailServiceComboBox.getItemAt(i);\n                if (preset.getName().equals(matchedPreset.getName())) {\n                    System.out.println(\"  设置下拉框索引为: \" + i + \" (\" + preset.getName() + \")\");\n                    emailServiceComboBox.setSelectedIndex(i);\n                    serviceDescLabel.setText(\"💡 \" + preset.getDescription());\n                    break;\n                }\n            }\n        } else {\n            // 如果没有匹配的预设，选择\"自定义\"\n            for (int i \u003d 0; i \u003c emailServiceComboBox.getItemCount(); i++) {\n                SmtpPreset preset \u003d emailServiceComboBox.getItemAt(i);\n                if (\"自定义\".equals(preset.getName())) {\n                    System.out.println(\"  没有匹配的预设，设置为自定义，索引: \" + i);\n                    emailServiceComboBox.setSelectedIndex(i",
+      "aiProbability": 95,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 20
     }
   ],
   "toolStats": {
     "AI Assistant": {
-      "usageCount": 351,
-      "totalLines": 13981
+      "usageCount": 357,
+      "totalLines": 14167
     }
   }
 }

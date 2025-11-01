@@ -116,10 +116,7 @@
         <!-- 文件图标提供器：最高优先级的图标覆盖 -->
         <fileIconProvider implementation="com.shuyixiao.jenkins.icon.JenkinsFileIconDecorator"/>
 
-        <!-- Bug记录器相关服务 -->
-        <projectService serviceImplementation="com.shuyixiao.bugrecorder.service.BugRecordService"/>
-        <projectService serviceImplementation="com.shuyixiao.bugrecorder.service.ConsoleMonitoringService"/>
-        <projectService serviceImplementation="com.shuyixiao.bugrecorder.service.BugAnalysisService"/>
+
 
         <!-- ES DSL 监控相关服务 -->
         <projectService serviceImplementation="com.shuyixiao.esdsl.service.EsDslRecordService"/>
@@ -136,8 +133,7 @@
         <!-- Git 统计邮件配置（项目级别，每个项目独立配置，存储在 .idea/gitStatEmailConfig.xml） -->
         <projectService serviceImplementation="com.shuyixiao.gitstat.email.config.GitStatEmailConfigState"/>
 
-        <!-- Bug记录器启动活动 -->
-        <postStartupActivity implementation="com.shuyixiao.bugrecorder.startup.BugRecorderStartupActivity"/>
+
 
         <!-- ES DSL 监控启动活动 -->
         <postStartupActivity implementation="com.shuyixiao.esdsl.startup.EsDslStartupActivity"/>
@@ -145,11 +141,7 @@
         <!-- SQL Monitor 启动活动 -->
         <postStartupActivity implementation="com.shuyixiao.sql.startup.SqlStartupActivity"/>
 
-        <!-- Bug记录器工具窗口 -->
-<!--        <toolWindow id="Bug Recorder"-->
-<!--                    factoryClass="com.shuyixiao.bugrecorder.toolwindow.BugRecorderToolWindowFactory"-->
-<!--                    anchor="bottom"-->
-<!--                    icon="/icons/bug-recorder.svg"/>-->
+
 
         <!-- ES DSL 监控工具窗口 -->
         <toolWindow id="ES DSL Monitor"
@@ -203,13 +195,7 @@
                                instance="com.shuyixiao.update.UpdateSettingsConfigurable"
                                parentId="FileAnnotationInformationConfiguration"/>
 
-        <!-- 项目级服务 -->
-        <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.EnhancedConsoleMonitoringService"/>
-        <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.EnhancedExecutionListener"/>
-        <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.EnhancedBugRecordManager"/>
-        <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.EnhancedBugAnalysisService"/>
-        <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.BugAggregationService"/>
-        <projectService serviceImplementation="com.shuyixiao.bugrecorder.enhanced.ErrorPatternLearningService"/>
+
         
         <!-- 通知组定义 -->
         <notificationGroup id="PandaCoder.Notifications" displayType="BALLOON" key="notification.group.pandacoder"/>

@@ -10,7 +10,7 @@ import com.intellij.openapi.components.Service;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.shuyixiao.sql.model.SqlRecord;
-import com.shuyixiao.bugrecorder.util.LocalDateTimeAdapter;
+import com.shuyixiao.util.LocalDateTimeAdapter;
 
 import java.io.File;
 import java.io.FileReader;
