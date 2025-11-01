@@ -80,11 +80,12 @@ public class GitStatToolWindow extends JPanel {
         this.project = project;
         this.gitStatService = project.getService(GitStatService.class);
         this.emailService = project.getService(GitStatEmailService.class);
-        
+
+        // 先加载邮件配置，再初始化 UI（这样 UI 创建时就能获取到正确的配置）
+        loadEmailConfig();
         initializeUI();
         setupEventHandlers();
         refreshData();
-        loadEmailConfig();
     }
     
     /**
@@ -989,10 +990,11 @@ public class GitStatToolWindow extends JPanel {
         smtpHostField.setText(config.getSmtpHost());
         smtpPortField.setText(String.valueOf(config.getSmtpPort()));
         senderEmailField.setText(config.getSenderEmail());
+        senderPasswordField.setText(config.getSenderPassword());  // 反显密码
         recipientEmailField.setText(config.getRecipientEmail());
         tlsCheckBox.setSelected(config.isEnableTLS());
         sslCheckBox.setSelected(config.isEnableSSL());
-        
+
         return panel;
     }
     
