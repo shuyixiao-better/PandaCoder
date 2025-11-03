@@ -85,6 +85,7 @@ public class GitStatToolWindow extends JPanel {
     private JTextField modelField;
     private JTextArea promptTemplateArea;
     private JButton generateReportButton;
+    private JComboBox<String> weeklyAuthorComboBox;
 
     // 状态标签
     private JLabel statusLabel;
@@ -1783,9 +1784,29 @@ public class GitStatToolWindow extends JPanel {
         JPanel formPanel = new JPanel();
         formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
 
+        // 作者筛选
+        JPanel authorPanel = new JPanel(new BorderLayout(5, 0));
+        JBLabel authorLabel = new JBLabel("选择作者:");
+        authorLabel.setPreferredSize(new Dimension(80, 25));
+        authorPanel.add(authorLabel, BorderLayout.WEST);
+        weeklyAuthorComboBox = new JComboBox<>();
+        weeklyAuthorComboBox.addItem("全部作者");
+        authorPanel.add(weeklyAuthorComboBox, BorderLayout.CENTER);
+        JButton refreshAuthorsButton = new JButton("刷新作者列表");
+        refreshAuthorsButton.addActionListener(e -> refreshAuthorList());
+        authorPanel.add(refreshAuthorsButton, BorderLayout.EAST);
+        formPanel.add(authorPanel);
+        formPanel.add(Box.createVerticalStrut(10));
+
+        // 分隔线
+        formPanel.add(new JSeparator());
+        formPanel.add(Box.createVerticalStrut(10));
+
         // API URL
         JPanel apiUrlPanel = new JPanel(new BorderLayout(5, 0));
-        apiUrlPanel.add(new JBLabel("API 地址:"), BorderLayout.WEST);
+        JBLabel apiUrlLabel = new JBLabel("API 地址:");
+        apiUrlLabel.setPreferredSize(new Dimension(80, 25));
+        apiUrlPanel.add(apiUrlLabel, BorderLayout.WEST);
         apiUrlField = new JTextField();
         apiUrlPanel.add(apiUrlField, BorderLayout.CENTER);
         formPanel.add(apiUrlPanel);
@@ -1793,7 +1814,9 @@ public class GitStatToolWindow extends JPanel {
 
         // API Key
         JPanel apiKeyPanel = new JPanel(new BorderLayout(5, 0));
-        apiKeyPanel.add(new JBLabel("API 密钥:"), BorderLayout.WEST);
+        JBLabel apiKeyLabel = new JBLabel("API 密钥:");
+        apiKeyLabel.setPreferredSize(new Dimension(80, 25));
+        apiKeyPanel.add(apiKeyLabel, BorderLayout.WEST);
         apiKeyField = new JPasswordField();
         apiKeyPanel.add(apiKeyField, BorderLayout.CENTER);
         formPanel.add(apiKeyPanel);
@@ -1801,7 +1824,9 @@ public class GitStatToolWindow extends JPanel {
 
         // Model
         JPanel modelPanel = new JPanel(new BorderLayout(5, 0));
-        modelPanel.add(new JBLabel("模型名称:"), BorderLayout.WEST);
+        JBLabel modelLabel = new JBLabel("模型名称:");
+        modelLabel.setPreferredSize(new Dimension(80, 25));
+        modelPanel.add(modelLabel, BorderLayout.WEST);
         modelField = new JTextField();
         modelPanel.add(modelField, BorderLayout.CENTER);
         formPanel.add(modelPanel);
@@ -1877,7 +1902,27 @@ public class GitStatToolWindow extends JPanel {
         // 加载配置
         loadWeeklyReportConfig();
 
+        // 初始化作者列表
+        refreshAuthorList();
+
         return panel;
+    }
+
+    /**
+     * 刷新作者列表
+     */
+    private void refreshAuthorList() {
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            List<String> authors = weeklyReportService.getAllAuthors();
+
+            ApplicationManager.getApplication().invokeLater(() -> {
+                weeklyAuthorComboBox.removeAllItems();
+                weeklyAuthorComboBox.addItem("全部作者");
+                for (String author : authors) {
+                    weeklyAuthorComboBox.addItem(author);
+                }
+            });
+        });
     }
 
     /**
@@ -1915,8 +1960,17 @@ public class GitStatToolWindow extends JPanel {
     private void loadWeeklyCommits() {
         weeklyCommitsArea.setText("正在加载本周提交日志...");
 
+        // 获取选中的作者
+        String selectedAuthor = (String) weeklyAuthorComboBox.getSelectedItem();
+        String authorFilter = null;
+        if (selectedAuthor != null && !"全部作者".equals(selectedAuthor)) {
+            authorFilter = selectedAuthor;
+        }
+
+        final String finalAuthorFilter = authorFilter;
+
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            String commits = weeklyReportService.getWeeklyCommits();
+            String commits = weeklyReportService.getWeeklyCommits(finalAuthorFilter);
 
             ApplicationManager.getApplication().invokeLater(() -> {
                 weeklyCommitsArea.setText(commits);

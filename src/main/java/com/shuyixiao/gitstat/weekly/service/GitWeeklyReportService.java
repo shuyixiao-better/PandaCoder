@@ -21,10 +21,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Git 周报生成服务
@@ -40,12 +39,74 @@ public final class GitWeeklyReportService {
     public GitWeeklyReportService(Project project) {
         this.project = project;
     }
-    
+
+    /**
+     * 获取所有作者列表
+     * 从 Git 仓库中提取所有提交过代码的作者
+     */
+    public List<String> getAllAuthors() {
+        Set<String> authors = new LinkedHashSet<>();
+
+        try {
+            // 获取项目的 Git 仓库
+            Collection<GitRepository> repositories = GitUtil.getRepositories(project);
+            if (repositories.isEmpty()) {
+                LOG.warn("No Git repositories found in project");
+                return new ArrayList<>();
+            }
+
+            // 遍历所有 Git 仓库
+            for (GitRepository repository : repositories) {
+                VirtualFile root = repository.getRoot();
+                String repoPath = root.getPath();
+
+                // 执行 git log 命令获取所有作者
+                String[] command = {
+                    "git",
+                    "-C", repoPath,
+                    "log",
+                    "--all",
+                    "--format=%an <%ae>",
+                };
+
+                Process process = Runtime.getRuntime().exec(command);
+                BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8)
+                );
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (!line.trim().isEmpty()) {
+                        authors.add(line.trim());
+                    }
+                }
+
+                reader.close();
+                process.waitFor();
+            }
+
+        } catch (Exception e) {
+            LOG.error("Failed to get all authors", e);
+        }
+
+        return new ArrayList<>(authors);
+    }
+
     /**
      * 获取本周的 Git 提交日志
      * 本周定义为：从本周一到本周日（包含今天）
      */
     public String getWeeklyCommits() {
+        return getWeeklyCommits(null);
+    }
+
+    /**
+     * 获取本周的 Git 提交日志（支持按作者筛选）
+     * 本周定义为：从本周一到本周日（包含今天）
+     *
+     * @param authorFilter 作者筛选条件，格式："作者名 <邮箱>"，null 表示不筛选
+     */
+    public String getWeeklyCommits(String authorFilter) {
         StringBuilder commits = new StringBuilder();
         
         try {
@@ -69,38 +130,67 @@ public final class GitWeeklyReportService {
             for (GitRepository repository : repositories) {
                 VirtualFile root = repository.getRoot();
                 String repoPath = root.getPath();
-                
-                // 执行 git log 命令获取本周的提交日志
-                String[] command = {
-                    "git",
-                    "-C", repoPath,
-                    "log",
-                    "--all",
-                    "--since=" + since,
-                    "--until=" + until + " 23:59:59",
-                    "--pretty=format:%ad | %an | %s",
-                    "--date=format:%Y-%m-%d %H:%M:%S"
-                };
-                
+
+                // 构建 git log 命令
+                List<String> commandList = new ArrayList<>();
+                commandList.add("git");
+                commandList.add("-C");
+                commandList.add(repoPath);
+                commandList.add("log");
+                commandList.add("--all");
+                commandList.add("--since=" + since);
+                commandList.add("--until=" + until + " 23:59:59");
+
+                // 如果指定了作者筛选，添加 --author 参数
+                if (authorFilter != null && !authorFilter.trim().isEmpty()) {
+                    // 提取作者名（去掉邮箱部分）
+                    String authorName = authorFilter;
+                    if (authorFilter.contains("<")) {
+                        authorName = authorFilter.substring(0, authorFilter.indexOf("<")).trim();
+                    }
+                    commandList.add("--author=" + authorName);
+                }
+
+                commandList.add("--pretty=format:%ad | %an | %s");
+                commandList.add("--date=format:%Y-%m-%d %H:%M:%S");
+
+                String[] command = commandList.toArray(new String[0]);
+
                 Process process = Runtime.getRuntime().exec(command);
                 BufferedReader reader = new BufferedReader(
                     new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8)
                 );
-                
+
                 String line;
                 while ((line = reader.readLine()) != null) {
                     commits.append(line).append("\n");
                 }
-                
+
                 reader.close();
                 process.waitFor();
             }
             
             if (commits.length() == 0) {
-                return "本周暂无提交记录（" + since + " 至 " + until + "）";
+                if (authorFilter != null && !authorFilter.trim().isEmpty()) {
+                    return "本周暂无该作者的提交记录（" + since + " 至 " + until + "）\n作者：" + authorFilter;
+                } else {
+                    return "本周暂无提交记录（" + since + " 至 " + until + "）";
+                }
             }
-            
-            return commits.toString();
+
+            // 添加统计信息头部
+            StringBuilder result = new StringBuilder();
+            result.append("=== 本周提交统计 ===\n");
+            result.append("时间范围：").append(since).append(" 至 ").append(until).append("\n");
+            if (authorFilter != null && !authorFilter.trim().isEmpty()) {
+                result.append("筛选作者：").append(authorFilter).append("\n");
+            } else {
+                result.append("筛选作者：全部作者\n");
+            }
+            result.append("提交记录：\n\n");
+            result.append(commits);
+
+            return result.toString();
             
         } catch (Exception e) {
             LOG.error("Failed to get weekly commits", e);

@@ -31,7 +31,9 @@
 #### 1.3 周报生成服务 (`GitWeeklyReportService`)
 - **位置**: `src/main/java/com/shuyixiao/gitstat/weekly/service/GitWeeklyReportService.java`
 - **功能**:
+  - **获取所有作者列表**: 从 Git 仓库提取所有提交过代码的作者
   - **获取本周提交日志**: 自动计算本周一到本周日的日期范围
+  - **作者筛选**: 支持按作者筛选提交记录，可生成个人或团队周报
   - **Git 日志提取**: 执行 `git log` 命令获取提交记录
   - **AI API 调用**: 支持流式响应的 HTTP 请求
   - **SSE 数据解析**: 解析 Server-Sent Events 格式的流式数据
@@ -43,19 +45,29 @@
 - **位置**: `GitStatToolWindow` 中的 `createWeeklyReportPanel()` 方法
 - **布局**:
   - **上半部分**: 配置区域
-    - API 地址输入框
-    - API 密钥输入框（密码框）
-    - 模型名称输入框
-    - 提示词模板文本区域
-    - 操作按钮（保存配置、加载本周提交、生成周报、复制周报）
+    - **作者筛选区域**:
+      - 作者选择下拉框（支持选择"全部作者"或特定作者）
+      - 刷新作者列表按钮
+    - **API 配置区域**:
+      - API 地址输入框
+      - API 密钥输入框（密码框）
+      - 模型名称输入框
+      - 提示词模板文本区域
+    - **操作按钮**:
+      - 保存配置、加载本周提交、生成周报、复制周报
   - **下半部分**: 显示区域（左右分割）
-    - 左侧：本周提交日志显示
+    - 左侧：本周提交日志显示（包含统计信息头部）
     - 右侧：生成的周报显示
 
 #### 2.2 交互功能
+- **刷新作者列表**: 后台线程获取所有作者，更新下拉框
+- **作者筛选**: 选择特定作者或全部作者
 - **保存配置**: 将配置保存到项目级别的持久化存储
-- **加载本周提交**: 后台线程获取 Git 日志，避免阻塞 UI
-- **生成周报**: 
+- **加载本周提交**:
+  - 后台线程获取 Git 日志，避免阻塞 UI
+  - 根据选中的作者进行筛选
+  - 显示统计信息（时间范围、筛选作者）
+- **生成周报**:
   - 流式显示 AI 生成过程
   - 生成过程中禁用按钮，防止重复点击
   - 完成后显示成功通知
@@ -75,26 +87,33 @@
 
 ## 🎯 技术亮点
 
-### 1. 流式响应支持
+### 1. 作者筛选功能
+- 自动提取 Git 仓库中的所有作者
+- 支持按作者筛选提交记录
+- 使用 `git log --author` 参数实现精确筛选
+- 支持生成个人周报或团队周报
+
+### 2. 流式响应支持
 - 实现了完整的 SSE (Server-Sent Events) 流式数据解析
 - 实时显示 AI 生成进度，提升用户体验
 - 支持大模型的流式输出，避免长时间等待
 
-### 2. 线程安全
+### 3. 线程安全
 - 使用 `ApplicationManager.getApplication().executeOnPooledThread()` 执行耗时操作
 - 使用 `ApplicationManager.getApplication().invokeLater()` 更新 UI
 - 避免阻塞 EDT (Event Dispatch Thread)
 
-### 3. 配置持久化
+### 4. 配置持久化
 - 使用 IntelliJ Platform 的 `PersistentStateComponent` 机制
 - 配置自动保存到项目级别的 XML 文件
 - 支持多项目独立配置
 
-### 4. 用户体验优化
+### 5. 用户体验优化
 - 提供默认配置，开箱即用
 - 支持自定义提示词模板，灵活适配不同需求
 - 完善的错误提示和成功通知
 - 流式显示生成过程，实时反馈
+- 提交日志显示统计信息头部，清晰展示筛选条件
 
 ## 📁 文件结构
 
@@ -120,7 +139,24 @@ docs/
 
 ## 🔧 核心代码说明
 
-### 1. Git 日志提取
+### 1. 获取所有作者列表
+
+```java
+// 执行 git log 命令获取所有作者
+String[] command = {
+    "git",
+    "-C", repoPath,
+    "log",
+    "--all",
+    "--format=%an <%ae>",  // 格式：作者名 <邮箱>
+};
+
+// 使用 LinkedHashSet 去重并保持顺序
+Set<String> authors = new LinkedHashSet<>();
+// ... 读取并添加到 authors
+```
+
+### 2. Git 日志提取（支持作者筛选）
 
 ```java
 // 计算本周的开始和结束日期
@@ -128,20 +164,30 @@ LocalDate today = LocalDate.now();
 LocalDate weekStart = today.with(DayOfWeek.MONDAY);
 LocalDate weekEnd = today.with(DayOfWeek.SUNDAY);
 
-// 执行 git log 命令
-String[] command = {
-    "git",
-    "-C", repoPath,
-    "log",
-    "--all",
-    "--since=" + since,
-    "--until=" + until + " 23:59:59",
-    "--pretty=format:%ad | %an | %s",
-    "--date=format:%Y-%m-%d %H:%M:%S"
-};
+// 构建 git log 命令
+List<String> commandList = new ArrayList<>();
+commandList.add("git");
+commandList.add("-C");
+commandList.add(repoPath);
+commandList.add("log");
+commandList.add("--all");
+commandList.add("--since=" + since);
+commandList.add("--until=" + until + " 23:59:59");
+
+// 如果指定了作者筛选，添加 --author 参数
+if (authorFilter != null && !authorFilter.trim().isEmpty()) {
+    String authorName = authorFilter;
+    if (authorFilter.contains("<")) {
+        authorName = authorFilter.substring(0, authorFilter.indexOf("<")).trim();
+    }
+    commandList.add("--author=" + authorName);
+}
+
+commandList.add("--pretty=format:%ad | %an | %s");
+commandList.add("--date=format:%Y-%m-%d %H:%M:%S");
 ```
 
-### 2. AI API 调用（流式响应）
+### 3. AI API 调用（流式响应）
 
 ```java
 // 构建请求 JSON
@@ -168,7 +214,7 @@ while ((line = reader.readLine()) != null) {
 }
 ```
 
-### 3. UI 更新（线程安全）
+### 4. UI 更新（线程安全）
 
 ```java
 weeklyReportService.generateWeeklyReport(
@@ -227,12 +273,13 @@ weeklyReportService.generateWeeklyReport(
 ## 🚀 使用流程
 
 1. **打开工具窗口**: IDEA 右侧 → Git Statistics → 📝 工作周报
-2. **配置 API**: 填写 API 地址、密钥、模型名称
-3. **自定义提示词**（可选）: 根据需要修改提示词模板
-4. **保存配置**: 点击"保存配置"按钮
-5. **加载提交**: 点击"加载本周提交"按钮
-6. **生成周报**: 点击"生成周报"按钮，等待 AI 生成
-7. **复制周报**: 点击"复制周报"按钮，粘贴到需要的地方
+2. **选择作者**: 在下拉框中选择"全部作者"或特定作者
+3. **配置 API**: 填写 API 地址、密钥、模型名称
+4. **自定义提示词**（可选）: 根据需要修改提示词模板
+5. **保存配置**: 点击"保存配置"按钮
+6. **加载提交**: 点击"加载本周提交"按钮（会根据选中的作者筛选）
+7. **生成周报**: 点击"生成周报"按钮，等待 AI 生成
+8. **复制周报**: 点击"复制周报"按钮，粘贴到需要的地方
 
 ## 🎯 后续优化建议
 
@@ -241,18 +288,21 @@ weeklyReportService.generateWeeklyReport(
 2. 添加生成进度指示器
 3. 支持取消正在进行的生成任务
 4. 添加周报预览功能
+5. 支持多作者批量生成周报
 
 ### 中期优化
 1. 支持更多 AI 平台（OpenAI、Claude、国内其他大模型）
 2. 支持自定义时间范围（不限于本周）
-3. 支持按作者筛选提交
+3. ~~支持按作者筛选提交~~ ✅ 已完成
 4. 添加周报模板管理功能
+5. 支持保存常用的作者筛选组合
 
 ### 长期优化
 1. 支持周报历史记录
 2. 支持导出为 Markdown/PDF 文件
 3. 支持团队周报汇总
 4. 支持周报数据分析和可视化
+5. 支持周报对比（本周 vs 上周）
 
 ## 📝 注意事项
 
@@ -266,6 +316,7 @@ weeklyReportService.generateWeeklyReport(
 本次开发成功实现了工作周报自动生成功能，主要特点：
 
 - ✅ **完整的功能实现**: 从 Git 日志提取到 AI 生成，再到 UI 展示，形成完整闭环
+- ✅ **作者筛选功能**: 支持按作者筛选，可生成个人周报或团队周报
 - ✅ **良好的用户体验**: 流式显示、实时反馈、一键复制
 - ✅ **灵活的配置**: 支持自定义 API 和提示词模板
 - ✅ **稳定的架构**: 线程安全、错误处理、配置持久化
@@ -275,7 +326,7 @@ weeklyReportService.generateWeeklyReport(
 
 ---
 
-**开发完成时间**: 2025-11-03  
-**开发者**: Augment Agent  
-**版本**: v1.0.0
+**开发完成时间**: 2025-11-03
+**开发者**: Augment Agent
+**版本**: v1.1.0（新增作者筛选功能）
 

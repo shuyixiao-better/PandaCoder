@@ -3927,12 +3927,45 @@
       "aiTool": "AI Assistant",
       "detectionMethod": "REALTIME_SPEED_ANALYSIS",
       "lineCount": 20
+    },
+    {
+      "filePath": "/Users/shuyixiao/IdeaProjects/PandaCoder/src/main/java/com/shuyixiao/gitstat/weekly/service/GitWeeklyReportService.java",
+      "timestamp": 1762186905449,
+      "startOffset": 1282,
+      "endOffset": 3233,
+      "codeContent": "\n    /**\n     * 获取所有作者列表\n     * 从 Git 仓库中提取所有提交过代码的作者\n     */\n    public List\u003cString\u003e getAllAuthors() {\n        Set\u003cString\u003e authors \u003d new LinkedHashSet\u003c\u003e();\n\n        try {\n            // 获取项目的 Git 仓库\n            Collection\u003cGitRepository\u003e repositories \u003d GitUtil.getRepositories(project);\n            if (repositories.isEmpty()) {\n                LOG.warn(\"No Git repositories found in project\");\n                return new ArrayList\u003c\u003e();\n            }\n\n            // 遍历所有 Git 仓库\n            for (GitRepository repository : repositories) {\n                VirtualFile root \u003d repository.getRoot();\n                String repoPath \u003d root.getPath();\n\n                // 执行 git log 命令获取所有作者\n                String[] command \u003d {\n                    \"git\",\n                    \"-C\", repoPath,\n                    \"log\",\n                    \"--all\",\n                    \"--format\u003d%an \u003c%ae\u003e\",\n                };\n\n                Process process \u003d Runtime.getRuntime().exec(command);\n                BufferedReader reader \u003d new BufferedReader(\n                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8)\n                );\n\n                String line;\n                while ((line \u003d reader.readLine()) !\u003d null) {\n                    if (!line.trim().isEmpty()) {\n                        authors.add(line.trim());\n                    }\n                }\n\n                reader.close();\n                process.waitFor();\n            }\n\n        } catch (Exception e) {\n            LOG.error(\"Failed to get all authors\", e);\n        }\n\n        return new ArrayList\u003c\u003e(authors);\n    }\n\n    /**\n     * 获取本周的 Git 提交日志\n     * 本周定义为：从本周一到本周日（包含今天）\n     */\n    public String getWeeklyCommits() {\n        return getWeeklyCommits(null);\n    }\n\n    /**\n     * 获取本周的 Git 提交日志（支持按作者筛选）\n     * 本周定义为：从本周一到本周日（包含今天）\n     *\n     * @param authorFilter 作者筛选条件，格式：\"作者名 \u003c邮箱\u003e\"，null 表示不筛选\n     */\n    public String getWeeklyCommits(String authorFilter",
+      "aiProbability": 95,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 68
+    },
+    {
+      "filePath": "/Users/shuyixiao/IdeaProjects/PandaCoder/src/main/java/com/shuyixiao/gitstat/weekly/service/GitWeeklyReportService.java",
+      "timestamp": 1762186920701,
+      "startOffset": 4216,
+      "endOffset": 5719,
+      "codeContent": "\n                // 构建 git log 命令\n                List\u003cString\u003e commandList \u003d new ArrayList\u003c\u003e();\n                commandList.add(\"git\");\n                commandList.add(\"-C\");\n                commandList.add(repoPath);\n                commandList.add(\"log\");\n                commandList.add(\"--all\");\n                commandList.add(\"--since\u003d\" + since);\n                commandList.add(\"--until\u003d\" + until + \" 23:59:59\");\n\n                // 如果指定了作者筛选，添加 --author 参数\n                if (authorFilter !\u003d null \u0026\u0026 !authorFilter.trim().isEmpty()) {\n                    // 提取作者名（去掉邮箱部分）\n                    String authorName \u003d authorFilter;\n                    if (authorFilter.contains(\"\u003c\")) {\n                        authorName \u003d authorFilter.substring(0, authorFilter.indexOf(\"\u003c\")).trim();\n                    }\n                    commandList.add(\"--author\u003d\" + authorName);\n                }\n\n                commandList.add(\"--pretty\u003dformat:%ad | %an | %s\");\n                commandList.add(\"--date\u003dformat:%Y-%m-%d %H:%M:%S\");\n\n                String[] command \u003d commandList.toArray(new String[0]);\n\n                Process process \u003d Runtime.getRuntime().exec(command);\n                BufferedReader reader \u003d new BufferedReader(\n                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8)\n                );\n\n                String line;\n                while ((line \u003d reader.readLine()) !\u003d null) {\n                    commits.append(line).append(\"\\n\");\n                }\n",
+      "aiProbability": 70,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 36
+    },
+    {
+      "filePath": "/Users/shuyixiao/IdeaProjects/PandaCoder/src/main/java/com/shuyixiao/gitstat/weekly/service/GitWeeklyReportService.java",
+      "timestamp": 1762186935718,
+      "startOffset": 5871,
+      "endOffset": 6704,
+      "codeContent": "if (authorFilter !\u003d null \u0026\u0026 !authorFilter.trim().isEmpty()) {\n                    return \"本周暂无该作者的提交记录（\" + since + \" 至 \" + until + \"）\\n作者：\" + authorFilter;\n                } else {\n                    return \"本周暂无提交记录（\" + since + \" 至 \" + until + \"）\";\n                }\n            }\n\n            // 添加统计信息头部\n            StringBuilder result \u003d new StringBuilder();\n            result.append(\"\u003d\u003d\u003d 本周提交统计 \u003d\u003d\u003d\\n\");\n            result.append(\"时间范围：\").append(since).append(\" 至 \").append(until).append(\"\\n\");\n            if (authorFilter !\u003d null \u0026\u0026 !authorFilter.trim().isEmpty()) {\n                result.append(\"筛选作者：\").append(authorFilter).append(\"\\n\");\n            } else {\n                result.append(\"筛选作者：全部作者\\n\");\n            }\n            result.append(\"提交记录：\\n\\n\");\n            result.append(commits);\n\n            return result",
+      "aiProbability": 70,
+      "aiTool": "AI Assistant",
+      "detectionMethod": "REALTIME_SPEED_ANALYSIS",
+      "lineCount": 20
     }
   ],
   "toolStats": {
     "AI Assistant": {
-      "usageCount": 357,
-      "totalLines": 14167
+      "usageCount": 360,
+      "totalLines": 14291
     }
   }
 }
