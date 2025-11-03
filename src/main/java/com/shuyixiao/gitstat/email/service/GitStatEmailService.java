@@ -450,8 +450,8 @@ public final class GitStatEmailService {
         scheduler.scheduleAtFixedRate(
             () -> {
                 try {
-                    // 发送昨天的统计
-                    sendEmail(LocalDate.now().minusDays(1));
+                    // 发送今天的统计
+                    sendEmail(LocalDate.now());
                 } catch (Exception e) {
                     LOG.error("Scheduled email task failed", e);
                 }
