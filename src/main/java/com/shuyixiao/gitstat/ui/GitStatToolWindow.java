@@ -18,6 +18,9 @@ import com.shuyixiao.gitstat.model.GitAuthorStat;
 import com.shuyixiao.gitstat.model.GitDailyStat;
 import com.shuyixiao.gitstat.model.GitProjectStat;
 import com.shuyixiao.gitstat.service.GitStatService;
+import com.shuyixiao.gitstat.weekly.config.WeeklyReportConfigState;
+import com.shuyixiao.gitstat.weekly.model.WeeklyReportConfig;
+import com.shuyixiao.gitstat.weekly.service.GitWeeklyReportService;
 import com.shuyixiao.ui.EnhancedNotificationUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,7 +42,8 @@ public class GitStatToolWindow extends JPanel {
     private final Project project;
     private final GitStatService gitStatService;
     private final GitStatEmailService emailService;
-    
+    private final GitWeeklyReportService weeklyReportService;
+
     private JTabbedPane tabbedPane;
     
     // 作者统计标签页
@@ -72,7 +76,16 @@ public class GitStatToolWindow extends JPanel {
     private JBTable aiStatsTable;
     private AiStatsTableModel aiStatsTableModel;
     private JTextArea aiOverviewArea;
-    
+
+    // 周报标签页
+    private JTextArea weeklyCommitsArea;
+    private JTextArea weeklyReportArea;
+    private JTextField apiUrlField;
+    private JPasswordField apiKeyField;
+    private JTextField modelField;
+    private JTextArea promptTemplateArea;
+    private JButton generateReportButton;
+
     // 状态标签
     private JLabel statusLabel;
     
@@ -80,6 +93,7 @@ public class GitStatToolWindow extends JPanel {
         this.project = project;
         this.gitStatService = project.getService(GitStatService.class);
         this.emailService = project.getService(GitStatEmailService.class);
+        this.weeklyReportService = project.getService(GitWeeklyReportService.class);
 
         // 先加载邮件配置，再初始化 UI（这样 UI 创建时就能获取到正确的配置）
         loadEmailConfig();
@@ -125,6 +139,7 @@ public class GitStatToolWindow extends JPanel {
         tabbedPane.addTab("总览", createOverviewPanel());
         tabbedPane.addTab("🤖 AI 代码统计", createAiStatsPanel());
         tabbedPane.addTab("📧 邮件报告", createEmailReportPanel());
+        tabbedPane.addTab("📝 工作周报", createWeeklyReportPanel());
         
         add(tabbedPane, BorderLayout.CENTER);
         
@@ -1747,6 +1762,225 @@ public class GitStatToolWindow extends JPanel {
             String tool = stat.getMostUsedAiTool();
             return tool != null ? tool : "-";
         }
+    }
+
+    /**
+     * 创建工作周报面板
+     */
+    private JComponent createWeeklyReportPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(JBUI.Borders.empty(10));
+
+        // 创建主分割面板（上下分割）
+        JSplitPane mainSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        mainSplitPane.setResizeWeight(0.3);
+
+        // 上半部分：配置区域
+        JPanel configPanel = new JPanel(new BorderLayout());
+        configPanel.setBorder(JBUI.Borders.empty(5));
+
+        // 配置表单
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
+
+        // API URL
+        JPanel apiUrlPanel = new JPanel(new BorderLayout(5, 0));
+        apiUrlPanel.add(new JBLabel("API 地址:"), BorderLayout.WEST);
+        apiUrlField = new JTextField();
+        apiUrlPanel.add(apiUrlField, BorderLayout.CENTER);
+        formPanel.add(apiUrlPanel);
+        formPanel.add(Box.createVerticalStrut(5));
+
+        // API Key
+        JPanel apiKeyPanel = new JPanel(new BorderLayout(5, 0));
+        apiKeyPanel.add(new JBLabel("API 密钥:"), BorderLayout.WEST);
+        apiKeyField = new JPasswordField();
+        apiKeyPanel.add(apiKeyField, BorderLayout.CENTER);
+        formPanel.add(apiKeyPanel);
+        formPanel.add(Box.createVerticalStrut(5));
+
+        // Model
+        JPanel modelPanel = new JPanel(new BorderLayout(5, 0));
+        modelPanel.add(new JBLabel("模型名称:"), BorderLayout.WEST);
+        modelField = new JTextField();
+        modelPanel.add(modelField, BorderLayout.CENTER);
+        formPanel.add(modelPanel);
+        formPanel.add(Box.createVerticalStrut(5));
+
+        // Prompt Template
+        JPanel promptPanel = new JPanel(new BorderLayout(5, 0));
+        promptPanel.add(new JBLabel("提示词模板 (使用 {commits} 作为占位符):"), BorderLayout.NORTH);
+        promptTemplateArea = new JTextArea(5, 40);
+        promptTemplateArea.setLineWrap(true);
+        promptTemplateArea.setWrapStyleWord(true);
+        JBScrollPane promptScrollPane = new JBScrollPane(promptTemplateArea);
+        promptPanel.add(promptScrollPane, BorderLayout.CENTER);
+        formPanel.add(promptPanel);
+        formPanel.add(Box.createVerticalStrut(10));
+
+        // 按钮面板
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton saveConfigButton = new JButton("保存配置");
+        saveConfigButton.addActionListener(e -> saveWeeklyReportConfig());
+        buttonPanel.add(saveConfigButton);
+
+        JButton loadCommitsButton = new JButton("加载本周提交");
+        loadCommitsButton.addActionListener(e -> loadWeeklyCommits());
+        buttonPanel.add(loadCommitsButton);
+
+        generateReportButton = new JButton("生成周报");
+        generateReportButton.addActionListener(e -> generateWeeklyReport());
+        buttonPanel.add(generateReportButton);
+
+        JButton copyReportButton = new JButton("复制周报");
+        copyReportButton.addActionListener(e -> copyWeeklyReport());
+        buttonPanel.add(copyReportButton);
+
+        formPanel.add(buttonPanel);
+
+        configPanel.add(formPanel, BorderLayout.NORTH);
+
+        // 下半部分：显示区域（左右分割）
+        JSplitPane displaySplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        displaySplitPane.setResizeWeight(0.4);
+
+        // 左侧：提交日志
+        JPanel commitsPanel = new JPanel(new BorderLayout());
+        commitsPanel.setBorder(JBUI.Borders.empty(5));
+        commitsPanel.add(new JBLabel("本周提交日志:"), BorderLayout.NORTH);
+        weeklyCommitsArea = new JTextArea();
+        weeklyCommitsArea.setEditable(false);
+        weeklyCommitsArea.setLineWrap(true);
+        weeklyCommitsArea.setWrapStyleWord(true);
+        JBScrollPane commitsScrollPane = new JBScrollPane(weeklyCommitsArea);
+        commitsPanel.add(commitsScrollPane, BorderLayout.CENTER);
+
+        // 右侧：生成的周报
+        JPanel reportPanel = new JPanel(new BorderLayout());
+        reportPanel.setBorder(JBUI.Borders.empty(5));
+        reportPanel.add(new JBLabel("生成的周报:"), BorderLayout.NORTH);
+        weeklyReportArea = new JTextArea();
+        weeklyReportArea.setEditable(false);
+        weeklyReportArea.setLineWrap(true);
+        weeklyReportArea.setWrapStyleWord(true);
+        JBScrollPane reportScrollPane = new JBScrollPane(weeklyReportArea);
+        reportPanel.add(reportScrollPane, BorderLayout.CENTER);
+
+        displaySplitPane.setLeftComponent(commitsPanel);
+        displaySplitPane.setRightComponent(reportPanel);
+
+        mainSplitPane.setTopComponent(configPanel);
+        mainSplitPane.setBottomComponent(displaySplitPane);
+
+        panel.add(mainSplitPane, BorderLayout.CENTER);
+
+        // 加载配置
+        loadWeeklyReportConfig();
+
+        return panel;
+    }
+
+    /**
+     * 加载周报配置
+     */
+    private void loadWeeklyReportConfig() {
+        WeeklyReportConfigState configState = WeeklyReportConfigState.getInstance(project);
+        WeeklyReportConfig config = configState.toConfig();
+
+        apiUrlField.setText(config.getApiUrl());
+        apiKeyField.setText(config.getApiKey());
+        modelField.setText(config.getModel());
+        promptTemplateArea.setText(config.getPromptTemplate());
+    }
+
+    /**
+     * 保存周报配置
+     */
+    private void saveWeeklyReportConfig() {
+        WeeklyReportConfig config = new WeeklyReportConfig();
+        config.setApiUrl(apiUrlField.getText());
+        config.setApiKey(new String(apiKeyField.getPassword()));
+        config.setModel(modelField.getText());
+        config.setPromptTemplate(promptTemplateArea.getText());
+
+        WeeklyReportConfigState configState = WeeklyReportConfigState.getInstance(project);
+        configState.fromConfig(config);
+
+        EnhancedNotificationUtil.showSimpleInfo(project, "✅ 保存成功", "周报配置已保存");
+    }
+
+    /**
+     * 加载本周提交日志
+     */
+    private void loadWeeklyCommits() {
+        weeklyCommitsArea.setText("正在加载本周提交日志...");
+
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+            String commits = weeklyReportService.getWeeklyCommits();
+
+            ApplicationManager.getApplication().invokeLater(() -> {
+                weeklyCommitsArea.setText(commits);
+                weeklyCommitsArea.setCaretPosition(0);
+            });
+        });
+    }
+
+    /**
+     * 生成周报
+     */
+    private void generateWeeklyReport() {
+        String commits = weeklyCommitsArea.getText();
+        if (commits == null || commits.trim().isEmpty()) {
+            EnhancedNotificationUtil.showWarning(project, "⚠️ 提示", "请先加载本周提交日志", null);
+            return;
+        }
+
+        WeeklyReportConfigState configState = WeeklyReportConfigState.getInstance(project);
+        WeeklyReportConfig config = configState.toConfig();
+
+        if (config.getApiKey() == null || config.getApiKey().trim().isEmpty()) {
+            EnhancedNotificationUtil.showWarning(project, "⚠️ 提示", "请先配置 API 密钥", null);
+            return;
+        }
+
+        weeklyReportArea.setText("正在生成周报，请稍候...\n");
+        generateReportButton.setEnabled(false);
+
+        weeklyReportService.generateWeeklyReport(
+            config,
+            commits,
+            // onChunk: 接收流式数据
+            chunk -> ApplicationManager.getApplication().invokeLater(() -> {
+                weeklyReportArea.append(chunk);
+            }),
+            // onComplete: 完成
+            () -> ApplicationManager.getApplication().invokeLater(() -> {
+                generateReportButton.setEnabled(true);
+                EnhancedNotificationUtil.showSimpleInfo(project, "✅ 生成成功", "周报生成完成");
+            }),
+            // onError: 错误
+            error -> ApplicationManager.getApplication().invokeLater(() -> {
+                generateReportButton.setEnabled(true);
+                weeklyReportArea.setText("生成失败: " + error);
+                EnhancedNotificationUtil.showEnhancedError(project, "❌ 生成失败", "周报生成失败", error, null);
+            })
+        );
+    }
+
+    /**
+     * 复制周报到剪贴板
+     */
+    private void copyWeeklyReport() {
+        String report = weeklyReportArea.getText();
+        if (report == null || report.trim().isEmpty()) {
+            EnhancedNotificationUtil.showWarning(project, "⚠️ 提示", "周报内容为空", null);
+            return;
+        }
+
+        java.awt.datatransfer.StringSelection selection = new java.awt.datatransfer.StringSelection(report);
+        java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
+
+        EnhancedNotificationUtil.showCopySuccess(project, "周报已复制到剪贴板");
     }
 }
 

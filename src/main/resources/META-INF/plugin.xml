@@ -129,9 +129,13 @@
         <!-- Git 统计相关服务 -->
         <projectService serviceImplementation="com.shuyixiao.gitstat.service.GitStatService"/>
         <projectService serviceImplementation="com.shuyixiao.gitstat.email.service.GitStatEmailService"/>
+        <projectService serviceImplementation="com.shuyixiao.gitstat.weekly.service.GitWeeklyReportService"/>
 
         <!-- Git 统计邮件配置（项目级别，每个项目独立配置，存储在 .idea/gitStatEmailConfig.xml） -->
         <projectService serviceImplementation="com.shuyixiao.gitstat.email.config.GitStatEmailConfigState"/>
+
+        <!-- Git 周报配置（项目级别，每个项目独立配置，存储在 .idea/gitStatWeeklyReportConfig.xml） -->
+        <projectService serviceImplementation="com.shuyixiao.gitstat.weekly.config.WeeklyReportConfigState"/>
 
 
 
