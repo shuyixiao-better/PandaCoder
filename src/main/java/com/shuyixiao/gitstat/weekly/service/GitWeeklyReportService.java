@@ -236,7 +236,7 @@ public final class GitWeeklyReportService {
                 requestBody.add("messages", messages);
                 
                 // 发送 HTTP 请求
-                URL url = new URL(config.getApiUrl());
+                URL url = java.net.URI.create(config.getApiUrl()).toURL();
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json");
