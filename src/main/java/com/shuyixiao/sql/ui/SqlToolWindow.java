@@ -299,7 +299,7 @@ public class SqlToolWindow extends JPanel {
     private JPopupMenu createOperationFilterPopup() {
         JPopupMenu popup = new JPopupMenu();
 
-        // 添加全选/全不选按钮
+        // 添加全选按钮
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JButton selectAllButton = new JButton("全选");
         selectAllButton.addActionListener(e -> {
@@ -308,15 +308,7 @@ public class SqlToolWindow extends JPanel {
             refreshData();
         });
 
-        JButton deselectAllButton = new JButton("全不选");
-        deselectAllButton.addActionListener(e -> {
-            operationFilter.deselectAll();
-            operationFilterButton.setText(operationFilter.getDisplayText());
-            refreshData();
-        });
-
         buttonPanel.add(selectAllButton);
-        buttonPanel.add(deselectAllButton);
         popup.add(buttonPanel);
         popup.addSeparator();
 
