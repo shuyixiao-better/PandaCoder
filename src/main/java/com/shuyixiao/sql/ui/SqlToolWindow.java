@@ -475,7 +475,7 @@ public class SqlToolWindow extends JPanel {
      * 获取过滤后的记录
      */
     private List<SqlRecord> getFilteredRecords() {
-        // 时间范围
+        // 1. 先按时间范围获取记录
         String timeRange = (String) timeRangeFilter.getSelectedItem();
         List<SqlRecord> records;
 
@@ -486,17 +486,29 @@ public class SqlToolWindow extends JPanel {
             records = recordService.getRecentRecords(hours);
         }
 
-        // 操作类型过滤（多选）
+        // 2. 操作类型过滤（多选）
         List<String> selectedOperations = operationFilter.getSelectedItems();
         if (!selectedOperations.isEmpty() && selectedOperations.size() < 4) {
             // 只有当选择了部分操作类型时才过滤（不是全选）
-            records = recordService.getRecordsByOperations(selectedOperations);
+            final List<SqlRecord> timeFilteredRecords = records;
+            records = timeFilteredRecords.stream()
+                    .filter(record -> selectedOperations.stream()
+                            .anyMatch(op -> op.equalsIgnoreCase(record.getOperation())))
+                    .collect(java.util.stream.Collectors.toList());
         }
 
-        // 搜索过滤
+        // 3. 搜索过滤
         String searchText = searchField.getText().trim();
         if (!searchText.isEmpty()) {
-            records = recordService.searchRecords(searchText);
+            final String searchLower = searchText.toLowerCase();
+            final List<SqlRecord> operationFilteredRecords = records;
+            records = operationFilteredRecords.stream()
+                    .filter(record ->
+                        record.getSqlStatement().toLowerCase().contains(searchLower) ||
+                        record.getTableName().toLowerCase().contains(searchLower) ||
+                        (record.getApiPath() != null && record.getApiPath().toLowerCase().contains(searchLower))
+                    )
+                    .collect(java.util.stream.Collectors.toList());
         }
 
         return records;
