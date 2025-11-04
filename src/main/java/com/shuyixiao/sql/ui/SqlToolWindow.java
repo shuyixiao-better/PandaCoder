@@ -21,6 +21,7 @@ import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -37,7 +38,8 @@ public class SqlToolWindow extends JPanel {
     private JBTable sqlTable;
     private SqlTableModel tableModel;
     private JTextField searchField;
-    private JComboBox<String> operationFilter;
+    private MultiSelectComboBox operationFilter;
+    private JButton operationFilterButton;
     private JComboBox<String> timeRangeFilter;
     private JLabel statusLabel;
     private JSplitPane mainSplitter;
@@ -123,12 +125,23 @@ public class SqlToolWindow extends JPanel {
         toolbar.add(new JBLabel("搜索: "));
         toolbar.add(searchField);
         
-        // 操作类型过滤
-        operationFilter = new JComboBox<>(new String[]{
-                "全部操作", "SELECT", "INSERT", "UPDATE", "DELETE"
+        // 操作类型过滤（多选）
+        operationFilter = new MultiSelectComboBox(new String[]{"SELECT", "INSERT", "UPDATE", "DELETE"});
+        operationFilter.addChangeListener(e -> {
+            operationFilterButton.setText(operationFilter.getDisplayText());
+            refreshData();
         });
+
+        // 创建显示按钮
+        operationFilterButton = new JButton(operationFilter.getDisplayText());
+        operationFilterButton.addActionListener(e -> {
+            // 创建弹出菜单
+            JPopupMenu popup = createOperationFilterPopup();
+            popup.show(operationFilterButton, 0, operationFilterButton.getHeight());
+        });
+
         toolbar.add(new JBLabel("操作: "));
-        toolbar.add(operationFilter);
+        toolbar.add(operationFilterButton);
         
         // 时间范围过滤
         timeRangeFilter = new JComboBox<>(new String[]{
@@ -251,9 +264,8 @@ public class SqlToolWindow extends JPanel {
     private void setupEventHandlers() {
         // 搜索框事件
         searchField.addActionListener(e -> refreshData());
-        
+
         // 过滤器事件
-        operationFilter.addActionListener(e -> refreshData());
         timeRangeFilter.addActionListener(e -> refreshData());
         
         // 双击查看详情
@@ -281,6 +293,59 @@ public class SqlToolWindow extends JPanel {
         });
     }
     
+    /**
+     * 创建操作类型过滤弹出菜单
+     */
+    private JPopupMenu createOperationFilterPopup() {
+        JPopupMenu popup = new JPopupMenu();
+
+        // 添加全选/全不选按钮
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton selectAllButton = new JButton("全选");
+        selectAllButton.addActionListener(e -> {
+            operationFilter.selectAll();
+            operationFilterButton.setText(operationFilter.getDisplayText());
+            refreshData();
+        });
+
+        JButton deselectAllButton = new JButton("全不选");
+        deselectAllButton.addActionListener(e -> {
+            operationFilter.deselectAll();
+            operationFilterButton.setText(operationFilter.getDisplayText());
+            refreshData();
+        });
+
+        buttonPanel.add(selectAllButton);
+        buttonPanel.add(deselectAllButton);
+        popup.add(buttonPanel);
+        popup.addSeparator();
+
+        // 添加复选框项
+        String[] operations = {"SELECT", "INSERT", "UPDATE", "DELETE"};
+        List<String> selectedItems = operationFilter.getSelectedItems();
+
+        for (String operation : operations) {
+            JCheckBoxMenuItem checkBox = new JCheckBoxMenuItem(operation);
+            checkBox.setSelected(selectedItems.contains(operation));
+            checkBox.addActionListener(e -> {
+                List<String> currentSelected = new ArrayList<>(operationFilter.getSelectedItems());
+                if (checkBox.isSelected()) {
+                    if (!currentSelected.contains(operation)) {
+                        currentSelected.add(operation);
+                    }
+                } else {
+                    currentSelected.remove(operation);
+                }
+                operationFilter.setSelectedItems(currentSelected);
+                operationFilterButton.setText(operationFilter.getDisplayText());
+                refreshData();
+            });
+            popup.add(checkBox);
+        }
+
+        return popup;
+    }
+
     /**
      * 显示表格右键菜单
      */
@@ -413,26 +478,27 @@ public class SqlToolWindow extends JPanel {
         // 时间范围
         String timeRange = (String) timeRangeFilter.getSelectedItem();
         List<SqlRecord> records;
-        
+
         if ("全部".equals(timeRange)) {
             records = recordService.getAllRecords();
         } else {
             int hours = getHoursFromTimeRange(timeRange);
             records = recordService.getRecentRecords(hours);
         }
-        
-        // 操作类型过滤
-        String operation = (String) operationFilter.getSelectedItem();
-        if (operation != null && !"全部操作".equals(operation)) {
-            records = recordService.getRecordsByOperation(operation);
+
+        // 操作类型过滤（多选）
+        List<String> selectedOperations = operationFilter.getSelectedItems();
+        if (!selectedOperations.isEmpty() && selectedOperations.size() < 4) {
+            // 只有当选择了部分操作类型时才过滤（不是全选）
+            records = recordService.getRecordsByOperations(selectedOperations);
         }
-        
+
         // 搜索过滤
         String searchText = searchField.getText().trim();
         if (!searchText.isEmpty()) {
             records = recordService.searchRecords(searchText);
         }
-        
+
         return records;
     }
     

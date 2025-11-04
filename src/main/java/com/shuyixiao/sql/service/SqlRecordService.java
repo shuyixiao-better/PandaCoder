@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -219,9 +220,27 @@ public final class SqlRecordService {
         if (operation == null || operation.isEmpty()) {
             return getAllRecords();
         }
-        
+
         return records.stream()
                 .filter(record -> operation.equalsIgnoreCase(record.getOperation()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 按多个操作类型筛选
+     */
+    public List<SqlRecord> getRecordsByOperations(List<String> operations) {
+        if (operations == null || operations.isEmpty()) {
+            return getAllRecords();
+        }
+
+        // 将操作类型转换为大写以便比较
+        Set<String> operationSet = operations.stream()
+                .map(String::toUpperCase)
+                .collect(Collectors.toSet());
+
+        return records.stream()
+                .filter(record -> operationSet.contains(record.getOperation().toUpperCase()))
                 .collect(Collectors.toList());
     }
     
