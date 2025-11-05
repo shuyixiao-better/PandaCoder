@@ -1902,7 +1902,7 @@ public class GitStatToolWindow extends JPanel {
         // Prompt Template
         JPanel promptPanel = new JPanel(new BorderLayout(5, 0));
         promptPanel.add(new JBLabel("提示词模板 (使用 {commits} 作为占位符):"), BorderLayout.NORTH);
-        promptTemplateArea = new JTextArea(5, 40);
+        promptTemplateArea = new JTextArea(10, 40);
         promptTemplateArea.setLineWrap(true);
         promptTemplateArea.setWrapStyleWord(true);
         JBScrollPane promptScrollPane = new JBScrollPane(promptTemplateArea);
