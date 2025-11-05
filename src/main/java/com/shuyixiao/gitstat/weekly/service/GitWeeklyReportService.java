@@ -107,17 +107,29 @@ public final class GitWeeklyReportService {
      * @param authorFilter 作者筛选条件，格式："作者名 <邮箱>"，null 表示不筛选
      */
     public String getWeeklyCommits(String authorFilter) {
+        // 计算本周的开始和结束日期
+        LocalDate today = LocalDate.now();
+        LocalDate weekStart = today.with(DayOfWeek.MONDAY);
+        LocalDate weekEnd = today.with(DayOfWeek.SUNDAY);
+
+        return getCommitsByDateRange(weekStart, weekEnd, authorFilter);
+    }
+
+    /**
+     * 获取指定日期范围的 Git 提交日志（支持按作者筛选）
+     *
+     * @param startDate 开始日期（周一）
+     * @param endDate 结束日期（周日）
+     * @param authorFilter 作者筛选条件，格式："作者名 <邮箱>"，null 表示不筛选
+     * @return 提交日志字符串
+     */
+    public String getCommitsByDateRange(LocalDate startDate, LocalDate endDate, String authorFilter) {
         StringBuilder commits = new StringBuilder();
-        
+
         try {
-            // 计算本周的开始和结束日期
-            LocalDate today = LocalDate.now();
-            LocalDate weekStart = today.with(DayOfWeek.MONDAY);
-            LocalDate weekEnd = today.with(DayOfWeek.SUNDAY);
-            
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            String since = weekStart.format(formatter);
-            String until = weekEnd.format(formatter);
+            String since = startDate.format(formatter);
+            String until = endDate.format(formatter);
             
             // 获取项目的 Git 仓库
             Collection<GitRepository> repositories = GitUtil.getRepositories(project);
@@ -162,32 +174,50 @@ public final class GitWeeklyReportService {
                 );
 
                 String line;
+                int commitCount = 0;
                 while ((line = reader.readLine()) != null) {
                     commits.append(line).append("\n");
+                    commitCount++;
                 }
 
                 reader.close();
                 process.waitFor();
             }
-            
+
             if (commits.length() == 0) {
+                StringBuilder result = new StringBuilder();
+                result.append("╔════════════════════════════════════════════════════════════════╗\n");
+                result.append("║                        📊 提交统计                              ║\n");
+                result.append("╚════════════════════════════════════════════════════════════════╝\n\n");
+                result.append("📅 时间范围：").append(since).append(" 至 ").append(until).append("\n");
                 if (authorFilter != null && !authorFilter.trim().isEmpty()) {
-                    return "本周暂无该作者的提交记录（" + since + " 至 " + until + "）\n作者：" + authorFilter;
+                    result.append("👤 筛选作者：").append(authorFilter).append("\n");
                 } else {
-                    return "本周暂无提交记录（" + since + " 至 " + until + "）";
+                    result.append("👤 筛选作者：全部作者\n");
                 }
+                result.append("\n⚠️  该时间段暂无提交记录\n");
+                return result.toString();
             }
+
+            // 统计提交数量
+            int commitCount = commits.toString().split("\n").length;
 
             // 添加统计信息头部
             StringBuilder result = new StringBuilder();
-            result.append("=== 本周提交统计 ===\n");
-            result.append("时间范围：").append(since).append(" 至 ").append(until).append("\n");
+            result.append("╔════════════════════════════════════════════════════════════════╗\n");
+            result.append("║                        📊 提交统计                              ║\n");
+            result.append("╚════════════════════════════════════════════════════════════════╝\n\n");
+            result.append("📅 时间范围：").append(since).append(" 至 ").append(until).append("\n");
             if (authorFilter != null && !authorFilter.trim().isEmpty()) {
-                result.append("筛选作者：").append(authorFilter).append("\n");
+                result.append("👤 筛选作者：").append(authorFilter).append("\n");
             } else {
-                result.append("筛选作者：全部作者\n");
+                result.append("👤 筛选作者：全部作者\n");
             }
-            result.append("提交记录：\n\n");
+            result.append("📝 提交数量：").append(commitCount).append(" 次\n");
+            result.append("\n");
+            result.append("════════════════════════════════════════════════════════════════\n");
+            result.append("                           📋 提交记录                           \n");
+            result.append("════════════════════════════════════════════════════════════════\n\n");
             result.append(commits);
 
             return result.toString();

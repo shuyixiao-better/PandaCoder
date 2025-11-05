@@ -21,6 +21,7 @@ import com.shuyixiao.gitstat.service.GitStatService;
 import com.shuyixiao.gitstat.weekly.config.WeeklyReportConfigState;
 import com.shuyixiao.gitstat.weekly.model.WeeklyReportConfig;
 import com.shuyixiao.gitstat.weekly.service.GitWeeklyReportService;
+import com.shuyixiao.gitstat.ui.component.WeekPickerDialog;
 import com.shuyixiao.ui.EnhancedNotificationUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,6 +29,8 @@ import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -86,6 +89,8 @@ public class GitStatToolWindow extends JPanel {
     private JTextArea promptTemplateArea;
     private JButton generateReportButton;
     private JComboBox<String> weeklyAuthorComboBox;
+    private JTextField weekStartDateField;  // 周开始日期选择
+    private JLabel commitsLabel;  // 提交日志标签（动态更新）
 
     // 状态标签
     private JLabel statusLabel;
@@ -1784,6 +1789,68 @@ public class GitStatToolWindow extends JPanel {
         JPanel formPanel = new JPanel();
         formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
 
+        // 周选择区域
+        JPanel weekPanel = new JPanel(new BorderLayout(5, 0));
+        JBLabel weekLabel = new JBLabel("选择周:");
+        weekLabel.setPreferredSize(new Dimension(80, 25));
+        weekPanel.add(weekLabel, BorderLayout.WEST);
+
+        JPanel weekInputPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+
+        // 日期显示标签
+        weekStartDateField = new JTextField(12);
+        // 默认设置为本周一
+        LocalDate today = LocalDate.now();
+        LocalDate weekStart = today.with(DayOfWeek.MONDAY);
+        LocalDate weekEnd = weekStart.with(DayOfWeek.SUNDAY);
+        weekStartDateField.setText(weekStart.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        weekStartDateField.setEditable(false);
+        weekStartDateField.setToolTipText("当前选中周的开始日期");
+        weekInputPanel.add(weekStartDateField);
+
+        // 日历选择按钮
+        JButton calendarButton = new JButton("📅 选择");
+        calendarButton.setToolTipText("打开日历选择周");
+        calendarButton.addActionListener(e -> {
+            try {
+                LocalDate currentDate = LocalDate.parse(weekStartDateField.getText(),
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                WeekPickerDialog dialog = new WeekPickerDialog(this, currentDate);
+                if (dialog.showAndGet()) {
+                    LocalDate selectedStart = dialog.getSelectedWeekStart();
+                    LocalDate selectedEnd = dialog.getSelectedWeekEnd();
+                    weekStartDateField.setText(selectedStart.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+                }
+            } catch (Exception ex) {
+                LocalDate now = LocalDate.now();
+                LocalDate monday = now.with(DayOfWeek.MONDAY);
+                weekStartDateField.setText(monday.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+            }
+        });
+        weekInputPanel.add(calendarButton);
+
+        JButton thisWeekButton = new JButton("本周");
+        thisWeekButton.setToolTipText("快速选择本周");
+        thisWeekButton.addActionListener(e -> {
+            LocalDate now = LocalDate.now();
+            LocalDate monday = now.with(DayOfWeek.MONDAY);
+            weekStartDateField.setText(monday.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        });
+        weekInputPanel.add(thisWeekButton);
+
+        JButton lastWeekButton = new JButton("上周");
+        lastWeekButton.setToolTipText("快速选择上周");
+        lastWeekButton.addActionListener(e -> {
+            LocalDate now = LocalDate.now();
+            LocalDate lastMonday = now.with(DayOfWeek.MONDAY).minusWeeks(1);
+            weekStartDateField.setText(lastMonday.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        });
+        weekInputPanel.add(lastWeekButton);
+
+        weekPanel.add(weekInputPanel, BorderLayout.CENTER);
+        formPanel.add(weekPanel);
+        formPanel.add(Box.createVerticalStrut(10));
+
         // 作者筛选
         JPanel authorPanel = new JPanel(new BorderLayout(5, 0));
         JBLabel authorLabel = new JBLabel("选择作者:");
@@ -1849,7 +1916,8 @@ public class GitStatToolWindow extends JPanel {
         saveConfigButton.addActionListener(e -> saveWeeklyReportConfig());
         buttonPanel.add(saveConfigButton);
 
-        JButton loadCommitsButton = new JButton("加载本周提交");
+        JButton loadCommitsButton = new JButton("加载提交");
+        loadCommitsButton.setToolTipText("加载选中周的提交记录");
         loadCommitsButton.addActionListener(e -> loadWeeklyCommits());
         buttonPanel.add(loadCommitsButton);
 
@@ -1872,7 +1940,19 @@ public class GitStatToolWindow extends JPanel {
         // 左侧：提交日志
         JPanel commitsPanel = new JPanel(new BorderLayout());
         commitsPanel.setBorder(JBUI.Borders.empty(5));
-        commitsPanel.add(new JBLabel("本周提交日志:"), BorderLayout.NORTH);
+
+        // 创建标题面板，包含标签和复制按钮
+        JPanel commitsTitlePanel = new JPanel(new BorderLayout());
+        commitsLabel = new JLabel("提交日志:");
+        commitsTitlePanel.add(commitsLabel, BorderLayout.WEST);
+
+        JButton copyCommitsButton = new JButton("复制提交日志");
+        copyCommitsButton.setToolTipText("复制提交日志到剪贴板");
+        copyCommitsButton.addActionListener(e -> copyCommitsLog());
+        commitsTitlePanel.add(copyCommitsButton, BorderLayout.EAST);
+
+        commitsPanel.add(commitsTitlePanel, BorderLayout.NORTH);
+
         weeklyCommitsArea = new JTextArea();
         weeklyCommitsArea.setEditable(false);
         weeklyCommitsArea.setLineWrap(true);
@@ -1955,10 +2035,41 @@ public class GitStatToolWindow extends JPanel {
     }
 
     /**
-     * 加载本周提交日志
+     * 加载提交日志（支持自定义周）
      */
     private void loadWeeklyCommits() {
-        weeklyCommitsArea.setText("正在加载本周提交日志...");
+        // 解析日期
+        String dateText = weekStartDateField.getText().trim();
+        LocalDate startDate;
+        LocalDate endDate;
+
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            startDate = LocalDate.parse(dateText, formatter);
+
+            // 确保是周一
+            if (startDate.getDayOfWeek() != DayOfWeek.MONDAY) {
+                EnhancedNotificationUtil.showWarning(project, "⚠️ 提示",
+                    "请输入周一的日期（当前输入的是" + startDate.getDayOfWeek().toString() + "）", null);
+                return;
+            }
+
+            // 计算周日
+            endDate = startDate.with(DayOfWeek.SUNDAY);
+
+        } catch (Exception e) {
+            EnhancedNotificationUtil.showWarning(project, "⚠️ 提示",
+                "日期格式错误，请使用 yyyy-MM-dd 格式（例如：2024-01-01）", null);
+            return;
+        }
+
+        // 更新标签
+        String dateRange = startDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) +
+                          " 至 " +
+                          endDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        commitsLabel.setText("提交日志 (" + dateRange + "):");
+
+        weeklyCommitsArea.setText("正在加载提交日志...");
 
         // 获取选中的作者
         String selectedAuthor = (String) weeklyAuthorComboBox.getSelectedItem();
@@ -1968,9 +2079,11 @@ public class GitStatToolWindow extends JPanel {
         }
 
         final String finalAuthorFilter = authorFilter;
+        final LocalDate finalStartDate = startDate;
+        final LocalDate finalEndDate = endDate;
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
-            String commits = weeklyReportService.getWeeklyCommits(finalAuthorFilter);
+            String commits = weeklyReportService.getCommitsByDateRange(finalStartDate, finalEndDate, finalAuthorFilter);
 
             ApplicationManager.getApplication().invokeLater(() -> {
                 weeklyCommitsArea.setText(commits);
@@ -2035,6 +2148,22 @@ public class GitStatToolWindow extends JPanel {
         java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
 
         EnhancedNotificationUtil.showCopySuccess(project, "周报已复制到剪贴板");
+    }
+
+    /**
+     * 复制提交日志到剪贴板
+     */
+    private void copyCommitsLog() {
+        String commits = weeklyCommitsArea.getText();
+        if (commits == null || commits.trim().isEmpty()) {
+            EnhancedNotificationUtil.showWarning(project, "⚠️ 提示", "提交日志内容为空", null);
+            return;
+        }
+
+        java.awt.datatransfer.StringSelection selection = new java.awt.datatransfer.StringSelection(commits);
+        java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
+
+        EnhancedNotificationUtil.showCopySuccess(project, "提交日志已复制到剪贴板");
     }
 }
 
