@@ -1195,8 +1195,8 @@ rm -rf .idea/pandacoder.xml
 
 ## 📚 相关文档
 
-- [PandaCoder UI 重构方案](./PandaCoder_UI重构方案.md)
-- [用户体验对比分析](./PandaCoder_UI重构_用户体验对比.md)
+- [PandaCoder UI 重构方案](PandaCoder_UI重构方案.md)
+- [用户体验对比分析](PandaCoder_UI重构_用户体验对比.md)
 - [IntelliJ Platform SDK - Tool Windows](https://plugins.jetbrains.com/docs/intellij/tool-windows.html)
 - [IntelliJ Platform SDK - Popups](https://plugins.jetbrains.com/docs/intellij/popups.html)
 

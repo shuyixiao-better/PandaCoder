@@ -357,19 +357,19 @@ Tools
 
 ### 使用文档
 
-1. **[Elasticsearch 8.15 升级指南](docs/Elasticsearch-8.15-升级指南.md)**
+1. **[Elasticsearch 8.15 升级指南](Elasticsearch-8.15-升级指南.md)**
    - ES 8.15 新特性
    - 升级步骤
    - 性能对比
    - 常见问题
 
-2. **[UI 配置使用指南](docs/LivingDoc-UI配置使用指南.md)**
+2. **[UI 配置使用指南](LivingDoc-UI配置使用指南.md)**
    - 设置面板详解
    - 工具窗口使用
    - Actions 操作
    - 完整流程
 
-3. **[快速开始指南](docs/LivingDoc活文档功能-快速开始指南.md)**
+3. **[快速开始指南](LivingDoc活文档功能-快速开始指南.md)**
    - 5 分钟快速上手
    - 环境准备
    - 配置步骤
@@ -377,19 +377,19 @@ Tools
 
 ### 技术文档
 
-4. **[完整设计方案](docs/PandaCoder活文档功能-RAG智能检索设计方案.md)**
+4. **[完整设计方案](PandaCoder活文档功能-RAG智能检索设计方案.md)**
    - 技术架构
    - RAG 原理
    - 学习路径
    - 最佳实践
 
-5. **[实现完成报告](docs/LivingDoc活文档功能-实现完成报告.md)**
+5. **[实现完成报告](LivingDoc活文档功能-实现完成报告.md)**
    - 功能清单
    - 技术亮点
    - 性能数据
    - 后续规划
 
-6. **[依赖配置说明](docs/LivingDoc-依赖配置说明.md)**
+6. **[依赖配置说明](LivingDoc-依赖配置说明.md)**
    - Gradle 配置
    - Maven 配置
    - 依赖说明

@@ -365,10 +365,10 @@ livingdoc:
 
 ## 📚 文档资源
 
-1. **设计方案**: [PandaCoder活文档功能-RAG智能检索设计方案.md](docs/PandaCoder活文档功能-RAG智能检索设计方案.md)
-2. **快速开始**: [LivingDoc活文档功能-快速开始指南.md](docs/LivingDoc活文档功能-快速开始指南.md)
-3. **实现报告**: [LivingDoc活文档功能-实现完成报告.md](docs/LivingDoc活文档功能-实现完成报告.md)
-4. **依赖配置**: [LivingDoc-依赖配置说明.md](docs/LivingDoc-依赖配置说明.md)
+1. **设计方案**: [PandaCoder活文档功能-RAG智能检索设计方案.md](PandaCoder活文档功能-RAG智能检索设计方案.md)
+2. **快速开始**: [LivingDoc活文档功能-快速开始指南.md](LivingDoc活文档功能-快速开始指南.md)
+3. **实现报告**: [LivingDoc活文档功能-实现完成报告.md](LivingDoc活文档功能-实现完成报告.md)
+4. **依赖配置**: [LivingDoc-依赖配置说明.md](LivingDoc-依赖配置说明.md)
 
 ---
 
