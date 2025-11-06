@@ -1474,15 +1474,16 @@ public class GitStatToolWindow extends JPanel {
         config.setSenderEmail(state.senderEmail);
 
         // 解密密码（state 中存储的是加密后的密码）
+        // 新版本的 PasswordEncryptor 会自动处理加密/明文密码，不会抛出异常
         if (state.senderPassword != null && !state.senderPassword.isEmpty()) {
-            try {
-                String decryptedPassword = PasswordEncryptor.decrypt(state.senderPassword, project);
-                config.setSenderPassword(decryptedPassword);
+            String decryptedPassword = PasswordEncryptor.decrypt(state.senderPassword, project);
+            config.setSenderPassword(decryptedPassword);
+
+            // 检查密码是否已加密，如果是明文则提示用户重新保存
+            if (!PasswordEncryptor.isEncrypted(state.senderPassword)) {
+                System.out.println("  警告：密码未加密，建议重新保存配置以加密密码");
+            } else {
                 System.out.println("  密码解密成功");
-            } catch (Exception e) {
-                // 如果解密失败，可能是旧版本的明文密码，直接使用
-                config.setSenderPassword(state.senderPassword);
-                System.out.println("  密码解密失败，使用原始值: " + e.getMessage());
             }
         } else {
             config.setSenderPassword("");
