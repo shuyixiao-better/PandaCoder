@@ -36,6 +36,10 @@ dependencies {
     implementation 'com.sun.mail:javax.mail:1.6.2'
     implementation 'com.sun.activation:jakarta.activation:1.2.2'
 
+    // MongoDB Driver - 周报归档功能
+    // 使用场景: WeeklyReportMongoService (周报归档到MongoDB)
+    implementation 'org.mongodb:mongodb-driver-sync:4.11.1'
+
     // ==================== 说明 ====================
     // 以下依赖已从 IntelliJ Platform 获取，无需打包:
     // - org.jetbrains:annotations (IDEA 已内置)

@@ -20,7 +20,9 @@ import com.shuyixiao.gitstat.model.GitProjectStat;
 import com.shuyixiao.gitstat.service.GitStatService;
 import com.shuyixiao.gitstat.weekly.config.WeeklyReportConfigState;
 import com.shuyixiao.gitstat.weekly.model.WeeklyReportConfig;
+import com.shuyixiao.gitstat.weekly.model.WeeklyReportArchive;
 import com.shuyixiao.gitstat.weekly.service.GitWeeklyReportService;
+import com.shuyixiao.gitstat.weekly.service.WeeklyReportMongoService;
 import com.shuyixiao.gitstat.ui.component.WeekPickerDialog;
 import com.shuyixiao.ui.EnhancedNotificationUtil;
 import org.jetbrains.annotations.NotNull;
@@ -46,6 +48,7 @@ public class GitStatToolWindow extends JPanel {
     private final GitStatService gitStatService;
     private final GitStatEmailService emailService;
     private final GitWeeklyReportService weeklyReportService;
+    private final WeeklyReportMongoService mongoService;
 
     private JTabbedPane tabbedPane;
     
@@ -100,6 +103,7 @@ public class GitStatToolWindow extends JPanel {
         this.gitStatService = project.getService(GitStatService.class);
         this.emailService = project.getService(GitStatEmailService.class);
         this.weeklyReportService = project.getService(GitWeeklyReportService.class);
+        this.mongoService = project.getService(WeeklyReportMongoService.class);
 
         // 先加载邮件配置，再初始化 UI（这样 UI 创建时就能获取到正确的配置）
         loadEmailConfig();
@@ -1930,6 +1934,11 @@ public class GitStatToolWindow extends JPanel {
         copyReportButton.addActionListener(e -> copyWeeklyReport());
         buttonPanel.add(copyReportButton);
 
+        JButton archiveReportButton = new JButton("归档周报");
+        archiveReportButton.setToolTipText("将周报归档到MongoDB数据库");
+        archiveReportButton.addActionListener(e -> archiveWeeklyReport());
+        buttonPanel.add(archiveReportButton);
+
         formPanel.add(buttonPanel);
 
         configPanel.add(formPanel, BorderLayout.NORTH);
@@ -2165,6 +2174,166 @@ public class GitStatToolWindow extends JPanel {
         java.awt.Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
 
         EnhancedNotificationUtil.showCopySuccess(project, "提交日志已复制到剪贴板");
+    }
+
+    /**
+     * 归档周报到MongoDB
+     */
+    private void archiveWeeklyReport() {
+        // 检查周报内容是否为空
+        String report = weeklyReportArea.getText();
+        if (report == null || report.trim().isEmpty()) {
+            EnhancedNotificationUtil.showWarning(project, "⚠️ 提示", "周报内容为空，请先生成周报", null);
+            return;
+        }
+
+        // 检查是否正在生成周报（通过按钮状态判断）
+        if (!generateReportButton.isEnabled()) {
+            EnhancedNotificationUtil.showWarning(project, "⚠️ 提示", "周报正在生成中，请等待生成完成后再归档", null);
+            return;
+        }
+
+        // 检查周报内容长度，避免归档空内容或仅有提示文本的内容
+        if (report.trim().length() < 50) {
+            EnhancedNotificationUtil.showWarning(project, "⚠️ 提示", "周报内容过短，请确认周报已正确生成", null);
+            return;
+        }
+
+        // 检查MongoDB配置
+        if (!mongoService.isConfigured()) {
+            EnhancedNotificationUtil.showWarning(
+                project,
+                "⚠️ MongoDB未配置",
+                "请先配置MongoDB连接信息。\n" +
+                "1. 复制 src/main/resources/mongodb-config.properties.example\n" +
+                "2. 重命名为 mongodb-config.properties\n" +
+                "3. 填写MongoDB连接信息",
+                null
+            );
+            return;
+        }
+
+        // 测试MongoDB连接
+        if (!mongoService.testConnection()) {
+            EnhancedNotificationUtil.showEnhancedError(
+                project,
+                "❌ 连接失败",
+                "无法连接到MongoDB",
+                "请检查MongoDB配置和网络连接",
+                null
+            );
+            return;
+        }
+
+        // 确认归档操作
+        int result = Messages.showYesNoDialog(
+            project,
+            "确定要将本周报归档到MongoDB吗？",
+            "确认归档",
+            "归档",
+            "取消",
+            Messages.getQuestionIcon()
+        );
+
+        if (result != Messages.YES) {
+            return;
+        }
+
+        // 在后台线程执行归档操作
+        new Thread(() -> {
+            try {
+                // 创建归档对象
+                WeeklyReportArchive archive = new WeeklyReportArchive();
+                archive.setReportContent(report);
+                archive.setCommits(weeklyCommitsArea.getText());
+
+                // 设置周范围
+                String weekStartText = weekStartDateField.getText();
+                if (weekStartText != null && !weekStartText.trim().isEmpty()) {
+                    try {
+                        LocalDate weekStart = LocalDate.parse(weekStartText, DateTimeFormatter.ISO_LOCAL_DATE);
+                        LocalDate weekEnd = weekStart.plusDays(6);
+                        archive.setWeekStartDate(weekStart);
+                        archive.setWeekEndDate(weekEnd);
+                    } catch (Exception e) {
+                        // 如果解析失败，使用当前周
+                        LocalDate today = LocalDate.now();
+                        LocalDate weekStart = today.with(DayOfWeek.MONDAY);
+                        LocalDate weekEnd = today.with(DayOfWeek.SUNDAY);
+                        archive.setWeekStartDate(weekStart);
+                        archive.setWeekEndDate(weekEnd);
+                    }
+                } else {
+                    // 使用当前周
+                    LocalDate today = LocalDate.now();
+                    LocalDate weekStart = today.with(DayOfWeek.MONDAY);
+                    LocalDate weekEnd = today.with(DayOfWeek.SUNDAY);
+                    archive.setWeekStartDate(weekStart);
+                    archive.setWeekEndDate(weekEnd);
+                }
+
+                // 设置作者筛选
+                String selectedAuthor = (String) weeklyAuthorComboBox.getSelectedItem();
+                if (selectedAuthor != null && !selectedAuthor.equals("全部作者")) {
+                    archive.setAuthorFilter(selectedAuthor);
+                }
+
+                // 设置项目名称
+                archive.setProjectName(project.getName());
+
+                // 设置AI模型信息
+                archive.setAiModel(modelField.getText());
+                archive.setApiUrl(apiUrlField.getText());
+
+                // 统计提交信息
+                String commits = weeklyCommitsArea.getText();
+                if (commits != null && !commits.isEmpty()) {
+                    // 简单统计提交数（每行一个提交）
+                    String[] lines = commits.split("\n");
+                    int commitCount = 0;
+                    for (String line : lines) {
+                        if (line.contains("|") && !line.startsWith("=") && !line.startsWith("周")) {
+                            commitCount++;
+                        }
+                    }
+                    archive.setTotalCommits(commitCount);
+                }
+
+                // 执行归档
+                boolean success = mongoService.archiveReport(archive);
+
+                // 在UI线程显示结果
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    if (success) {
+                        EnhancedNotificationUtil.showSimpleInfo(
+                            project,
+                            "✅ 归档成功",
+                            "周报已成功归档到MongoDB"
+                        );
+                    } else {
+                        EnhancedNotificationUtil.showEnhancedError(
+                            project,
+                            "❌ 归档失败",
+                            "周报归档失败",
+                            "请查看控制台日志了解详细信息",
+                            null
+                        );
+                    }
+                });
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                ApplicationManager.getApplication().invokeLater(() -> {
+                    EnhancedNotificationUtil.showEnhancedError(
+                        project,
+                        "❌ 归档失败",
+                        "周报归档失败",
+                        e.getMessage(),
+                        null
+                    );
+                });
+            }
+        }).start();
     }
 }
 
