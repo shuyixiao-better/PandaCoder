@@ -18,12 +18,14 @@ import com.shuyixiao.gitstat.model.GitAuthorStat;
 import com.shuyixiao.gitstat.model.GitDailyStat;
 import com.shuyixiao.gitstat.model.GitProjectStat;
 import com.shuyixiao.gitstat.service.GitStatService;
+import com.shuyixiao.gitstat.weekly.config.UserIdentityConfigState;
 import com.shuyixiao.gitstat.weekly.config.WeeklyReportConfigState;
 import com.shuyixiao.gitstat.weekly.model.WeeklyReportConfig;
 import com.shuyixiao.gitstat.weekly.model.WeeklyReportArchive;
 import com.shuyixiao.gitstat.weekly.service.GitWeeklyReportService;
 import com.shuyixiao.gitstat.weekly.service.WeeklyReportMongoService;
 import com.shuyixiao.gitstat.ui.component.WeekPickerDialog;
+import com.shuyixiao.gitstat.weekly.util.DeviceIdentifierUtil;
 import com.shuyixiao.ui.EnhancedNotificationUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -2199,6 +2201,32 @@ public class GitStatToolWindow extends JPanel {
             return;
         }
 
+        // 检查用户身份配置
+        UserIdentityConfigState userConfig = UserIdentityConfigState.getInstance();
+
+        if (!userConfig.isConfigured()) {
+            int configResult = Messages.showYesNoDialog(
+                project,
+                "用户身份信息未配置，归档的周报将无法标识用户身份。\n\n" +
+                "是否现在配置用户信息？\n\n" +
+                "（您也可以稍后在 设置 > 工具 > Git统计 - 用户身份配置 中配置）",
+                "⚠️ 用户身份未配置",
+                "去配置",
+                "稍后配置",
+                Messages.getWarningIcon()
+            );
+
+            if (configResult == Messages.YES) {
+                // 打开设置页面
+                com.intellij.openapi.options.ShowSettingsUtil.getInstance().showSettingsDialog(
+                    project,
+                    "Git统计 - 用户身份配置"
+                );
+                return;
+            }
+            // 如果用户选择稍后配置，继续归档流程（但用户信息字段将为空）
+        }
+
         // 检查MongoDB配置
         if (!mongoService.isConfigured()) {
             EnhancedNotificationUtil.showWarning(
@@ -2298,6 +2326,17 @@ public class GitStatToolWindow extends JPanel {
                     }
                     archive.setTotalCommits(commitCount);
                 }
+
+                // 设置用户身份信息
+                DeviceIdentifierUtil deviceUtil = new DeviceIdentifierUtil();
+                archive.setDeviceId(deviceUtil.getDeviceId());
+
+                // 获取用户自定义信息
+                UserIdentityConfigState userConfigInfo = UserIdentityConfigState.getInstance();
+                archive.setUserName(userConfigInfo.getUserName());
+                archive.setUserCode(userConfigInfo.getUserCode());
+                archive.setUserEmail(userConfigInfo.getUserEmail());
+                archive.setUserDepartment(userConfigInfo.getUserDepartment());
 
                 // 执行归档
                 boolean success = mongoService.archiveReport(archive);

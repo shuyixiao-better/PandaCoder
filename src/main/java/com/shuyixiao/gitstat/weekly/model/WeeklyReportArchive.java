@@ -49,7 +49,24 @@ public class WeeklyReportArchive {
     
     // 作者数量
     private int totalAuthors;
-    
+
+    // ==================== 用户身份信息 ====================
+
+    // 设备唯一标识（基于MAC地址的SHA-256哈希值）
+    private String deviceId;
+
+    // 用户自定义用户名
+    private String userName;
+
+    // 用户自定义编码（工号、员工编号等）
+    private String userCode;
+
+    // 用户邮箱（可选）
+    private String userEmail;
+
+    // 用户部门（可选）
+    private String userDepartment;
+
     // 扩展字段（用于存储其他自定义信息）
     private Map<String, Object> metadata;
     
@@ -85,7 +102,14 @@ public class WeeklyReportArchive {
         doc.put("apiUrl", apiUrl);
         doc.put("totalCommits", totalCommits);
         doc.put("totalAuthors", totalAuthors);
-        
+
+        // 用户身份信息
+        doc.put("deviceId", deviceId);
+        doc.put("userName", userName);
+        doc.put("userCode", userCode);
+        doc.put("userEmail", userEmail);
+        doc.put("userDepartment", userDepartment);
+
         if (metadata != null && !metadata.isEmpty()) {
             doc.put("metadata", metadata);
         }
@@ -207,6 +231,48 @@ public class WeeklyReportArchive {
             this.metadata = new HashMap<>();
         }
         this.metadata.put(key, value);
+    }
+
+    // ==================== 用户身份信息的 Getters and Setters ====================
+
+    public String getDeviceId() {
+        return deviceId;
+    }
+
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getUserCode() {
+        return userCode;
+    }
+
+    public void setUserCode(String userCode) {
+        this.userCode = userCode;
+    }
+
+    public String getUserEmail() {
+        return userEmail;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
+    }
+
+    public String getUserDepartment() {
+        return userDepartment;
+    }
+
+    public void setUserDepartment(String userDepartment) {
+        this.userDepartment = userDepartment;
     }
 }
 

@@ -180,6 +180,9 @@
         <!-- AI 识别配置状态服务 -->
         <applicationService serviceImplementation="com.shuyixiao.gitstat.ai.config.GitStatAiConfigState"/>
 
+        <!-- 用户身份配置状态服务 -->
+        <applicationService serviceImplementation="com.shuyixiao.gitstat.weekly.config.UserIdentityConfigState"/>
+
         <!-- 更新设置状态服务 -->
         <applicationService serviceImplementation="com.shuyixiao.update.UpdateSettingsState"/>
 
@@ -209,10 +212,16 @@
         <projectService serviceImplementation="com.shuyixiao.livingdoc.settings.LivingDocSettings"/>
         
         <!-- 活文档设置面板 -->
-        <projectConfigurable groupId="tools" 
-                           displayName="活文档 (Living Doc)" 
+        <projectConfigurable groupId="tools"
+                           displayName="活文档 (Living Doc)"
                            id="com.shuyixiao.livingdoc.settings.LivingDocConfigurable"
                            instance="com.shuyixiao.livingdoc.settings.LivingDocConfigurable"/>
+
+        <!-- Git统计 - 用户身份配置面板 -->
+        <applicationConfigurable groupId="tools"
+                               displayName="Git统计 - 用户身份配置"
+                               id="com.shuyixiao.gitstat.weekly.ui.UserIdentityConfigurable"
+                               instance="com.shuyixiao.gitstat.weekly.ui.UserIdentityConfigurable"/>
         
         <!-- 活文档工具窗口 -->
         <toolWindow id="活文档"
