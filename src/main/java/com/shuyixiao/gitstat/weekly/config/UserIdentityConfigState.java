@@ -97,12 +97,11 @@ public class UserIdentityConfigState implements PersistentStateComponent<UserIde
     
     /**
      * 检查用户信息是否已配置
-     * 
-     * @return 如果用户名和用户编码都已配置则返回true
+     *
+     * @return 如果用户名已配置则返回true（用户编码会自动生成）
      */
     public boolean isConfigured() {
-        return userName != null && !userName.trim().isEmpty() 
-            && userCode != null && !userCode.trim().isEmpty();
+        return userName != null && !userName.trim().isEmpty();
     }
     
     /**

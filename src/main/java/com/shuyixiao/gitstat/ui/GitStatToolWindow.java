@@ -2328,15 +2328,20 @@ public class GitStatToolWindow extends JPanel {
                 }
 
                 // 设置用户身份信息
-                DeviceIdentifierUtil deviceUtil = new DeviceIdentifierUtil();
-                archive.setDeviceId(deviceUtil.getDeviceId());
+                String deviceId = com.shuyixiao.gitstat.weekly.util.DeviceIdentifierUtil.getDeviceId();
+                archive.setDeviceId(deviceId);
+
+                // 根据设备ID生成用户编码（取前12位）
+                String userCode = deviceId.length() >= 12 ?
+                    deviceId.substring(0, 12).toUpperCase() : deviceId.toUpperCase();
+                archive.setUserCode(userCode);
 
                 // 获取用户自定义信息
-                UserIdentityConfigState userConfigInfo = UserIdentityConfigState.getInstance();
+                com.shuyixiao.gitstat.weekly.config.UserIdentityConfigState userConfigInfo =
+                    com.shuyixiao.gitstat.weekly.config.UserIdentityConfigState.getInstance();
                 archive.setUserName(userConfigInfo.getUserName());
-                archive.setUserCode(userConfigInfo.getUserCode());
                 archive.setUserEmail(userConfigInfo.getUserEmail());
-                archive.setUserDepartment(userConfigInfo.getUserDepartment());
+                archive.setUserDepartment("");  // 部门字段设为空
 
                 // 执行归档
                 boolean success = mongoService.archiveReport(archive);

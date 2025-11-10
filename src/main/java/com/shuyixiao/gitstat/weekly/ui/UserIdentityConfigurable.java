@@ -24,11 +24,11 @@ import java.awt.*;
 public class UserIdentityConfigurable implements Configurable {
     
     private JBTextField userNameField;
-    private JBTextField userCodeField;
+    private JBLabel userCodeLabel;
     private JBTextField userEmailField;
-    private JBTextField userDepartmentField;
     private JBLabel deviceIdLabel;
     private JPanel mainPanel;
+    private String generatedUserCode;
     
     @Nls(capitalization = Nls.Capitalization.Title)
     @Override
@@ -40,16 +40,20 @@ public class UserIdentityConfigurable implements Configurable {
     @Override
     public JComponent createComponent() {
         userNameField = new JBTextField(30);
-        userCodeField = new JBTextField(30);
         userEmailField = new JBTextField(30);
-        userDepartmentField = new JBTextField(30);
-        
+
         // 获取并显示设备ID
         String deviceId = DeviceIdentifierUtil.getDeviceId();
-        String displayDeviceId = deviceId.length() > 16 ? 
+        String displayDeviceId = deviceId.length() > 16 ?
             deviceId.substring(0, 16) + "..." : deviceId;
         deviceIdLabel = new JBLabel(displayDeviceId);
         deviceIdLabel.setToolTipText("完整设备ID: " + deviceId);
+
+        // 根据设备ID生成用户编码（取前12位）
+        generatedUserCode = deviceId.length() >= 12 ?
+            deviceId.substring(0, 12).toUpperCase() : deviceId.toUpperCase();
+        userCodeLabel = new JBLabel(generatedUserCode);
+        userCodeLabel.setToolTipText("用户编码由设备ID自动生成: " + generatedUserCode);
         
         // 创建说明面板
         JPanel infoPanel = new JPanel(new BorderLayout());
@@ -60,11 +64,10 @@ public class UserIdentityConfigurable implements Configurable {
             "📋 用户身份配置说明\n\n" +
             "此配置用于在周报归档时标识用户身份，确保数据的可追溯性。\n\n" +
             "• 设备ID：自动获取，基于您的MAC地址生成，用于唯一标识您的设备\n" +
+            "• 用户编码：根据设备ID自动生成，用于唯一标识您的账户\n" +
             "• 用户名：您的真实姓名或昵称（必填）\n" +
-            "• 用户编码：您的工号、员工编号或其他唯一标识（必填）\n" +
-            "• 邮箱：您的工作邮箱（可选）\n" +
-            "• 部门：您所在的部门或团队（可选）\n\n" +
-            "⚠️ 注意：用户名和用户编码为必填项，归档周报前请先配置。"
+            "• 邮箱：您的工作邮箱（可选）\n\n" +
+            "⚠️ 注意：用户名为必填项，归档周报前请先配置。"
         );
         infoArea.setEditable(false);
         infoArea.setLineWrap(true);
@@ -80,11 +83,10 @@ public class UserIdentityConfigurable implements Configurable {
             .addComponent(infoPanel)
             .addSeparator()
             .addLabeledComponent(new JBLabel("设备ID (自动获取):"), deviceIdLabel, 5, false)
+            .addLabeledComponent(new JBLabel("用户编码 (自动生成):"), userCodeLabel, 5, false)
             .addSeparator()
             .addLabeledComponent(new JBLabel("用户名 *:"), userNameField, 5, false)
-            .addLabeledComponent(new JBLabel("用户编码 *:"), userCodeField, 5, false)
             .addLabeledComponent(new JBLabel("邮箱:"), userEmailField, 5, false)
-            .addLabeledComponent(new JBLabel("部门:"), userDepartmentField, 5, false)
             .addComponentFillVertically(new JPanel(), 0)
             .getPanel();
         
@@ -96,43 +98,35 @@ public class UserIdentityConfigurable implements Configurable {
     @Override
     public boolean isModified() {
         UserIdentityConfigState config = UserIdentityConfigState.getInstance();
-        
+
         return !userNameField.getText().equals(config.getUserName())
-            || !userCodeField.getText().equals(config.getUserCode())
-            || !userEmailField.getText().equals(config.getUserEmail())
-            || !userDepartmentField.getText().equals(config.getUserDepartment());
+            || !userEmailField.getText().equals(config.getUserEmail());
     }
     
     @Override
     public void apply() throws ConfigurationException {
         // 验证必填字段
         String userName = userNameField.getText().trim();
-        String userCode = userCodeField.getText().trim();
-        
+
         if (userName.isEmpty()) {
             throw new ConfigurationException("用户名不能为空");
         }
-        
-        if (userCode.isEmpty()) {
-            throw new ConfigurationException("用户编码不能为空");
-        }
-        
+
         // 保存配置
         UserIdentityConfigState config = UserIdentityConfigState.getInstance();
         config.setUserName(userName);
-        config.setUserCode(userCode);
+        config.setUserCode(generatedUserCode);  // 使用自动生成的用户编码
         config.setUserEmail(userEmailField.getText().trim());
-        config.setUserDepartment(userDepartmentField.getText().trim());
+        config.setUserDepartment("");  // 部门字段设为空
     }
     
     @Override
     public void reset() {
         UserIdentityConfigState config = UserIdentityConfigState.getInstance();
-        
+
         userNameField.setText(config.getUserName());
-        userCodeField.setText(config.getUserCode());
         userEmailField.setText(config.getUserEmail());
-        userDepartmentField.setText(config.getUserDepartment());
+        // 用户编码和部门不需要重置，因为它们是自动生成/固定的
     }
 }
 
