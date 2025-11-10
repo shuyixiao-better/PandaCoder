@@ -2328,7 +2328,7 @@ public class GitStatToolWindow extends JPanel {
                 }
 
                 // 设置用户身份信息
-                String deviceId = com.shuyixiao.gitstat.weekly.util.DeviceIdentifierUtil.getDeviceId();
+                String deviceId = DeviceIdentifierUtil.getDeviceId();
                 archive.setDeviceId(deviceId);
 
                 // 根据设备ID生成用户编码（取前12位）
