@@ -58,7 +58,7 @@ python update-all.py  # 同时更新 PandaCoder 和博客
 python sync-to-blog.py
 ```
 
-详细说明请参考：[BLOG_SYNC_GUIDE.md](BLOG_SYNC_GUIDE.md)
+详细说明请参考：[BLOG_SYNC_GUIDE.md](docs/BLOG_SYNC_GUIDE.md)
 
 ### 5. 提交更改
 

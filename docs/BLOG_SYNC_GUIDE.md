@@ -319,9 +319,9 @@ UnicodeEncodeError: 'gbk' codec can't encode character
 
 ## 📚 相关文档
 
-- [VERSION_UPDATE_GUIDE.md](VERSION_UPDATE_GUIDE.md) - 版本更新指南
-- [docs/版本号统一管理方案.md](docs/版本号统一管理方案.md) - 版本管理方案
-- [docs/版本号统一管理实现总结.md](docs/版本号统一管理实现总结.md) - 实现总结
+- [VERSION_UPDATE_GUIDE.md](../VERSION_UPDATE_GUIDE.md) - 版本更新指南
+- [docs/版本号统一管理方案.md](版本号统一管理方案.md) - 版本管理方案
+- [docs/版本号统一管理实现总结.md](版本号统一管理实现总结.md) - 实现总结
 
 ## 💡 提示
 
