@@ -316,14 +316,19 @@ public class QRCodeDialog extends DialogWrapper {
         descPanel.setBorder(JBUI.Borders.emptyTop(8));
         
         JBLabel descLabel = new JBLabel(
-            "<html>" +
-            "<div style='text-align: center;'>" +
-            "感谢您对 PandaCoder 插件的支持！<br/>" +
-            "<span style='color: #888; font-size: 10px;'>" +
-            "您的支持是我持续改进的动力 💪 支持金额不限，心意最重要 ❤️" +
-            "</span>" +
-            "</div>" +
-            "</html>"
+            "<html>\n" +
+                    "<div style='text-align: center; font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif; line-height: 1.5;'>\n" +
+                    "  感谢您使用 PandaCoder！<br/>\n" +
+                    "  <span style='color: #666; font-size: 14px;'>\n" +
+                    "    据统计，超过 80% 的用户从未表达过支持 —— 但正是那少数人的鼓励，让我在深夜还能笑着写代码 \uD83D\uDCBB✨\n" +
+                    "  </span><br/><br/>\n" +
+                    "  如果这个插件曾为您节省过哪怕一分钟，<br/>\n" +
+                    "  是否愿意用一杯咖啡的价格，点亮这份继续前行的动力？☕\uFE0F<br/>\n" +
+                    "  <span style='color: #888; font-size: 12px;'>\n" +
+                    "    金额不限，心意最重。您的支持，是我对抗“工具人”命运的微光。\n" +
+                    "  </span>\n" +
+                    "</div>\n" +
+                    "</html>"
         );
         descLabel.setHorizontalAlignment(SwingConstants.CENTER);
         descLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
