@@ -10,6 +10,13 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.util.ui.JBUI;
 import com.shuyixiao.setting.PluginSettings;
 import com.shuyixiao.ai.chat.OpenAICompatibleChatClient;
+import com.shuyixiao.chat.CodeLocator;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiDocumentManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -27,8 +34,11 @@ public class AiChatToolWindowPanel {
     private final JButton sendButton = new JButton("发送");
     private final JButton applyButton = new JButton("应用到当前文件");
     private final JComboBox<String> modeCombo = new JComboBox<>(new String[]{"问答", "Agent"});
+    private final JCheckBox applyToTargetCheck = new JCheckBox("应用到 @目标文件");
+    private final JLabel targetLabel = new JLabel("");
 
     private final List<OpenAICompatibleChatClient.Message> messages = new ArrayList<>();
+    private PsiElement applyTargetPsi = null;
 
     public AiChatToolWindowPanel(Project project) {
         this.project = project;
@@ -42,9 +52,20 @@ public class AiChatToolWindowPanel {
 
     private JPanel buildUI() {
         JPanel panel = new JPanel(new BorderLayout());
-        JPanel top = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        top.add(new JLabel("模式："));
-        top.add(modeCombo);
+        JPanel top = new JPanel(new BorderLayout());
+        JPanel leftTop = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
+        leftTop.setOpaque(false);
+        leftTop.add(new JLabel("模式："));
+        leftTop.add(modeCombo);
+        top.add(leftTop, BorderLayout.WEST);
+
+        JPanel rightTop = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
+        rightTop.setOpaque(false);
+        targetLabel.setForeground(Color.GRAY);
+        rightTop.add(targetLabel);
+        rightTop.add(applyToTargetCheck);
+        applyToTargetCheck.setEnabled(false);
+        top.add(rightTop, BorderLayout.EAST);
         panel.add(top, BorderLayout.NORTH);
 
         messageListPanel.setLayout(new BoxLayout(messageListPanel, BoxLayout.Y_AXIS));
@@ -59,7 +80,7 @@ public class AiChatToolWindowPanel {
         JScrollPane inputScroll = new JScrollPane(inputArea);
         bottom.add(inputScroll, BorderLayout.CENTER);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 6));
         actions.add(applyButton);
         actions.add(sendButton);
         bottom.add(actions, BorderLayout.SOUTH);
@@ -80,6 +101,19 @@ public class AiChatToolWindowPanel {
         });
         // 保持 Shift+Enter 为换行
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, KeyEvent.SHIFT_DOWN_MASK), "insert-break");
+
+        // 输入提示占位
+        inputArea.setForeground(new Color(120,120,120));
+        inputArea.setText("输入消息，支持 @类名 或 @文件路径 作为上下文。Enter 发送，Shift+Enter 换行。");
+        inputArea.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override
+            public void focusGained(java.awt.event.FocusEvent e) {
+                if ("输入消息，支持 @类名 或 @文件路径 作为上下文。Enter 发送，Shift+Enter 换行。".equals(inputArea.getText())) {
+                    inputArea.setText("");
+                    inputArea.setForeground(Color.BLACK);
+                }
+            }
+        });
         return panel;
     }
 
@@ -95,6 +129,10 @@ public class AiChatToolWindowPanel {
             return;
         }
         inputArea.setText("");
+        String contextMd = attachProjectContext(userText);
+        if (!contextMd.isEmpty()) {
+            addMessage("上下文", contextMd);
+        }
         addMessage("用户", userText);
 
         messages.add(new OpenAICompatibleChatClient.Message("user", userText));
@@ -104,7 +142,11 @@ public class AiChatToolWindowPanel {
                 PluginSettings s = PluginSettings.getInstance();
                 String reply;
                 if ("openai".equals(s.getAiProviderType())) {
-                    reply = OpenAICompatibleChatClient.chat(s.getAiBaseUrl(), s.getAiApiKey(), s.getAiModel(), new ArrayList<>(messages));
+                    List<OpenAICompatibleChatClient.Message> ms = new ArrayList<>(messages);
+                    if (!contextMd.isEmpty()) {
+                        ms.add(new OpenAICompatibleChatClient.Message("system", "项目上下文:\n\n" + contextMd));
+                    }
+                    reply = OpenAICompatibleChatClient.chat(s.getAiBaseUrl(), s.getAiApiKey(), s.getAiModel(), ms);
                 } else {
                     // 国内模型复用翻译API的分析能力
                     com.shuyixiao.DomesticAITranslationAPI api = new com.shuyixiao.DomesticAITranslationAPI();
@@ -146,6 +188,10 @@ public class AiChatToolWindowPanel {
             return;
         }
 
+        if (applyToTargetCheck.isSelected() && applyTargetPsi != null) {
+            openAndApplyToTarget(content);
+            return;
+        }
         Editor editor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project).getSelectedTextEditor();
         if (editor == null) {
             Editor[] editors = EditorFactory.getInstance().getAllEditors();
@@ -170,14 +216,54 @@ public class AiChatToolWindowPanel {
         Messages.showInfoMessage(project, "已将助手内容写入当前文件（替换选区或插入光标处）", "AI Agent");
     }
 
+    private void openAndApplyToTarget(String content) {
+        PsiFile targetFile = null;
+        if (applyTargetPsi instanceof PsiFile) {
+            targetFile = (PsiFile) applyTargetPsi;
+        } else if (applyTargetPsi instanceof PsiClass) {
+            targetFile = ((PsiClass) applyTargetPsi).getContainingFile();
+        }
+        if (targetFile == null || targetFile.getVirtualFile() == null) {
+            Messages.showInfoMessage(project, "未找到可写入的目标文件", "AI Agent");
+            return;
+        }
+        OpenFileDescriptor descriptor = new OpenFileDescriptor(project, targetFile.getVirtualFile());
+        descriptor.navigate(true);
+        FileEditorManager.getInstance(project).openTextEditor(descriptor, true);
+
+        Document doc = PsiDocumentManager.getInstance(project).getDocument(targetFile);
+        if (doc == null) {
+            Messages.showInfoMessage(project, "无法获取文档对象", "AI Agent");
+            return;
+        }
+        final Document fdoc = doc;
+        WriteCommandAction.runWriteCommandAction(project, new Runnable() {
+            @Override
+            public void run() {
+                fdoc.insertString(fdoc.getTextLength(), "\n\n/* AI Agent 变更 */\n" + content + "\n");
+            }
+        });
+        Messages.showInfoMessage(project, "已将助手内容追加到 @目标文件 末尾", "AI Agent");
+    }
+
     private void addMessage(String who, String md) {
+        JPanel lineWrap = new JPanel(new FlowLayout("用户".equals(who) ? FlowLayout.RIGHT : FlowLayout.LEFT));
+        lineWrap.setOpaque(false);
         JPanel bubble = new JPanel(new BorderLayout());
         bubble.setBorder(new EmptyBorder(8, 8, 8, 8));
-        bubble.setBackground(com.intellij.util.ui.UIUtil.getPanelBackground());
+        bubble.setBackground("用户".equals(who) ? new Color(235, 248, 255) : com.intellij.util.ui.UIUtil.getPanelBackground());
 
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
         JLabel header = new JLabel(who);
         header.setFont(header.getFont().deriveFont(Font.BOLD));
-        bubble.add(header, BorderLayout.NORTH);
+        headerPanel.add(header, BorderLayout.WEST);
+        if ("上下文".equals(who)) {
+            JButton openBtn = new JButton("打开到编辑器");
+            openBtn.addActionListener(e -> openLocatedTarget(md));
+            headerPanel.add(openBtn, BorderLayout.EAST);
+        }
+        bubble.add(headerPanel, BorderLayout.NORTH);
 
         String html = MarkdownUtil.renderCompositeHtml(md);
         JEditorPane htmlPane = new JEditorPane();
@@ -191,11 +277,85 @@ public class AiChatToolWindowPanel {
         inner.setPreferredSize(new Dimension(760, 200));
         bubble.add(inner, BorderLayout.CENTER);
 
-        messageListPanel.add(bubble);
+        lineWrap.add(bubble);
+        messageListPanel.add(lineWrap);
         messageListPanel.add(Box.createVerticalStrut(6));
         messageListPanel.revalidate();
         SwingUtilities.invokeLater(() -> {
             messageListPanel.scrollRectToVisible(new Rectangle(0, messageListPanel.getHeight() + 200, 1, 1));
         });
+    }
+
+    private String attachProjectContext(String userText) {
+        List<String> targets = extractTargets(userText);
+        if (targets.isEmpty()) return "";
+        StringBuilder md = new StringBuilder();
+        applyTargetPsi = null;
+        for (String t : targets) {
+            PsiClass cls = CodeLocator.findClass(project, t);
+            if (cls != null) {
+                String file = cls.getContainingFile() != null && cls.getContainingFile().getVirtualFile() != null ? cls.getContainingFile().getVirtualFile().getPath() : "";
+                md.append("### ").append(t).append("\n");
+                md.append("文件: `").append(file).append(":`").append(CodeLocator.line(project, cls)).append("`\n\n");
+                md.append("```java\n").append(CodeLocator.snippet(cls, 4000)).append("\n```\n\n");
+                applyTargetPsi = cls;
+                continue;
+            }
+            if (t.endsWith(".java")) {
+                PsiFile file = CodeLocator.findFile(project, t);
+                if (file != null) {
+                    md.append("### ").append(t).append("\n");
+                    String path = file.getVirtualFile() != null ? file.getVirtualFile().getPath() : "";
+                    md.append("文件: `").append(path).append("`\n\n");
+                    md.append("```java\n").append(CodeLocator.snippet(file, 4000)).append("\n```\n\n");
+                    applyTargetPsi = file;
+                }
+            }
+        }
+        if (applyTargetPsi != null) {
+            applyToTargetCheck.setEnabled(true);
+            String hint = applyTargetPsi instanceof PsiFile ? ((PsiFile)applyTargetPsi).getVirtualFile().getPath() : (applyTargetPsi instanceof PsiClass ? ((PsiClass)applyTargetPsi).getQualifiedName() : "");
+            targetLabel.setText(hint == null ? "" : ("目标：" + hint));
+        } else {
+            applyToTargetCheck.setEnabled(false);
+            targetLabel.setText("");
+        }
+        return md.toString();
+    }
+
+    private List<String> extractTargets(String text) {
+        List<String> list = new ArrayList<>();
+        // @FQN 类名
+        java.util.regex.Pattern mentionFqn = java.util.regex.Pattern.compile("@((?:[a-zA-Z_]\\w*\\.)+[A-Z]\\w+)");
+        java.util.regex.Matcher mmf = mentionFqn.matcher(text);
+        while (mmf.find()) list.add(mmf.group(1));
+        // @路径 文件
+        java.util.regex.Pattern mentionPath = java.util.regex.Pattern.compile("@([\\w./-]+\\.java)");
+        java.util.regex.Matcher mmp = mentionPath.matcher(text);
+        while (mmp.find()) list.add(mmp.group(1));
+        // 兜底：非@形式
+        java.util.regex.Pattern fqn = java.util.regex.Pattern.compile("(?:[a-zA-Z_]\\w*\\.)+[A-Z]\\w+");
+        java.util.regex.Matcher mf = fqn.matcher(text);
+        while (mf.find()) list.add(mf.group());
+        java.util.regex.Pattern jfn = java.util.regex.Pattern.compile("[A-Z]\\w+\\.java");
+        java.util.regex.Matcher mj = jfn.matcher(text);
+        while (mj.find()) list.add(mj.group());
+        return list;
+    }
+
+    private void openLocatedTarget(String md) {
+        java.util.regex.Pattern p = java.util.regex.Pattern.compile("###\\s+([^\n]+)");
+        java.util.regex.Matcher m = p.matcher(md);
+        if (!m.find()) return;
+        String target = m.group(1).trim();
+        PsiClass cls = CodeLocator.findClass(project, target);
+        if (cls != null) {
+            CodeLocator.open(project, cls);
+            return;
+        }
+        if (target.endsWith(".java")) {
+            PsiFile file = CodeLocator.findFile(project, target);
+            if (file != null) CodeLocator.open(project, file);
+        }
     }
 }
