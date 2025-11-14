@@ -347,8 +347,8 @@ public class DomesticAITranslationAPI {
         conn.setRequestMethod("POST");
         conn.setDoOutput(true);
         conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-        conn.setConnectTimeout(10000);
-        conn.setReadTimeout(10000);
+        conn.setConnectTimeout(20000);
+        conn.setReadTimeout(60000);
         
         // 根据不同模型设置不同的请求头
         String authHeader = null;
