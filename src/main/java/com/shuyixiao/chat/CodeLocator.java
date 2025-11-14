@@ -23,7 +23,7 @@ public class CodeLocator {
         PsiClass byFqn = facade.findClass(name, GlobalSearchScope.projectScope(project));
         if (byFqn != null) return byFqn;
         Query<PsiClass> q = AllClassesSearch.search(GlobalSearchScope.projectScope(project), project);
-        for (PsiClass c : q) {
+        for (PsiClass c : q.findAll()) {
             if (c.getName() != null && c.getName().equals(name)) {
                 return c;
             }
