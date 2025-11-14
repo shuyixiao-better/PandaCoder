@@ -14,6 +14,8 @@ import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.editor.Document;
 import com.intellij.psi.PsiManager;
 
+import java.util.Collection;
+
 public class CodeLocator {
 
     public static PsiClass findClass(Project project, String name) {
@@ -30,8 +32,10 @@ public class CodeLocator {
     }
 
     public static PsiFile findFile(Project project, String filename) {
-        PsiFile[] files = com.intellij.psi.search.FilenameIndex.getFilesByName(project, filename, GlobalSearchScope.projectScope(project));
-        return files.length > 0 ? files[0] : null;
+        Collection<VirtualFile> virtualFiles = com.intellij.psi.search.FilenameIndex.getVirtualFilesByName(filename, GlobalSearchScope.projectScope(project));
+        if (virtualFiles.isEmpty()) return null;
+        VirtualFile virtualFile = virtualFiles.iterator().next();
+        return PsiManager.getInstance(project).findFile(virtualFile);
     }
 
     public static PsiFile findFileByPath(Project project, String path) {
