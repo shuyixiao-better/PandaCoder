@@ -55,7 +55,7 @@ public class SettingConfigurable implements SearchableConfigurable {
 
     // AI助手配置
     private JCheckBox enableAiChatAssistantCheckBox = new JCheckBox("启用 AI 智能助手（聊天/Agent）");
-    private JComboBox<String> aiProviderComboBox = new JComboBox<>(new String[]{"OpenAI兼容", "国内模型（通义/文心/智谱/混元）"});
+    private JComboBox<String> aiProviderComboBox = new JComboBox<>(new String[]{"OpenAI兼容", "Ollama 本地", "国内模型（通义/文心/智谱/混元）"});
     private JTextField aiBaseUrlField = new JTextField(40);
     private JPasswordField aiApiKeyField = new JPasswordField(40);
     private JTextField aiModelField = new JTextField(40);
@@ -398,7 +398,8 @@ public class SettingConfigurable implements SearchableConfigurable {
 
         // AI 助手设置
         enableAiChatAssistantCheckBox.setSelected(PluginSettings.getInstance().isEnableAiChatAssistant());
-        aiProviderComboBox.setSelectedItem("openai".equals(PluginSettings.getInstance().getAiProviderType()) ? "OpenAI兼容" : "国内模型（通义/文心/智谱/混元）");
+        String p = PluginSettings.getInstance().getAiProviderType();
+        aiProviderComboBox.setSelectedItem("ollama".equals(p) ? "Ollama 本地" : ("openai".equals(p) ? "OpenAI兼容" : "国内模型（通义/文心/智谱/混元）"));
         aiBaseUrlField.setText(PluginSettings.getInstance().getAiBaseUrl());
         aiApiKeyField.setText(PluginSettings.getInstance().getAiApiKey());
         aiModelField.setText(PluginSettings.getInstance().getAiModel());
@@ -658,7 +659,7 @@ public class SettingConfigurable implements SearchableConfigurable {
             || useCustomPromptCheckBox.isSelected() != settings.isUseCustomPrompt()
             || !translationPromptArea.getText().equals(settings.getTranslationPrompt())
             || enableAiChatAssistantCheckBox.isSelected() != settings.isEnableAiChatAssistant()
-            || !("openai".equals(settings.getAiProviderType()) ? "OpenAI兼容" : "国内模型（通义/文心/智谱/混元）").equals(aiProviderComboBox.getSelectedItem().toString())
+            || !("ollama".equals(settings.getAiProviderType()) ? "Ollama 本地" : ("openai".equals(settings.getAiProviderType()) ? "OpenAI兼容" : "国内模型（通义/文心/智谱/混元）")).equals(aiProviderComboBox.getSelectedItem().toString())
             || !aiBaseUrlField.getText().equals(settings.getAiBaseUrl())
             || !String.valueOf(aiApiKeyField.getPassword()).equals(settings.getAiApiKey())
             || !aiModelField.getText().equals(settings.getAiModel());
@@ -693,7 +694,8 @@ public class SettingConfigurable implements SearchableConfigurable {
 
         // AI 助手
         settings.setEnableAiChatAssistant(enableAiChatAssistantCheckBox.isSelected());
-        settings.setAiProviderType("OpenAI兼容".equals(aiProviderComboBox.getSelectedItem().toString()) ? "openai" : "domestic");
+        String selected = aiProviderComboBox.getSelectedItem().toString();
+        settings.setAiProviderType("Ollama 本地".equals(selected) ? "ollama" : ("OpenAI兼容".equals(selected) ? "openai" : "domestic"));
         settings.setAiBaseUrl(aiBaseUrlField.getText());
         settings.setAiApiKey(String.valueOf(aiApiKeyField.getPassword()));
         settings.setAiModel(aiModelField.getText());
@@ -725,7 +727,7 @@ public class SettingConfigurable implements SearchableConfigurable {
         useCustomPromptCheckBox.setSelected(settings.isUseCustomPrompt());
         translationPromptArea.setText(settings.getTranslationPrompt());
         enableAiChatAssistantCheckBox.setSelected(settings.isEnableAiChatAssistant());
-        aiProviderComboBox.setSelectedItem("openai".equals(settings.getAiProviderType()) ? "OpenAI兼容" : "国内模型（通义/文心/智谱/混元）");
+        aiProviderComboBox.setSelectedItem("ollama".equals(settings.getAiProviderType()) ? "Ollama 本地" : ("openai".equals(settings.getAiProviderType()) ? "OpenAI兼容" : "国内模型（通义/文心/智谱/混元）"));
         aiBaseUrlField.setText(settings.getAiBaseUrl());
         aiApiKeyField.setText(settings.getAiApiKey());
         aiModelField.setText(settings.getAiModel());
@@ -761,6 +763,14 @@ public class SettingConfigurable implements SearchableConfigurable {
                         JOptionPane.WARNING_MESSAGE);
                 return;
             }
+        } else if ("Ollama 本地".equals(provider)) {
+            if (baseUrl.isEmpty() || model.isEmpty()) {
+                JOptionPane.showMessageDialog(panel,
+                        "请填写 Ollama Base URL 和模型名称",
+                        "配置不完整",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
         } else {
             if (!enableDomesticAICheckBox.isSelected()) {
                 JOptionPane.showMessageDialog(panel,
@@ -775,6 +785,10 @@ public class SettingConfigurable implements SearchableConfigurable {
             String reply;
             if ("OpenAI兼容".equals(provider)) {
                 reply = com.shuyixiao.ai.chat.OpenAICompatibleChatClient.quickTest(baseUrl, apiKey, model, "你好，PandaCoder!");
+            } else if ("Ollama 本地".equals(provider)) {
+                java.util.List<com.shuyixiao.ai.chat.OllamaChatClient.Message> ms = new java.util.ArrayList<>();
+                ms.add(new com.shuyixiao.ai.chat.OllamaChatClient.Message("user", "你好，PandaCoder!"));
+                reply = com.shuyixiao.ai.chat.OllamaChatClient.chat(baseUrl, model, ms);
             } else {
                 reply = com.shuyixiao.DomesticAITranslationAPI.translate("你好，PandaCoder!", getValueByDisplayName(domesticAIModelComboBox.getSelectedItem().toString()), String.valueOf(domesticAIApiKeyField.getPassword()));
             }

@@ -36,9 +36,16 @@ public class AiChatToolWindowPanel {
     private final JComboBox<String> modeCombo = new JComboBox<>(new String[]{"问答", "Agent"});
     private final JCheckBox applyToTargetCheck = new JCheckBox("应用到 @目标文件");
     private final JLabel targetLabel = new JLabel("");
+    private final JComboBox<String> sessionCombo = new JComboBox<>();
+    private final JButton newSessionButton = new JButton("新建会话");
+    private final JButton deleteSessionButton = new JButton("删除会话");
+    private final JButton clearSessionButton = new JButton("清空会话");
 
     private final List<OpenAICompatibleChatClient.Message> messages = new ArrayList<>();
     private PsiElement applyTargetPsi = null;
+    private final java.util.Map<String, java.util.List<OpenAICompatibleChatClient.Message>> sessionMessages = new java.util.LinkedHashMap<>();
+    private String currentSessionId;
+    private int sessionCounter = 1;
 
     public AiChatToolWindowPanel(Project project) {
         this.project = project;
@@ -57,6 +64,12 @@ public class AiChatToolWindowPanel {
         leftTop.setOpaque(false);
         leftTop.add(new JLabel("模式："));
         leftTop.add(modeCombo);
+        leftTop.add(new JLabel("会话："));
+        sessionCombo.setPreferredSize(new Dimension(160, 28));
+        leftTop.add(sessionCombo);
+        leftTop.add(newSessionButton);
+        leftTop.add(clearSessionButton);
+        leftTop.add(deleteSessionButton);
         top.add(leftTop, BorderLayout.WEST);
 
         JPanel rightTop = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
@@ -114,6 +127,12 @@ public class AiChatToolWindowPanel {
                 }
             }
         });
+        // 初始化首次会话
+        createNewSession();
+        sessionCombo.addActionListener(ev -> switchSession((String) sessionCombo.getSelectedItem()));
+        newSessionButton.addActionListener(ev -> createNewSession());
+        clearSessionButton.addActionListener(ev -> clearCurrentSession());
+        deleteSessionButton.addActionListener(ev -> deleteCurrentSession());
         return panel;
     }
 
@@ -124,6 +143,9 @@ public class AiChatToolWindowPanel {
     }
 
     private void onSend(ActionEvent e) {
+        if (currentSessionId == null) {
+            createNewSession();
+        }
         String userText = inputArea.getText().trim();
         if (userText.isEmpty()) {
             return;
@@ -135,18 +157,61 @@ public class AiChatToolWindowPanel {
         }
         addMessage("用户", userText);
 
-        messages.add(new OpenAICompatibleChatClient.Message("user", userText));
+        getCurrentMessages().add(new OpenAICompatibleChatClient.Message("user", userText));
 
         ApplicationManager.getApplication().executeOnPooledThread(() -> {
             try {
                 PluginSettings s = PluginSettings.getInstance();
+                if (!s.isEnableAiChatAssistant()) {
+                    SwingUtilities.invokeLater(() -> Messages.showWarningDialog(project, "未启用智能助手，请在设置中开启并配置。", "AI Chat"));
+                    return;
+                }
+                String provider = s.getAiProviderType();
+                if ("openai".equals(provider)) {
+                    if (s.getAiBaseUrl() == null || s.getAiBaseUrl().trim().isEmpty() || s.getAiModel() == null || s.getAiModel().trim().isEmpty()) {
+                        SwingUtilities.invokeLater(() -> Messages.showWarningDialog(project, "OpenAI 兼容模式未配置完整，请填写 Base URL 和模型名称。", "AI Chat"));
+                        return;
+                    }
+                } else if ("ollama".equals(provider)) {
+                    if (s.getAiBaseUrl() == null || s.getAiBaseUrl().trim().isEmpty() || s.getAiModel() == null || s.getAiModel().trim().isEmpty()) {
+                        SwingUtilities.invokeLater(() -> Messages.showWarningDialog(project, "Ollama 模式未配置完整，请填写 Base URL 和模型名称。", "AI Chat"));
+                        return;
+                    }
+                } else {
+                    if (!PluginSettings.getInstance().isEnableDomesticAI() || PluginSettings.getInstance().getDomesticAIApiKey().isEmpty()) {
+                        SwingUtilities.invokeLater(() -> Messages.showWarningDialog(project, "国内模型未配置或未启用，请在“翻译引擎”页设置。", "AI Chat"));
+                        return;
+                    }
+                }
                 String reply;
                 if ("openai".equals(s.getAiProviderType())) {
-                    List<OpenAICompatibleChatClient.Message> ms = new ArrayList<>(messages);
-                    if (!contextMd.isEmpty()) {
-                        ms.add(new OpenAICompatibleChatClient.Message("system", "项目上下文:\n\n" + contextMd));
+                    // 自动识别 Ollama baseUrl
+                    boolean useOllama = s.getAiBaseUrl() != null && (s.getAiBaseUrl().contains("11434") || s.getAiBaseUrl().toLowerCase().contains("ollama") || s.getAiBaseUrl().endsWith("/api") || s.getAiBaseUrl().endsWith("/api/"));
+                    if (useOllama) {
+                        java.util.List<com.shuyixiao.ai.chat.OllamaChatClient.Message> ms = new ArrayList<>();
+                        for (OpenAICompatibleChatClient.Message m : getCurrentMessages()) {
+                            ms.add(new com.shuyixiao.ai.chat.OllamaChatClient.Message(m.role, m.content));
+                        }
+                        if (!contextMd.isEmpty()) {
+                            ms.add(new com.shuyixiao.ai.chat.OllamaChatClient.Message("system", "项目上下文:\n\n" + contextMd));
+                        }
+                        reply = com.shuyixiao.ai.chat.OllamaChatClient.chat(s.getAiBaseUrl(), s.getAiModel(), ms);
+                    } else {
+                        List<OpenAICompatibleChatClient.Message> ms = new ArrayList<>(getCurrentMessages());
+                        if (!contextMd.isEmpty()) {
+                            ms.add(new OpenAICompatibleChatClient.Message("system", "项目上下文:\n\n" + contextMd));
+                        }
+                        reply = OpenAICompatibleChatClient.chat(s.getAiBaseUrl(), s.getAiApiKey(), s.getAiModel(), ms);
                     }
-                    reply = OpenAICompatibleChatClient.chat(s.getAiBaseUrl(), s.getAiApiKey(), s.getAiModel(), ms);
+                } else if ("ollama".equals(s.getAiProviderType())) {
+                    java.util.List<com.shuyixiao.ai.chat.OllamaChatClient.Message> ms = new ArrayList<>();
+                    for (OpenAICompatibleChatClient.Message m : getCurrentMessages()) {
+                        ms.add(new com.shuyixiao.ai.chat.OllamaChatClient.Message(m.role, m.content));
+                    }
+                    if (!contextMd.isEmpty()) {
+                        ms.add(new com.shuyixiao.ai.chat.OllamaChatClient.Message("system", "项目上下文:\n\n" + contextMd));
+                    }
+                    reply = com.shuyixiao.ai.chat.OllamaChatClient.chat(s.getAiBaseUrl(), s.getAiModel(), ms);
                 } else {
                     // 国内模型复用翻译API的分析能力
                     com.shuyixiao.DomesticAITranslationAPI api = new com.shuyixiao.DomesticAITranslationAPI();
@@ -154,7 +219,7 @@ public class AiChatToolWindowPanel {
                 }
                 String r = reply == null ? "<空>" : reply;
                 SwingUtilities.invokeLater(() -> {
-                    messages.add(new OpenAICompatibleChatClient.Message("assistant", r));
+                    getCurrentMessages().add(new OpenAICompatibleChatClient.Message("assistant", r));
                     addMessage("助手", r);
                 });
             } catch (Exception ex) {
@@ -173,11 +238,16 @@ public class AiChatToolWindowPanel {
         if (!"Agent".equals(modeCombo.getSelectedItem().toString())) {
             return;
         }
-        if (messages.isEmpty()) return;
+        if (currentSessionId == null) {
+            Messages.showInfoMessage(project, "请先新建会话", "AI Agent");
+            return;
+        }
+        if (getCurrentMessages().isEmpty()) return;
         // 取最后一条助手消息
         String content = null;
-        for (int i = messages.size() - 1; i >= 0; i--) {
-            OpenAICompatibleChatClient.Message m = messages.get(i);
+        java.util.List<OpenAICompatibleChatClient.Message> list = getCurrentMessages();
+        for (int i = list.size() - 1; i >= 0; i--) {
+            OpenAICompatibleChatClient.Message m = list.get(i);
             if ("assistant".equals(m.role)) {
                 content = m.content;
                 break;
@@ -233,8 +303,14 @@ public class AiChatToolWindowPanel {
 
         Document doc = PsiDocumentManager.getInstance(project).getDocument(targetFile);
         if (doc == null) {
-            Messages.showInfoMessage(project, "无法获取文档对象", "AI Agent");
-            return;
+            com.intellij.openapi.vfs.VirtualFile vf = targetFile.getVirtualFile();
+            if (vf != null) {
+                doc = com.intellij.openapi.fileEditor.FileDocumentManager.getInstance().getDocument(vf);
+            }
+            if (doc == null) {
+                Messages.showInfoMessage(project, "无法获取文档对象", "AI Agent");
+                return;
+            }
         }
         final Document fdoc = doc;
         WriteCommandAction.runWriteCommandAction(project, new Runnable() {
@@ -243,6 +319,7 @@ public class AiChatToolWindowPanel {
                 fdoc.insertString(fdoc.getTextLength(), "\n\n/* AI Agent 变更 */\n" + content + "\n");
             }
         });
+        PsiDocumentManager.getInstance(project).commitDocument(fdoc);
         Messages.showInfoMessage(project, "已将助手内容追加到 @目标文件 末尾", "AI Agent");
     }
 
@@ -356,6 +433,71 @@ public class AiChatToolWindowPanel {
         if (target.endsWith(".java")) {
             PsiFile file = CodeLocator.findFile(project, target);
             if (file != null) CodeLocator.open(project, file);
+        }
+    }
+
+    private java.util.List<OpenAICompatibleChatClient.Message> getCurrentMessages() {
+        return sessionMessages.get(currentSessionId);
+    }
+
+    private void createNewSession() {
+        String id = "会话 " + (sessionCounter++);
+        sessionMessages.put(id, new java.util.ArrayList<>());
+        sessionCombo.addItem(id);
+        sessionCombo.setSelectedItem(id);
+        currentSessionId = id;
+        messageListPanel.removeAll();
+        messageListPanel.revalidate();
+        messageListPanel.repaint();
+        applyTargetPsi = null;
+        applyToTargetCheck.setEnabled(false);
+        targetLabel.setText("");
+    }
+
+    private void switchSession(String id) {
+        if (id == null || !sessionMessages.containsKey(id)) return;
+        currentSessionId = id;
+        messageListPanel.removeAll();
+        // 重新渲染当前会话消息历史
+        for (OpenAICompatibleChatClient.Message m : sessionMessages.get(id)) {
+            addMessage("assistant".equals(m.role) ? "助手" : "用户", m.content);
+        }
+        messageListPanel.revalidate();
+        messageListPanel.repaint();
+        applyTargetPsi = null;
+        applyToTargetCheck.setEnabled(false);
+        targetLabel.setText("");
+    }
+
+    private void clearCurrentSession() {
+        if (currentSessionId == null) return;
+        sessionMessages.put(currentSessionId, new java.util.ArrayList<>());
+        messageListPanel.removeAll();
+        messageListPanel.revalidate();
+        messageListPanel.repaint();
+        applyTargetPsi = null;
+        applyToTargetCheck.setEnabled(false);
+        targetLabel.setText("");
+    }
+
+    private void deleteCurrentSession() {
+        if (currentSessionId == null) return;
+        int idx = sessionCombo.getSelectedIndex();
+        sessionMessages.remove(currentSessionId);
+        sessionCombo.removeItem(currentSessionId);
+        if (sessionCombo.getItemCount() == 0) {
+            // 删除最后一个会话后不自动新建，清空界面并要求用户手动新建
+            currentSessionId = null;
+            messageListPanel.removeAll();
+            messageListPanel.revalidate();
+            messageListPanel.repaint();
+            applyTargetPsi = null;
+            applyToTargetCheck.setEnabled(false);
+            targetLabel.setText("");
+        } else {
+            int sel = Math.max(0, idx - 1);
+            sessionCombo.setSelectedIndex(sel);
+            switchSession((String) sessionCombo.getSelectedItem());
         }
     }
 }
