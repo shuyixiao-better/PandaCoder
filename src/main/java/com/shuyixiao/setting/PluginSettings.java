@@ -50,6 +50,13 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
     private boolean enableDomesticAI = false;
     private String domesticAIModel = "hunyuan"; // 默认使用腾讯混元，支持从配置文件读取
     private String domesticAIApiKey = "";
+
+    // 智能助手（聊天/Agent）配置
+    private boolean enableAiChatAssistant = false;
+    private String aiProviderType = "openai"; // openai/domestic
+    private String aiBaseUrl = ""; // OpenAI兼容或本地部署地址
+    private String aiApiKey = "";
+    private String aiModel = "gpt-4o-mini"; // 兼容模型名，国内模型时可忽略
     
     // 翻译提示词配置
     private String translationPrompt =
@@ -168,6 +175,44 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
         this.domesticAIApiKey = domesticAIApiKey;
     }
 
+    // AI 助手配置
+    public boolean isEnableAiChatAssistant() {
+        return enableAiChatAssistant;
+    }
+    public void setEnableAiChatAssistant(boolean enableAiChatAssistant) {
+        this.enableAiChatAssistant = enableAiChatAssistant;
+    }
+    public String getAiProviderType() {
+        if (aiProviderType == null || aiProviderType.isEmpty()) {
+            aiProviderType = "openai";
+        }
+        return aiProviderType;
+    }
+    public void setAiProviderType(String aiProviderType) {
+        this.aiProviderType = aiProviderType;
+    }
+    public String getAiBaseUrl() {
+        return aiBaseUrl == null ? "" : aiBaseUrl;
+    }
+    public void setAiBaseUrl(String aiBaseUrl) {
+        this.aiBaseUrl = aiBaseUrl;
+    }
+    public String getAiApiKey() {
+        return aiApiKey == null ? "" : aiApiKey;
+    }
+    public void setAiApiKey(String aiApiKey) {
+        this.aiApiKey = aiApiKey;
+    }
+    public String getAiModel() {
+        if (aiModel == null || aiModel.isEmpty()) {
+            aiModel = "gpt-4o-mini";
+        }
+        return aiModel;
+    }
+    public void setAiModel(String aiModel) {
+        this.aiModel = aiModel;
+    }
+
     @Nullable
     @Override
     public PluginSettings getState() {
@@ -212,13 +257,27 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
         if (this.googleRegion == null) {
             this.googleRegion = "global";
         }
-        
+
         // 确保国内大模型配置不为null
         if (this.domesticAIModel == null || this.domesticAIModel.isEmpty()) {
             this.domesticAIModel = com.shuyixiao.config.TranslationModelConfig.getInstance().getDefaultDomesticAIModel();
         }
         if (this.domesticAIApiKey == null) {
             this.domesticAIApiKey = "";
+        }
+
+        // 确保 AI 助手配置不为 null
+        if (this.aiProviderType == null || this.aiProviderType.isEmpty()) {
+            this.aiProviderType = "openai";
+        }
+        if (this.aiBaseUrl == null) {
+            this.aiBaseUrl = "";
+        }
+        if (this.aiApiKey == null) {
+            this.aiApiKey = "";
+        }
+        if (this.aiModel == null || this.aiModel.isEmpty()) {
+            this.aiModel = "gpt-4o-mini";
         }
         
         // 确保提示词配置不为null
@@ -265,5 +324,4 @@ public class PluginSettings implements PersistentStateComponent<PluginSettings> 
         this.useCustomPrompt = useCustomPrompt;
     }
 }
-
 

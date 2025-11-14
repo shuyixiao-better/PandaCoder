@@ -53,6 +53,14 @@ public class SettingConfigurable implements SearchableConfigurable {
         {"腾讯混元 (Hunyuan)", "hunyuan"}
     };
 
+    // AI助手配置
+    private JCheckBox enableAiChatAssistantCheckBox = new JCheckBox("启用 AI 智能助手（聊天/Agent）");
+    private JComboBox<String> aiProviderComboBox = new JComboBox<>(new String[]{"OpenAI兼容", "国内模型（通义/文心/智谱/混元）"});
+    private JTextField aiBaseUrlField = new JTextField(40);
+    private JPasswordField aiApiKeyField = new JPasswordField(40);
+    private JTextField aiModelField = new JTextField(40);
+    private JButton testAiChatButton = new JButton("验证助手配置并试聊");
+
     public SettingConfigurable() {
         // 初始化下拉框，只显示中文名称
         String[] displayNames = new String[modelMapping.length];
@@ -87,6 +95,7 @@ public class SettingConfigurable implements SearchableConfigurable {
         tabbedPane.addTab("提示词配置", createPromptPanel());
         tabbedPane.addTab("模板配置", createTemplatePanel());
         tabbedPane.addTab("百度翻译", createBaiduPanel());
+        tabbedPane.addTab("智能助手", createAiAssistantPanel());
 //        tabbedPane.addTab("Bug记录", createBugStoragePanel());
         
         panel.add(tabbedPane, BorderLayout.CENTER);
@@ -101,6 +110,61 @@ public class SettingConfigurable implements SearchableConfigurable {
         addEventListeners();
         
         return panel;
+    }
+
+    /**
+     * 创建智能助手（聊天/Agent）配置面板
+     */
+    private JPanel createAiAssistantPanel() {
+        JPanel aiPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = JBUI.insets(5);
+        int row = 0;
+
+        JLabel title = new JLabel("<html><b>AI 智能助手</b></html>");
+        gbc.gridx = 0; gbc.gridy = row++; gbc.gridwidth = 2;
+        aiPanel.add(title, gbc);
+
+        gbc.gridy = row++;
+        aiPanel.add(enableAiChatAssistantCheckBox, gbc);
+
+        JLabel providerLabel = new JLabel("接入方式：");
+        gbc.gridy = row++;
+        aiPanel.add(providerLabel, gbc);
+
+        gbc.gridy = row++;
+        aiPanel.add(aiProviderComboBox, gbc);
+
+        JLabel baseUrlLabel = new JLabel("模型地址（Base URL）：");
+        gbc.gridy = row++;
+        aiPanel.add(baseUrlLabel, gbc);
+
+        gbc.gridy = row++;
+        aiPanel.add(aiBaseUrlField, gbc);
+
+        JLabel apiKeyLabel = new JLabel("API 密钥：");
+        gbc.gridy = row++;
+        aiPanel.add(apiKeyLabel, gbc);
+
+        gbc.gridy = row++;
+        aiPanel.add(aiApiKeyField, gbc);
+
+        JLabel modelLabel = new JLabel("模型名称：");
+        gbc.gridy = row++;
+        aiPanel.add(modelLabel, gbc);
+
+        gbc.gridy = row++;
+        aiPanel.add(aiModelField, gbc);
+
+        gbc.gridy = row++;
+        aiPanel.add(testAiChatButton, gbc);
+
+        JLabel tips = new JLabel("<html><font color='gray'>OpenAI兼容：如 `https://api.openai.com`、`http://localhost:11434/v1`；国内模型选择“国内模型”并在翻译引擎页配置密钥</font></html>");
+        gbc.gridy = row++;
+        aiPanel.add(tips, gbc);
+
+        return aiPanel;
     }
     
     /**
@@ -331,6 +395,13 @@ public class SettingConfigurable implements SearchableConfigurable {
         enableDomesticAICheckBox.setSelected(PluginSettings.getInstance().isEnableDomesticAI());
         domesticAIModelComboBox.setSelectedItem(getDisplayNameByValue(PluginSettings.getInstance().getDomesticAIModel()));
         domesticAIApiKeyField.setText(PluginSettings.getInstance().getDomesticAIApiKey());
+
+        // AI 助手设置
+        enableAiChatAssistantCheckBox.setSelected(PluginSettings.getInstance().isEnableAiChatAssistant());
+        aiProviderComboBox.setSelectedItem("openai".equals(PluginSettings.getInstance().getAiProviderType()) ? "OpenAI兼容" : "国内模型（通义/文心/智谱/混元）");
+        aiBaseUrlField.setText(PluginSettings.getInstance().getAiBaseUrl());
+        aiApiKeyField.setText(PluginSettings.getInstance().getAiApiKey());
+        aiModelField.setText(PluginSettings.getInstance().getAiModel());
         
         // 提示词设置
         useCustomPromptCheckBox.setSelected(PluginSettings.getInstance().isUseCustomPrompt());
@@ -346,6 +417,7 @@ public class SettingConfigurable implements SearchableConfigurable {
         updateGoogleFieldsState();
         updateDomesticAIFieldsState();
         updateTranslationPromptState();
+        updateAiAssistantFieldsState();
     }
     
     /**
@@ -359,6 +431,9 @@ public class SettingConfigurable implements SearchableConfigurable {
         testDomesticAPIButton.addActionListener(this::testDomesticAPIConfiguration);
         useCustomPromptCheckBox.addActionListener(e -> updateTranslationPromptState());
         resetPromptButton.addActionListener(this::resetTranslationPrompt);
+
+        enableAiChatAssistantCheckBox.addActionListener(e -> updateAiAssistantFieldsState());
+        testAiChatButton.addActionListener(this::testAiAssistantConfiguration);
     }
     
     /**
@@ -478,6 +553,18 @@ public class SettingConfigurable implements SearchableConfigurable {
         domesticAIApiKeyField.setEnabled(enabled);
         testDomesticAPIButton.setEnabled(enabled);
     }
+
+    /**
+     * 更新 AI 助手字段启用状态
+     */
+    private void updateAiAssistantFieldsState() {
+        boolean enabled = enableAiChatAssistantCheckBox.isSelected();
+        aiProviderComboBox.setEnabled(enabled);
+        aiBaseUrlField.setEnabled(enabled);
+        aiApiKeyField.setEnabled(enabled);
+        aiModelField.setEnabled(enabled);
+        testAiChatButton.setEnabled(enabled);
+    }
     
     /**
      * 测试国内大模型配置
@@ -569,7 +656,12 @@ public class SettingConfigurable implements SearchableConfigurable {
             || !currentModelValue.equals(settings.getDomesticAIModel())
             || !String.valueOf(domesticAIApiKeyField.getPassword()).equals(settings.getDomesticAIApiKey())
             || useCustomPromptCheckBox.isSelected() != settings.isUseCustomPrompt()
-            || !translationPromptArea.getText().equals(settings.getTranslationPrompt());
+            || !translationPromptArea.getText().equals(settings.getTranslationPrompt())
+            || enableAiChatAssistantCheckBox.isSelected() != settings.isEnableAiChatAssistant()
+            || !("openai".equals(settings.getAiProviderType()) ? "OpenAI兼容" : "国内模型（通义/文心/智谱/混元）").equals(aiProviderComboBox.getSelectedItem().toString())
+            || !aiBaseUrlField.getText().equals(settings.getAiBaseUrl())
+            || !String.valueOf(aiApiKeyField.getPassword()).equals(settings.getAiApiKey())
+            || !aiModelField.getText().equals(settings.getAiModel());
     }
 
     @Override
@@ -599,6 +691,13 @@ public class SettingConfigurable implements SearchableConfigurable {
         settings.setUseCustomPrompt(useCustomPromptCheckBox.isSelected());
         settings.setTranslationPrompt(translationPromptArea.getText());
 
+        // AI 助手
+        settings.setEnableAiChatAssistant(enableAiChatAssistantCheckBox.isSelected());
+        settings.setAiProviderType("OpenAI兼容".equals(aiProviderComboBox.getSelectedItem().toString()) ? "openai" : "domestic");
+        settings.setAiBaseUrl(aiBaseUrlField.getText());
+        settings.setAiApiKey(String.valueOf(aiApiKeyField.getPassword()));
+        settings.setAiModel(aiModelField.getText());
+
         // 验证保存结果
         System.out.println("[SettingConfigurable] 保存后验证...");
         System.out.println("[SettingConfigurable] 百度应用ID (从settings): '" + settings.getBaiduAppId() + "'");
@@ -625,9 +724,70 @@ public class SettingConfigurable implements SearchableConfigurable {
         domesticAIApiKeyField.setText(settings.getDomesticAIApiKey());
         useCustomPromptCheckBox.setSelected(settings.isUseCustomPrompt());
         translationPromptArea.setText(settings.getTranslationPrompt());
+        enableAiChatAssistantCheckBox.setSelected(settings.isEnableAiChatAssistant());
+        aiProviderComboBox.setSelectedItem("openai".equals(settings.getAiProviderType()) ? "OpenAI兼容" : "国内模型（通义/文心/智谱/混元）");
+        aiBaseUrlField.setText(settings.getAiBaseUrl());
+        aiApiKeyField.setText(settings.getAiApiKey());
+        aiModelField.setText(settings.getAiModel());
         updateGoogleFieldsState();
         updateDomesticAIFieldsState();
         updateTranslationPromptState();
+        updateAiAssistantFieldsState();
+    }
+
+    /**
+     * 验证 AI 助手配置并试聊
+     */
+    private void testAiAssistantConfiguration(ActionEvent e) {
+        boolean enabled = enableAiChatAssistantCheckBox.isSelected();
+        if (!enabled) {
+            JOptionPane.showMessageDialog(panel,
+                    "请先启用 AI 智能助手",
+                    "未启用",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String provider = aiProviderComboBox.getSelectedItem().toString();
+        String baseUrl = aiBaseUrlField.getText().trim();
+        String apiKey = String.valueOf(aiApiKeyField.getPassword()).trim();
+        String model = aiModelField.getText().trim();
+
+        if ("OpenAI兼容".equals(provider)) {
+            if (baseUrl.isEmpty() || apiKey.isEmpty() || model.isEmpty()) {
+                JOptionPane.showMessageDialog(panel,
+                        "请填写 Base URL、API 密钥和模型名称",
+                        "配置不完整",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        } else {
+            if (!enableDomesticAICheckBox.isSelected()) {
+                JOptionPane.showMessageDialog(panel,
+                        "请在“翻译引擎”页启用国内大模型并配置密钥",
+                        "配置不完整",
+                        JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+        }
+
+        try {
+            String reply;
+            if ("OpenAI兼容".equals(provider)) {
+                reply = com.shuyixiao.ai.chat.OpenAICompatibleChatClient.quickTest(baseUrl, apiKey, model, "你好，PandaCoder!");
+            } else {
+                reply = com.shuyixiao.DomesticAITranslationAPI.translate("你好，PandaCoder!", getValueByDisplayName(domesticAIModelComboBox.getSelectedItem().toString()), String.valueOf(domesticAIApiKeyField.getPassword()));
+            }
+            JOptionPane.showMessageDialog(panel,
+                    "助手回复：\n" + (reply == null ? "<空>" : reply),
+                    "验证成功",
+                    JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(panel,
+                    "助手验证失败：\n" + ex.getMessage(),
+                    "验证失败",
+                    JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     /**
@@ -655,5 +815,3 @@ public class SettingConfigurable implements SearchableConfigurable {
     }
     
 }
-
-

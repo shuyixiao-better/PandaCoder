@@ -235,6 +235,12 @@
                     anchor="right"
                     icon="/icons/toolwindow_panda.svg"
                     secondary="false"/>
+
+        <!-- AI Chat 工具窗口 -->
+        <toolWindow id="AI Chat"
+                    factoryClass="com.shuyixiao.chat.ui.AiChatToolWindowFactory"
+                    anchor="right"
+                    icon="/icons/search.svg"/>
         
         <!-- 活文档通知组 -->
         <notificationGroup id="LivingDoc" displayType="BALLOON"/>
