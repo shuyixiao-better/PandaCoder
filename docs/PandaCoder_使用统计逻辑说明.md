@@ -4,7 +4,7 @@
 
 ### 1. 数据存储层
 
-**存储位置**：`.idea/pandacoder.xml`（项目级配置）
+**存储位置**：`~/Library/Application Support/JetBrains/<IDE版本>/options/pandacoder.xml`（应用级配置，跨项目共享）
 **存储格式**：
 ```xml
 <PandaCoderSettings>
@@ -16,16 +16,21 @@
 </PandaCoderSettings>
 ```
 
+**重要说明**：
+- 使用应用级别存储（`Service.Level.APP`），所有项目共享同一份统计数据
+- 插件更新时不会删除或重置此文件，统计数据会持续累加
+- 不同 IDE（如 IDEA、WebStorm）的统计数据是独立的
+
 ### 2. 服务层
 
 **核心服务**：`PandaCoderSettings.java`
 ```java
-@Service(Service.Level.PROJECT)
+@Service(Service.Level.APP)  // 应用级别，跨项目共享
 @State(name = "PandaCoderSettings", storages = @Storage("pandacoder.xml"))
 public final class PandaCoderSettings implements PersistentStateComponent<State> {
     
     // 统计方法
-    public int getUsageCount()                    // 获取使用次数
+    public int getUsageCount()                    // 获取使用次数（跨所有项目）
     public void incrementUsageCount()             // 增加使用次数
     public boolean shouldShowMilestone()          // 是否达到里程碑
     public boolean shouldShowMilestoneNow()       // 是否应该显示里程碑（避免重复）
@@ -132,8 +137,10 @@ incrementUsageCount() 增加计数
 ### 2. 数据持久化
 
 **自动保存**：每次调用 `incrementUsageCount()` 后自动保存
-**存储位置**：项目根目录 `.idea/pandacoder.xml`
+**存储位置**：应用配置目录 `~/Library/Application Support/JetBrains/<IDE版本>/options/pandacoder.xml`
 **数据格式**：XML 格式，IDE 自动管理
+**跨项目共享**：所有项目使用同一份统计数据
+**插件更新**：更新插件时数据不会丢失，持续累加
 
 ### 3. 数据读取
 
@@ -148,7 +155,10 @@ incrementUsageCount() 增加计数
 
 ```bash
 # 1. 清理配置（模拟首次安装）
-rm -rf .idea/pandacoder.xml
+# macOS/Linux:
+rm -rf ~/Library/Application\ Support/JetBrains/*/options/pandacoder.xml
+# Windows:
+# del %APPDATA%\JetBrains\*\options\pandacoder.xml
 
 # 2. 启动测试 IDE
 ./gradlew runIde
@@ -160,7 +170,10 @@ rm -rf .idea/pandacoder.xml
 
 # 4. 查看统计结果
 # 打开 Tool Window 查看仪表盘中的使用次数
-# 或查看 .idea/pandacoder.xml 文件
+# 或查看应用配置目录中的 pandacoder.xml 文件
+
+# 5. 测试跨项目统计
+# 打开另一个项目，使用功能后查看统计是否继续累加
 ```
 
 ### 验证检查点
@@ -207,16 +220,20 @@ public void incrementUsageCount() {
 ### 问题3：数据丢失
 
 **可能原因**：
-- 项目配置被重置
+- IDE 配置目录被清理
 - 文件权限问题
+- 卸载 IDE 时删除了配置
 
 **解决方案**：
 ```bash
-# 备份配置
-cp .idea/pandacoder.xml .idea/pandacoder.xml.backup
+# 备份配置（macOS）
+cp ~/Library/Application\ Support/JetBrains/*/options/pandacoder.xml ~/pandacoder_backup.xml
 
-# 检查文件权限
-ls -la .idea/pandacoder.xml
+# 检查文件是否存在
+ls -la ~/Library/Application\ Support/JetBrains/*/options/pandacoder.xml
+
+# 恢复配置
+cp ~/pandacoder_backup.xml ~/Library/Application\ Support/JetBrains/<IDE版本>/options/pandacoder.xml
 ```
 
 ---
@@ -251,7 +268,7 @@ ls -la .idea/pandacoder.xml
 2. **细化统计维度**：
    - 按功能分类统计
    - 按时间统计（日/周/月）
-   - 按项目统计
+   - 按项目统计（可选，当前为全局统计）
 
 ### 中期规划
 

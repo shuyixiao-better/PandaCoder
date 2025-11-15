@@ -13,10 +13,12 @@ import org.jetbrains.annotations.Nullable;
  * 用于跟踪首次安装、使用次数、里程碑等信息
  * 支持智能推广和用户行为分析
  * 
+ * 注意：使用应用级别存储，实现跨项目的全局统计
+ * 
  * @author 舒一笑不秃头
  * @version 2.2.0
  */
-@Service(Service.Level.PROJECT)
+@Service(Service.Level.APP)
 @State(
     name = "PandaCoderSettings",
     storages = @Storage("pandacoder.xml")
@@ -26,7 +28,7 @@ public final class PandaCoderSettings implements PersistentStateComponent<PandaC
     private State state = new State();
     
     /**
-     * 获取项目级别的设置实例
+     * 获取应用级别的设置实例（跨项目共享）
      */
     public static PandaCoderSettings getInstance(@NotNull Project project) {
         return project.getService(PandaCoderSettings.class);
