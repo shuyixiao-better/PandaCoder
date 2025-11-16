@@ -494,6 +494,38 @@ logging:
 - **GitHub**：[github.com/shuyixiao-better](https://github.com/shuyixiao-better)
 - **邮箱**：yixiaoshu88@163.com
 
+## 🤝 社区交流
+
+### 💬 加入开发者交流群
+
+欢迎加入 PandaCoder 开发者交流群，与作者和其他开发者一起交流技术、分享经验、反馈问题！我们提供多种交流渠道：
+
+#### 📱 微信交流群 & 💬 QQ交流群
+
+<p align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="src/main/resources/images/舒一笑不秃头微信.jpg" width="280" alt="舒一笑不秃头微信">
+        <br>
+        <sub>扫码添加微信好友，备注 <strong>PandaCoder交流</strong>，可以拉你进微信交流群</sub>
+      </td>
+      <td align="center">
+        <img src="src/main/resources/images/PandaCoder交流QQ群.jpg" width="280" alt="PandaCoder开发者交流QQ群">
+        <br>
+        <sub>扫码加入QQ群，与作者和开发者直接交流</sub>
+      </td>
+    </tr>
+  </table>
+</p>
+
+**交流群内可以：**
+- 💡 获取最新的插件更新和技术动态
+- 🐛 反馈使用问题和改进建议
+- 🔧 交流开发经验和最佳实践
+- 📚 获取技术文档和教程资源
+- 🎯 参与功能讨论和产品规划
+
 ## 🤝 开源与协作
 
 PandaCoder 是一个开源项目，欢迎社区贡献。
@@ -520,8 +552,8 @@ PandaCoder 是一个开源项目，欢迎社区贡献。
 - ☕ **赞助支持**：请作者喝杯咖啡，激励持续更新
 
 <p align="center">
-  <img src="src/main/resources/images/微信收款.jpg" width="200" alt="微信赞助">
-  <img src="src/main/resources/images/支付宝收款.jpg" width="200" alt="支付宝赞助">
+  <img src="src/main/resources/images/wechat-pay.jpg" width="200" alt="微信赞助">
+  <img src="src/main/resources/images/alipay-pay.jpg" width="200" alt="支付宝赞助">
 </p>
 
 <p align="center">
