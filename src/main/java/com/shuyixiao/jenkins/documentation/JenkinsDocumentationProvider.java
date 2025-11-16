@@ -58,7 +58,7 @@ public class JenkinsDocumentationProvider implements DocumentationProvider {
     }
 
     @Override
-    public List<String> getUrlFor(@NotNull PsiElement element, @NotNull PsiElement originalElement) {
+    public List<String> getUrlFor(@NotNull PsiElement element, @Nullable PsiElement originalElement) {
         // 首先尝试获取Jenkins文档URL
         List<String> jenkinsUrls = getJenkinsDocumentationUrls(element, originalElement);
         if (jenkinsUrls != null && !jenkinsUrls.isEmpty()) {
@@ -204,7 +204,7 @@ public class JenkinsDocumentationProvider implements DocumentationProvider {
      * 获取Jenkins文档URL
      */
     @Nullable
-    private List<String> getJenkinsDocumentationUrls(@NotNull PsiElement element, @NotNull PsiElement originalElement) {
+    private List<String> getJenkinsDocumentationUrls(@NotNull PsiElement element, @Nullable PsiElement originalElement) {
         // 检查是否为Jenkins方法
         String methodName = null;
         
